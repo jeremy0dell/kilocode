@@ -1822,6 +1822,7 @@ const AgentManagerContent: Component = () => {
       setReviewActive(false)
     },
     focus: requestChatFocus,
+    start: prompt.focus,
     splash,
   })
   const handleForkSession = (sessionId: string, messageId?: string) => {
@@ -2313,6 +2314,7 @@ const AgentManagerContent: Component = () => {
                     worktrees={references}
                     emptyState={intro.render}
                     introduction={intro.introduction()}
+                    splashFolded={intro.folded()}
                     onForkMessage={readOnly() ? undefined : handleForkSession}
                     onForkSession={readOnly() ? undefined : handleForkSession}
                     onSelectSession={focusExistingSession}

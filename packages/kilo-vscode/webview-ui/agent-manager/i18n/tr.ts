@@ -514,7 +514,7 @@ export const dict = {
   "agentManager.intro.guide": "Kılavuzu okuyun",
   "agentManager.intro.dismiss": "Tanıtımı atla",
   "agentManager.intro.reopen": "Agent Manager nasıl çalışır",
-  "agentManager.splash.eyebrow": "AJAN YÖNETİCİSİ",
+  "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Gizle",
   "agentManager.splash.title": "Bir Kilo ajanı filosunu işe koşun.",
   "agentManager.splash.subtitle":

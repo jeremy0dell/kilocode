@@ -486,7 +486,7 @@ export const dict = {
   "agentManager.intro.guide": "閱讀指南",
   "agentManager.intro.dismiss": "略過介紹",
   "agentManager.intro.reopen": "Agent Manager 的運作方式",
-  "agentManager.splash.eyebrow": "代理程式管理員",
+  "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "隱藏",
   "agentManager.splash.title": "讓一隊 Kilo 代理程式為你工作。",
   "agentManager.splash.subtitle":

@@ -30,6 +30,7 @@ describe("createProjectStateHandlers", () => {
       isActive: () => true,
       font: () => {},
       browser: () => {},
+      splash: () => {},
       current: () => "session-a",
       closeBrowser: () => {},
       openBrowser: () => {},
@@ -84,6 +85,7 @@ describe("createProjectStateHandlers", () => {
       isActive: () => true,
       font: () => {},
       browser: () => {},
+      splash: () => {},
       current: () => "session-a",
       closeBrowser: () => {},
       openBrowser: () => {},
@@ -124,6 +126,7 @@ describe("createProjectStateHandlers", () => {
       browser: (value) => {
         enabled = value
       },
+      splash: () => {},
       current: () => "session-a",
       closeBrowser: () => {
         closed++
@@ -210,6 +213,7 @@ describe("createProjectStateHandlers", () => {
               routeState: () => {},
               isActive: (project) => project === "project-a",
               font: () => {},
+              splash: () => {},
               ...binding,
             })
             const state = (projectId, browserAutomation = false) => ({

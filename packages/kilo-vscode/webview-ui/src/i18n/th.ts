@@ -1439,7 +1439,7 @@ export const dict = {
   "chat.search.noResults": "ไม่มีผลลัพธ์",
   "settings.experimental.agentManagerSplash.title": "หน้าจอเริ่มต้น Agent Manager",
   "settings.experimental.agentManagerSplash.description":
-    "แสดงหน้าจอเริ่มต้น Agent Manager ใหม่พร้อมกอง fleet ตัวอย่าง และย่อเป็นแถบกะทัดรัดเมื่อคุณซ่อน",
+    "แสดงหน้าจอเริ่มต้น Agent Manager ใหม่พร้อมฟลีตตัวอย่าง และย่อเป็นแถบกะทัดรัดเมื่อคุณซ่อน",
   "settings.experimental.browserAutomation.title": "เบราว์เซอร์ในตัว",
   "settings.experimental.browserAutomation.description":
     "แสดงตัวอย่างแอปพลิเคชันในเครื่องใน Agent Manager และเปิดเผยเครื่องมือ browser_open ให้กับเซสชัน Agent Manager",

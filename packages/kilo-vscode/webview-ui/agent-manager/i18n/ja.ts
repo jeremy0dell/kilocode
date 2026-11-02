@@ -508,7 +508,7 @@ export const dict = {
   "agentManager.intro.guide": "ガイドを読む",
   "agentManager.intro.dismiss": "イントロダクションをスキップ",
   "agentManager.intro.reopen": "Agent Manager の仕組み",
-  "agentManager.splash.eyebrow": "エージェントマネージャー",
+  "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "非表示",
   "agentManager.splash.title": "Kilo エージェントの艦隊を働かせよう。",
   "agentManager.splash.subtitle":

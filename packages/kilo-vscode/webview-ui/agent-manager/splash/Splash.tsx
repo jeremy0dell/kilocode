@@ -1,4 +1,4 @@
-import type { JSX } from "solid-js"
+import { createUniqueId, type JSX } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { WelcomeEmptyState, KiloLogo } from "../../src/components/chat/WelcomeEmptyState"
@@ -15,8 +15,9 @@ interface EmptyProps {
 
 export function SplashExpanded(props: { onHide: () => void; onStart: () => void }) {
   const { t } = useLanguage()
+  const titleId = createUniqueId()
   return (
-    <section class="am-splash" aria-labelledby="am-splash-title">
+    <section class="am-splash" aria-labelledby={titleId}>
       <div class="am-splash-frame">
         <article class="am-splash-hero">
           <header class="am-splash-header">
@@ -24,15 +25,14 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void 
               <KiloLogo />
             </div>
             <span class="am-splash-eyebrow">{t("agentManager.splash.eyebrow")}</span>
-            <button class="am-splash-hide" type="button" onClick={props.onHide}>
+            <Button variant="ghost" size="small" class="am-splash-hide" onClick={props.onHide}>
               {t("agentManager.splash.hide")}
-            </button>
+            </Button>
           </header>
-          <h1 class="am-splash-title" id="am-splash-title">
+          <h2 class="am-splash-title" id={titleId}>
             {t("agentManager.splash.title")}
-          </h1>
+          </h2>
           <p class="am-splash-subtitle">{t("agentManager.splash.subtitle")}</p>
-          <div class="am-splash-carousel" aria-hidden="true" />
           <div class="am-splash-actions">
             <Button variant="primary" onClick={props.onStart}>
               {t("agentManager.splash.start")}
@@ -40,7 +40,6 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void 
             <span class="am-splash-hint">{t("agentManager.splash.hint")}</span>
           </div>
         </article>
-        <aside class="am-splash-preview" aria-hidden="true" />
       </div>
     </section>
   )
@@ -58,10 +57,10 @@ export function SplashFolded(props: EmptyProps & { onShowExamples: () => void })
           <span class="am-splash-folded-title">{t("agentManager.splash.folded.title")}</span>
           <span class="am-splash-folded-note">{t("agentManager.splash.folded.note")}</span>
         </div>
-        <button class="am-splash-show" type="button" onClick={props.onShowExamples}>
+        <Button variant="ghost" size="small" class="am-splash-show" onClick={props.onShowExamples}>
           {t("agentManager.splash.showExamples")}
           <Icon name="chevron-right" size="small" />
-        </button>
+        </Button>
       </div>
       <div class="am-splash-folded-body">
         <WelcomeEmptyState

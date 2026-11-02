@@ -469,12 +469,6 @@ export class VscodeHost implements Host {
     })
   }
 
-  onDidChangeSplash(cb: (enabled: boolean) => void): Disposable {
-    return vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration("kilo-code.new.experimental.agentManagerSplash")) cb(this.agentManagerSplash())
-    })
-  }
-
   isTrusted(): boolean {
     return vscode.workspace.isTrusted
   }

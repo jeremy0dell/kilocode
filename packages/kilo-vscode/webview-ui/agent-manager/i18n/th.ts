@@ -497,7 +497,7 @@ export const dict = {
   "agentManager.intro.guide": "อ่านคู่มือ",
   "agentManager.intro.dismiss": "ข้ามบทนำ",
   "agentManager.intro.reopen": "Agent Manager ทำงานอย่างไร",
-  "agentManager.splash.eyebrow": "ตัวจัดการเอเจนต์",
+  "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "ซ่อน",
   "agentManager.splash.title": "ให้กองทัพเอเจนต์ Kilo ลงมือทำงาน",
   "agentManager.splash.subtitle":

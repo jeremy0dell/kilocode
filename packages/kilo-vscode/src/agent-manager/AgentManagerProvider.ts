@@ -1839,12 +1839,11 @@ export class AgentManagerProvider implements Disposable {
     void this.shutdown()
   }
 
-  public refreshBrowserAutomation(): void {
+  public refreshExperimentalFlags(): void {
     if (!this.host.browserAutomation()) void this.browserLifecycle.closeAll()
-    if (!this.context) {
-      return this.pushEmptyState()
-    }
-    this.pushState()
+    void this.stateReady
+      ?.then(() => (this.state ? this.pushState() : this.pushEmptyState()))
+      .catch((err) => this.log("refreshExperimentalFlags: state initialization failed:", err))
   }
   private async disposeAsync(): Promise<void> {
     await this.stateReady?.catch((err) => this.log("dispose: stateReady rejected:", err))

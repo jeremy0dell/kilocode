@@ -27,6 +27,7 @@ export function createIntro(opts: {
   onShowHistory?: () => void
   reveal: () => void
   focus: () => void
+  start: () => void
   hints?: () => JSX.Element
   splash: SplashState
 }) {
@@ -52,14 +53,26 @@ export function createIntro(opts: {
   }
   return {
     ...state,
-    introduction: () => splashView(opts.splash.enabled(), opts.splash.folded()) !== "off" || state.visible(),
+    introduction: () => {
+      const view = splashView(opts.splash.enabled(), opts.splash.folded())
+      return view === "expanded" || (view === "off" && state.visible())
+    },
+    folded: () => splashView(opts.splash.enabled(), opts.splash.folded()) === "folded",
     render: (): JSX.Element => (
       <AgentManagerEmptyState
         base={opts.base()}
         git={opts.git()}
         sessions={opts.sessions}
         intro={state}
-        onStart={opts.focus}
+        onStart={opts.start}
+        onHide={() => {
+          opts.splash.fold()
+          opts.focus()
+        }}
+        onShowExamples={() => {
+          opts.splash.unfold()
+          opts.focus()
+        }}
         splash={opts.splash}
         onCreateWorktree={opts.onCreateWorktree}
         onSelectSession={opts.onSelectSession}
@@ -73,6 +86,8 @@ export function createIntro(opts: {
 interface EmptyProps extends Omit<IntroProps, "onDismiss"> {
   intro: Pick<ReturnType<typeof createIntro>, "visible" | "open" | "dismiss">
   onStart: () => void
+  onHide: () => void
+  onShowExamples: () => void
   splash: SplashState
   sessions?: () => SessionInfo[]
   onSelectSession?: (id: string) => void
@@ -92,11 +107,11 @@ function AgentManagerEmptyState(props: EmptyProps) {
             onSelectSession={props.onSelectSession}
             onShowHistory={props.onShowHistory}
             hints={props.hints}
-            onShowExamples={props.splash.unfold}
+            onShowExamples={props.onShowExamples}
           />
         }
       >
-        <SplashExpanded onHide={props.splash.fold} onStart={props.onStart} />
+        <SplashExpanded onHide={props.onHide} onStart={props.onStart} />
       </Show>
     </Show>
   )

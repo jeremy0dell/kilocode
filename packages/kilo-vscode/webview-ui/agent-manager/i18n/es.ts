@@ -514,7 +514,7 @@ export const dict = {
   "agentManager.intro.guide": "Leer la guía",
   "agentManager.intro.dismiss": "Omitir introducción",
   "agentManager.intro.reopen": "Cómo funciona Agent Manager",
-  "agentManager.splash.eyebrow": "GESTOR DE AGENTES",
+  "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Ocultar",
   "agentManager.splash.title": "Pon a trabajar una flota de agentes de Kilo.",
   "agentManager.splash.subtitle":

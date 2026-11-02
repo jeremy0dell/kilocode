@@ -505,7 +505,7 @@ export const dict = {
   "agentManager.intro.guide": "Pročitajte vodič",
   "agentManager.intro.dismiss": "Preskoči uvod",
   "agentManager.intro.reopen": "Kako radi Agent Manager",
-  "agentManager.splash.eyebrow": "UPRAVLJAČ AGENATA",
+  "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Sakrij",
   "agentManager.splash.title": "Stavi flotu Kilo agenata na posao.",
   "agentManager.splash.subtitle":

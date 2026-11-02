@@ -19,6 +19,7 @@ import { SessionTab } from "../components/chat/SessionTab"
 import { ChatView } from "../components/chat/ChatView"
 import { registerVscodeToolOverrides } from "../components/chat/VscodeToolOverrides"
 import { SessionContext, useSession } from "../context/session"
+import { AccountSwitcher } from "../components/shared/AccountSwitcher"
 import { ServerContext } from "../context/server"
 import { WorktreeModeProvider } from "../context/worktree-mode"
 import { SidebarSearchMenu } from "../../agent-manager/SidebarSearchMenu"
@@ -161,6 +162,7 @@ function IntroductionPreview(props: { skipped?: boolean }) {
     onShowHistory: () => {},
     reveal: () => {},
     focus: () => {},
+    start: () => {},
     splash,
   })
   if (props.skipped) intro.dismiss()
@@ -216,8 +218,15 @@ export const SplashFoldedStory: Story = {
   name: "Splash folded",
   render: () => (
     <StoryProviders>
-      <div style={{ height: "640px", display: "flex" }}>
-        <SplashFolded onShowExamples={() => {}} />
+      <div class="message-list-container am-splash-host-folded" style={{ height: "640px" }}>
+        <div class="welcome-header" data-slot="welcome-header">
+          <AccountSwitcher class="account-switcher-welcome" />
+        </div>
+        <div class="message-list" data-slot="message-list">
+          <div class="message-list-content-empty">
+            <SplashFolded onShowExamples={() => {}} />
+          </div>
+        </div>
       </div>
     </StoryProviders>
   ),

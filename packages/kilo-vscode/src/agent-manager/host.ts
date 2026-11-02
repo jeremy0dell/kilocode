@@ -161,9 +161,6 @@ export interface Host {
   /** Listen for changes to the worktree pre-warming setting. */
   onDidChangeWorktreePool(cb: (enabled: boolean) => void): Disposable
 
-  /** Listen for changes to the experimental splash flag. */
-  onDidChangeSplash?(cb: (enabled: boolean) => void): Disposable
-
   /** Read the persisted additional-project registry payload. */
   readProjects(): unknown
 

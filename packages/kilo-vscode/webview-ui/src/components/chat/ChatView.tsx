@@ -59,6 +59,7 @@ interface ChatViewProps {
   onFocusChange?: (focused: boolean) => void
   emptyState?: () => JSX.Element
   introduction?: boolean
+  splashFolded?: boolean
   resolveEmbeddedTerminal?: (context?: string) => Promise<string | undefined>
   /** Agent Manager state for the prompt shortcut hint. */
   manager?: () => ManagerContext | undefined
@@ -439,6 +440,7 @@ export const ChatView: Component<ChatViewProps> = (props) => {
                 interactivePrompts={ownsPrompts()}
                 emptyState={props.emptyState}
                 introduction={props.introduction}
+                splashFolded={props.splashFolded}
                 announce={isSidebar()}
                 sessionID={pendingSessionID}
               />

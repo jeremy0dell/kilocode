@@ -87,6 +87,7 @@ interface MessageListProps {
   /** Optionally replace the standard welcome content while the conversation is empty. */
   emptyState?: () => JSX.Element
   introduction?: boolean
+  splashFolded?: boolean
   /** Announce transcript changes as a live log. Disable for multi-session surfaces with concurrent streams. */
   announce?: boolean
   sessionID?: Accessor<string | undefined>
@@ -859,7 +860,10 @@ export const MessageList: Component<MessageListProps> = (props) => {
   }
 
   return (
-    <div class="message-list-container" classList={{ "am-intro-layout": introduction() }}>
+    <div
+      class="message-list-container"
+      classList={{ "am-intro-layout": introduction(), "am-splash-host-folded": props.splashFolded }}
+    >
       <Show when={props.announce === false}>
         <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
           {announcement()}
