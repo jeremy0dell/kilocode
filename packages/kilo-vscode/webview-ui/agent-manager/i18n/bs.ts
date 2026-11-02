@@ -505,6 +505,16 @@ export const dict = {
   "agentManager.intro.guide": "Pročitajte vodič",
   "agentManager.intro.dismiss": "Preskoči uvod",
   "agentManager.intro.reopen": "Kako radi Agent Manager",
+  "agentManager.splash.eyebrow": "UPRAVLJAČ AGENATA",
+  "agentManager.splash.hide": "Sakrij",
+  "agentManager.splash.title": "Stavi flotu Kilo agenata na posao.",
+  "agentManager.splash.subtitle":
+    "Radi na više zadataka paralelno, delegiraj posao, prati napredak svakog agenta i održavaj više tokova rada na jednom mjestu.",
+  "agentManager.splash.start": "Započni svoju prvu sesiju",
+  "agentManager.splash.hint": "ili opiši zadatak u polju ispod",
+  "agentManager.splash.folded.title": "Stavi flotu Kilo agenata na posao",
+  "agentManager.splash.folded.note": "Funkcije kroz više stekova, orkestrator, ops tim i još mnogo toga",
+  "agentManager.splash.showExamples": "Prikaži primjere",
   "agentManager.worktree.health.absent-restorable": "Folder izbrisan",
   "agentManager.worktree.health.absent-restorableNote":
     "Folder je nestao, ali grana {{branch}} još postoji. Vrati ga da nastaviš rad ovdje.",

@@ -1463,6 +1463,9 @@ export const dict = {
   "chat.search.close": "Luk søgning",
   "chat.search.invalidRegex": "Ugyldigt regulært udtryk",
   "chat.search.noResults": "Ingen resultater",
+  "settings.experimental.agentManagerSplash.title": "Agent Manager-startskærm",
+  "settings.experimental.agentManagerSplash.description":
+    "Vis den nye Agent Manager-startskærm med eksempel-flåder, og fold den til en kompakt bjælke, når du skjuler den.",
   "settings.experimental.browserAutomation.title": "Integreret browser",
   "settings.experimental.browserAutomation.description":
     "Vis forhåndsvisninger af lokale applikationer i Agent Manager, og gør værktøjet browser_open tilgængeligt for Agent Manager-sessioner.",

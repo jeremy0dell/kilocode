@@ -152,6 +152,7 @@ export interface Host {
   cloneRepository(url: string, parent: string): Promise<string | undefined>
 
   browserAutomation(): boolean
+  agentManagerSplash(): boolean
   approveBrowserNavigation?(origin: string): Promise<boolean>
 
   /** Whether background worktree pre-warming is enabled. */
@@ -159,6 +160,9 @@ export interface Host {
 
   /** Listen for changes to the worktree pre-warming setting. */
   onDidChangeWorktreePool(cb: (enabled: boolean) => void): Disposable
+
+  /** Listen for changes to the experimental splash flag. */
+  onDidChangeSplash?(cb: (enabled: boolean) => void): Disposable
 
   /** Read the persisted additional-project registry payload. */
   readProjects(): unknown

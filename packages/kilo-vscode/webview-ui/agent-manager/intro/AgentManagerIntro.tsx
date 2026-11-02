@@ -5,6 +5,9 @@ import { useLanguage } from "../../src/context/language"
 import { useVSCode } from "../../src/context/vscode"
 import type { SessionInfo } from "../../src/types/messages"
 import { WelcomeEmptyState, KiloLogo } from "../../src/components/chat/WelcomeEmptyState"
+import { SplashExpanded, SplashFolded } from "../splash/Splash"
+import type { SplashState } from "../splash/state"
+import { splashView } from "../splash/view"
 import { IntroGraph } from "./IntroGraph"
 import "./intro.css"
 
@@ -25,6 +28,7 @@ export function createIntro(opts: {
   reveal: () => void
   focus: () => void
   hints?: () => JSX.Element
+  splash: SplashState
 }) {
   const vscode = useVSCode()
   const [dismissed, setDismissed] = createSignal(
@@ -48,12 +52,15 @@ export function createIntro(opts: {
   }
   return {
     ...state,
+    introduction: () => splashView(opts.splash.enabled(), opts.splash.folded()) !== "off" || state.visible(),
     render: (): JSX.Element => (
       <AgentManagerEmptyState
         base={opts.base()}
         git={opts.git()}
         sessions={opts.sessions}
         intro={state}
+        onStart={opts.focus}
+        splash={opts.splash}
         onCreateWorktree={opts.onCreateWorktree}
         onSelectSession={opts.onSelectSession}
         onShowHistory={opts.onShowHistory}
@@ -65,6 +72,8 @@ export function createIntro(opts: {
 
 interface EmptyProps extends Omit<IntroProps, "onDismiss"> {
   intro: Pick<ReturnType<typeof createIntro>, "visible" | "open" | "dismiss">
+  onStart: () => void
+  splash: SplashState
   sessions?: () => SessionInfo[]
   onSelectSession?: (id: string) => void
   onShowHistory?: () => void
@@ -72,6 +81,28 @@ interface EmptyProps extends Omit<IntroProps, "onDismiss"> {
 }
 
 function AgentManagerEmptyState(props: EmptyProps) {
+  const view = () => splashView(props.splash.enabled(), props.splash.folded())
+  return (
+    <Show when={view() !== "off"} fallback={<IntroOrWelcome {...props} />}>
+      <Show
+        when={view() === "expanded"}
+        fallback={
+          <SplashFolded
+            sessions={props.sessions}
+            onSelectSession={props.onSelectSession}
+            onShowHistory={props.onShowHistory}
+            hints={props.hints}
+            onShowExamples={props.splash.unfold}
+          />
+        }
+      >
+        <SplashExpanded onHide={props.splash.fold} onStart={props.onStart} />
+      </Show>
+    </Show>
+  )
+}
+
+function IntroOrWelcome(props: EmptyProps) {
   const { t } = useLanguage()
   return (
     <Show

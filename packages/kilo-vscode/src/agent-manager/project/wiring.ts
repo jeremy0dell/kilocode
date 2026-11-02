@@ -109,6 +109,8 @@ export function createProjectWiring(opts: {
       }
     }),
   ]
+  const splash = opts.host.onDidChangeSplash?.(() => opts.pushState())
+  if (splash) listeners.push(splash)
   return {
     registry,
     contexts,

@@ -13,6 +13,8 @@ import { createReviewComposers } from "../../agent-manager/review-composers"
 import { FullScreenDiffView } from "../../diff-viewer/FullScreenDiffView"
 import { WorktreeItem } from "../../agent-manager/WorktreeItem"
 import { createIntro } from "../../agent-manager/intro/AgentManagerIntro"
+import { SplashExpanded, SplashFolded } from "../../agent-manager/splash/Splash"
+import { createSplashState } from "../../agent-manager/splash/state"
 import { SessionTab } from "../components/chat/SessionTab"
 import { ChatView } from "../components/chat/ChatView"
 import { registerVscodeToolOverrides } from "../components/chat/VscodeToolOverrides"
@@ -150,6 +152,7 @@ export default meta
 type Story = StoryObj
 
 function IntroductionPreview(props: { skipped?: boolean }) {
+  const splash = createSplashState(() => {}, { enabled: false, folded: false })
   const intro = createIntro({
     base: () => "main",
     git: () => true,
@@ -158,6 +161,7 @@ function IntroductionPreview(props: { skipped?: boolean }) {
     onShowHistory: () => {},
     reveal: () => {},
     focus: () => {},
+    splash,
   })
   if (props.skipped) intro.dismiss()
   const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
@@ -195,6 +199,26 @@ export const IntroductionSkipped: Story = {
   render: () => (
     <StoryProviders>
       <IntroductionPreview skipped />
+    </StoryProviders>
+  ),
+}
+
+export const SplashExpandedStory: Story = {
+  name: "Splash expanded",
+  render: () => (
+    <StoryProviders>
+      <SplashExpanded onHide={() => {}} onStart={() => {}} />
+    </StoryProviders>
+  ),
+}
+
+export const SplashFoldedStory: Story = {
+  name: "Splash folded",
+  render: () => (
+    <StoryProviders>
+      <div style={{ height: "640px", display: "flex" }}>
+        <SplashFolded onShowExamples={() => {}} />
+      </div>
     </StoryProviders>
   ),
 }

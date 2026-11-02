@@ -28,6 +28,7 @@ import type { RemoteStatusService } from "../services/RemoteStatusService"
 import type { CaffeinationService } from "../services/caffeination"
 
 const INTRO_KEY = "kilo.agentManager.introDismissed"
+const SPLASH_KEY = "kilo.agentManager.splashFolded"
 const PR_MERGE_METHODS_KEY = "agentManager.prMergeMethod"
 
 export class VscodeHost implements Host {
@@ -125,6 +126,8 @@ export class VscodeHost implements Host {
       port,
       browserAutomation: this.browserAutomation(),
       introDismissed: this.context.globalState.get<boolean>(INTRO_KEY) === true,
+      agentManagerSplash: this.agentManagerSplash(),
+      splashFolded: this.context.globalState.get<boolean>(SPLASH_KEY) === true,
       frameSrc: ["localhost", "127.0.0.1"].map((host) => `http://${host}:*`).join(" "),
     })
 
@@ -174,6 +177,10 @@ export class VscodeHost implements Host {
         }
         if (msg.type === "agentManager.requestCaffeination") {
           snapshot()
+          return null
+        }
+        if (msg.type === "agentManager.setSplashFolded") {
+          if (typeof msg.folded === "boolean") await this.context.globalState.update(SPLASH_KEY, msg.folded)
           return null
         }
         if (msg.type !== "agentManager.setIntroDismissed") return opts.onBeforeMessage(msg)
@@ -411,6 +418,10 @@ export class VscodeHost implements Host {
     return vscode.workspace.getConfiguration("kilo-code.new.experimental").get("browserAutomation", false)
   }
 
+  agentManagerSplash(): boolean {
+    return vscode.workspace.getConfiguration("kilo-code.new.experimental").get("agentManagerSplash", false)
+  }
+
   async approveBrowserNavigation(origin: string): Promise<boolean> {
     const answer = await vscode.window.showWarningMessage(
       `Allow the Agent Manager browser to navigate to ${origin}?`,
@@ -455,6 +466,12 @@ export class VscodeHost implements Host {
   onDidChangeWorktreePool(cb: (enabled: boolean) => void): Disposable {
     return vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("kilo-code.new.agentManager.worktreePool")) cb(this.worktreePool())
+    })
+  }
+
+  onDidChangeSplash(cb: (enabled: boolean) => void): Disposable {
+    return vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("kilo-code.new.experimental.agentManagerSplash")) cb(this.agentManagerSplash())
     })
   }
 

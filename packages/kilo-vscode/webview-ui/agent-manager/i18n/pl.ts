@@ -507,6 +507,16 @@ export const dict = {
   "agentManager.intro.guide": "Przeczytaj przewodnik",
   "agentManager.intro.dismiss": "Pomiń wprowadzenie",
   "agentManager.intro.reopen": "Jak działa Agent Manager",
+  "agentManager.splash.eyebrow": "MENEDŻER AGENTÓW",
+  "agentManager.splash.hide": "Ukryj",
+  "agentManager.splash.title": "Postaw do pracy flotę agentów Kilo.",
+  "agentManager.splash.subtitle":
+    "Realizuj wiele zadań równolegle, deleguj pracę, śledź postępy każdego agenta i utrzymuj wiele strumieni pracy w jednym miejscu.",
+  "agentManager.splash.start": "Rozpocznij pierwszą sesję",
+  "agentManager.splash.hint": "lub opisz zadanie w polu poniżej",
+  "agentManager.splash.folded.title": "Postaw do pracy flotę agentów Kilo",
+  "agentManager.splash.folded.note": "Funkcje między stosami, orkiestrator, zespół ops i więcej",
+  "agentManager.splash.showExamples": "Pokaż przykłady",
   "agentManager.worktree.health.absent-restorable": "Folder usunięty",
   "agentManager.worktree.health.absent-restorableNote":
     "Folder zniknął, ale gałąź {{branch}} nadal istnieje. Przywróć go, aby dalej tu pracować.",

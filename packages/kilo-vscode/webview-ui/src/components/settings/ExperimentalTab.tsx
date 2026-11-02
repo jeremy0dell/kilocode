@@ -303,6 +303,19 @@ const ExperimentalTab: Component = () => {
           </Switch>
         </SettingsRow>
 
+        <SettingsRow
+          title={language.t("settings.experimental.agentManagerSplash.title")}
+          description={language.t("settings.experimental.agentManagerSplash.description")}
+        >
+          <Switch
+            checked={settings().agentManagerSplash === true}
+            onChange={(checked) => applySetting("agentManagerSplash", checked, "experimental.agentManagerSplash")}
+            hideLabel
+          >
+            {language.t("settings.experimental.agentManagerSplash.title")}
+          </Switch>
+        </SettingsRow>
+
         {/* MCP timeout */}
         <SettingsRow
           title={language.t("settings.experimental.mcpTimeout.title")}

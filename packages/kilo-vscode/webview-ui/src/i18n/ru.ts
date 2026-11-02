@@ -1463,6 +1463,9 @@ export const dict = {
   "chat.search.close": "Закрыть поиск",
   "chat.search.invalidRegex": "Недопустимое регулярное выражение",
   "chat.search.noResults": "Нет результатов",
+  "settings.experimental.agentManagerSplash.title": "Заставка Agent Manager",
+  "settings.experimental.agentManagerSplash.description":
+    "Показывает новую заставку Agent Manager с примерами флотов и сворачивает её в компактную панель после скрытия.",
   "settings.experimental.browserAutomation.title": "Встроенный браузер",
   "settings.experimental.browserAutomation.description":
     "Показывайте предпросмотр локальных приложений в Agent Manager и предоставляйте инструмент browser_open сеансам Agent Manager.",

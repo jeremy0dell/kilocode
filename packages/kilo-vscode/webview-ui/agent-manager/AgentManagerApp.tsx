@@ -69,6 +69,7 @@ import { ChatView } from "../src/components/chat"
 import HistoryView from "../src/components/history/HistoryView"
 import { NewWorktreeDialog } from "./NewWorktreeDialog"
 import { createIntro } from "./intro/AgentManagerIntro"
+import { createSplashState } from "./splash/state"
 import { createShortcutHints } from "./ShortcutHints"
 import { useBaseUpdate } from "./update-from-base"
 import { createModeRouter } from "./mode-router"
@@ -225,6 +226,10 @@ const AgentManagerContent: Component = () => {
   const session = useSession()
   const vscode = useVSCode()
   const dialog = useDialog()
+  const splash = createSplashState((message) => vscode.postMessage(message), {
+    enabled: (window as { KILO_AGENT_MANAGER_SPLASH?: boolean }).KILO_AGENT_MANAGER_SPLASH === true,
+    folded: (window as { KILO_AGENT_MANAGER_SPLASH_FOLDED?: boolean }).KILO_AGENT_MANAGER_SPLASH_FOLDED === true,
+  })
   const updateBase = useBaseUpdate(session)
   const update = () =>
     updateBase(
@@ -1087,6 +1092,7 @@ const AgentManagerContent: Component = () => {
     routeState: router.routeState,
     isActive: isActivePayload,
     font: (font) => font && setTerminalFont(font),
+    splash: splash.setEnabled,
     ...browser.bind(session.currentSessionID),
   })
   const preserveSidebarScroll = createSidebarScrollPreserver(() => selection() ?? session.currentSessionID())
@@ -1816,6 +1822,7 @@ const AgentManagerContent: Component = () => {
       setReviewActive(false)
     },
     focus: requestChatFocus,
+    splash,
   })
   const handleForkSession = (sessionId: string, messageId?: string) => {
     const sel = selection()
@@ -2305,7 +2312,7 @@ const AgentManagerContent: Component = () => {
                     projectId={currentProjectId()}
                     worktrees={references}
                     emptyState={intro.render}
-                    introduction={intro.visible()}
+                    introduction={intro.introduction()}
                     onForkMessage={readOnly() ? undefined : handleForkSession}
                     onForkSession={readOnly() ? undefined : handleForkSession}
                     onSelectSession={focusExistingSession}

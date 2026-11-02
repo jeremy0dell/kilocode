@@ -958,6 +958,9 @@ export const dict = {
   "settings.sandboxing.writablePaths.title": "Additional Writable Paths",
   "settings.sandboxing.writablePaths.description":
     "Extra filesystem paths the sandbox allows writes to (e.g. /tmp, /var/log). These are merged with the default writable paths when the sandbox is active.",
+  "settings.experimental.agentManagerSplash.title": "Agent Manager splash",
+  "settings.experimental.agentManagerSplash.description":
+    "Show the new Agent Manager splash with example fleets, and fold it into a compact bar after you hide it.",
   "settings.experimental.browserAutomation.title": "Integrated Browser",
   "settings.experimental.browserAutomation.description":
     "Preview local applications and public HTTPS pages in Agent Manager and the Integrated Browser tab, and expose the browser_open tool to sessions.",

@@ -1504,6 +1504,9 @@ export const dict = {
   "chat.search.close": "Fermer la recherche",
   "chat.search.invalidRegex": "Expression régulière non valide",
   "chat.search.noResults": "Aucun résultat",
+  "settings.experimental.agentManagerSplash.title": "Écran d'accueil d'Agent Manager",
+  "settings.experimental.agentManagerSplash.description":
+    "Affiche le nouvel écran d'accueil d'Agent Manager avec des flottes d'exemple et le replie en une barre compacte lorsque vous le masquez.",
   "settings.experimental.browserAutomation.title": "Navigateur intégré",
   "settings.experimental.browserAutomation.description":
     "Affichez des aperçus d'applications locales dans Agent Manager et exposez l'outil browser_open aux sessions Agent Manager.",

@@ -44,6 +44,32 @@ describe("createProjectStateHandlers", () => {
     expect(value.browserAutomation).toBe(true)
   })
 
+  it("applies the splash flag from state messages", () => {
+    const values: boolean[] = []
+    const handler = createProjectStateHandlers({
+      setProjects: () => {},
+      migrate: () => {},
+      setStates: () => {},
+      prune: () => {},
+      ensure: () => ({ sections: () => [], applyState: () => {} }),
+      active: () => ({ sections: () => [], applyState: () => {} }),
+      routeCatalog: () => {},
+      routeState: () => {},
+      isActive: () => true,
+      font: () => {},
+      browser: () => {},
+      splash: (value) => values.push(value),
+      current: () => "session-a",
+      closeBrowser: () => {},
+      openBrowser: () => {},
+    })
+
+    handler.state({ ...state("project-a"), splash: false })
+    handler.state({ ...state("project-a"), splash: true })
+
+    expect(values).toEqual([false, true])
+  })
+
   it("migrates the pinned project, or the first catalog entry, when projects arrive", () => {
     const migrated: string[] = []
     const handler = createProjectStateHandlers({

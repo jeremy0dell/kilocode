@@ -1431,6 +1431,9 @@ export const dict = {
   "chat.search.close": "إغلاق البحث",
   "chat.search.invalidRegex": "تعبير عادي غير صالح",
   "chat.search.noResults": "لا توجد نتائج",
+  "settings.experimental.agentManagerSplash.title": "شاشة بدء Agent Manager",
+  "settings.experimental.agentManagerSplash.description":
+    "يعرض شاشة بدء Agent Manager الجديدة مع أساطيل نموذجية، ويطويها إلى شريط مدمج بعد إخفائها.",
   "settings.experimental.browserAutomation.title": "المتصفح المدمج",
   "settings.experimental.browserAutomation.description":
     "عرض معاينات التطبيقات المحلية في Agent Manager وإتاحة أداة browser_open لجلسات Agent Manager.",

@@ -1469,6 +1469,9 @@ export const dict = {
   "chat.search.close": "Zatvori pretragu",
   "chat.search.invalidRegex": "Nevažeći regularni izraz",
   "chat.search.noResults": "Nema rezultata",
+  "settings.experimental.agentManagerSplash.title": "Agent Manager početni ekran",
+  "settings.experimental.agentManagerSplash.description":
+    "Prikazuje novi Agent Manager početni ekran s primjerima flota i skuplja ga u kompaktnu traku nakon što ga sakriješ.",
   "settings.experimental.browserAutomation.title": "Integrirani preglednik",
   "settings.experimental.browserAutomation.description":
     "Prikažite preglede lokalnih aplikacija u Agent Manageru i omogućite alat browser_open sesijama Agent Managera.",

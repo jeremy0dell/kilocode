@@ -507,6 +507,16 @@ export const dict = {
   "agentManager.intro.guide": "راهنما را بخوانید",
   "agentManager.intro.dismiss": "رد کردن مقدمه",
   "agentManager.intro.reopen": "Agent Manager چگونه کار می‌کند",
+  "agentManager.splash.eyebrow": "مدیر عامل‌ها",
+  "agentManager.splash.hide": "پنهان کردن",
+  "agentManager.splash.title": "یک ناوگان از عامل‌های Kilo را به کار بگیرید.",
+  "agentManager.splash.subtitle":
+    "چندین کار را هم‌زمان انجام دهید، کار را واگذار کنید، پیشرفت هر عامل را دنبال کنید و چند جریان کاری را از یک جا به حرکت درآورید.",
+  "agentManager.splash.start": "اولین نشست خود را شروع کنید",
+  "agentManager.splash.hint": "یا یک کار را در کادر زیر توصیف کنید",
+  "agentManager.splash.folded.title": "یک ناوگان از عامل‌های Kilo را به کار بگیرید",
+  "agentManager.splash.folded.note": "قابلیت‌های چندپشته‌ای، یک هماهنگ‌کننده، یک تیم عملیات و بیشتر",
+  "agentManager.splash.showExamples": "نمایش نمونه‌ها",
   "agentManager.worktree.health.absent-restorable": "پوشه حذف شده است",
   "agentManager.worktree.health.absent-restorableNote":
     "پوشه نیست، اما شاخه {{branch}} هنوز وجود دارد. آن را بازیابی کنید تا کار در اینجا ادامه یابد.",

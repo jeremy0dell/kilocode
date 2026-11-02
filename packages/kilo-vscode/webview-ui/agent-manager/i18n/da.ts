@@ -508,6 +508,16 @@ export const dict = {
   "agentManager.intro.guide": "Læs guiden",
   "agentManager.intro.dismiss": "Spring introduktion over",
   "agentManager.intro.reopen": "Sådan fungerer Agent Manager",
+  "agentManager.splash.eyebrow": "AGENTSTYRING",
+  "agentManager.splash.hide": "Skjul",
+  "agentManager.splash.title": "Sæt en flåde af Kilo-agenter i arbejde.",
+  "agentManager.splash.subtitle":
+    "Tag flere opgaver parallelt, deleger arbejde, følg hver agents fremgang, og hold flere arbejdsgange i gang fra ét sted.",
+  "agentManager.splash.start": "Start din første session",
+  "agentManager.splash.hint": "eller beskriv en opgave i feltet nedenfor",
+  "agentManager.splash.folded.title": "Sæt en flåde af Kilo-agenter i arbejde",
+  "agentManager.splash.folded.note": "Funktioner på tværs af stacks, en orkestrator, et driftsteam og mere",
+  "agentManager.splash.showExamples": "Vis eksempler",
   "agentManager.worktree.health.absent-restorable": "Mappe slettet",
   "agentManager.worktree.health.absent-restorableNote":
     "Mappen er væk, men branchen {{branch}} findes stadig. Gendan den for at arbejde videre her.",

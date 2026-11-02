@@ -1382,6 +1382,9 @@ export const dict = {
   "chat.search.close": "关闭搜索",
   "chat.search.invalidRegex": "正则表达式无效",
   "chat.search.noResults": "无结果",
+  "settings.experimental.agentManagerSplash.title": "Agent Manager 启动画面",
+  "settings.experimental.agentManagerSplash.description":
+    "显示带有示例团队的 Agent Manager 新启动画面，隐藏后会折叠为紧凑栏。",
   "settings.experimental.browserAutomation.title": "集成浏览器",
   "settings.experimental.browserAutomation.description":
     "在 Agent Manager 中显示本地应用预览，并向 Agent Manager 会话公开 browser_open 工具。",

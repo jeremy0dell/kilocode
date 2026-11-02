@@ -505,6 +505,16 @@ export const dict = {
   "agentManager.intro.guide": "Les veiledningen",
   "agentManager.intro.dismiss": "Hopp over introduksjonen",
   "agentManager.intro.reopen": "Slik fungerer Agent Manager",
+  "agentManager.splash.eyebrow": "AGENTSTYRING",
+  "agentManager.splash.hide": "Skjul",
+  "agentManager.splash.title": "Sett en flåte med Kilo-agenter i arbeid.",
+  "agentManager.splash.subtitle":
+    "Ta tak i flere oppgaver parallelt, deleger arbeid, følg fremdriften til hver agent og hold flere arbeidsstrømmer i gang fra ett sted.",
+  "agentManager.splash.start": "Start din første økt",
+  "agentManager.splash.hint": "eller beskriv en oppgave i feltet under",
+  "agentManager.splash.folded.title": "Sett en flåte med Kilo-agenter i arbeid",
+  "agentManager.splash.folded.note": "Funksjoner på tvers av stakker, en orkestrator, et driftsteam og mer",
+  "agentManager.splash.showExamples": "Vis eksempler",
   "agentManager.worktree.health.absent-restorable": "Mappe slettet",
   "agentManager.worktree.health.absent-restorableNote":
     "Mappen er borte, men grenen {{branch}} finnes fortsatt. Gjenopprett den for å jobbe videre her.",

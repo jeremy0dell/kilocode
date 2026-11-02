@@ -1,0 +1,231 @@
+.am-splash,
+.am-splash-folded-layout {
+  --am-splash-surface: var(--vscode-editorWidget-background, #161719);
+  --am-splash-border: var(--vscode-widget-border, #2f3136);
+  --am-splash-text: var(--vscode-foreground, #e8e9eb);
+  --am-splash-muted: var(--vscode-descriptionForeground, #9a9ca2);
+  --am-splash-accent: var(--vscode-focusBorder, #6aa7d6);
+}
+
+.am-splash {
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  color: var(--am-splash-text);
+  text-align: start;
+  font-size: var(--kilo-font-size-13);
+  line-height: 1.55;
+}
+
+.am-splash-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  min-width: 0;
+}
+
+.am-splash-hero {
+  flex: 0 1 720px;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--am-splash-border);
+  border-radius: var(--radius-lg, 8px);
+  background: var(--am-splash-surface);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.am-splash-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.am-splash-logo {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md, 6px);
+  overflow: hidden;
+}
+
+.am-splash-logo > div {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+}
+
+.am-splash-eyebrow {
+  font-size: var(--kilo-font-size-10);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--am-splash-muted);
+}
+
+.am-splash-hide {
+  margin-inline-start: auto;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: var(--am-splash-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.am-splash-hide:hover {
+  color: var(--am-splash-text);
+  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.18));
+}
+
+.am-splash-hide:focus-visible,
+.am-splash-show:focus-visible {
+  outline: 1px solid var(--am-splash-accent);
+  outline-offset: 1px;
+}
+
+.am-splash-title {
+  margin: 0;
+  color: var(--am-splash-text);
+  font-size: var(--kilo-font-size-20);
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.am-splash-subtitle {
+  margin: 0;
+  max-width: 58ch;
+  color: var(--am-splash-muted);
+  font-size: var(--kilo-font-size-13);
+  line-height: 1.55;
+}
+
+/* Reserved for the example carousel. */
+.am-splash-carousel {
+  display: none;
+}
+
+.am-splash-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding-top: 4px;
+}
+
+.am-splash-hint {
+  color: var(--am-splash-muted);
+  font-size: var(--kilo-font-size-12);
+}
+
+/* Reserved for the sidebar preview. */
+.am-splash-preview {
+  display: none;
+}
+
+.am-splash-folded-layout {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
+.am-splash-folded {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--am-splash-border);
+  color: var(--am-splash-text);
+}
+
+.am-splash-folded-logo {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm, 4px);
+  overflow: hidden;
+}
+
+.am-splash-folded-logo > div {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+}
+
+.am-splash-folded-text {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.am-splash-folded-title {
+  flex-shrink: 0;
+  font-size: var(--kilo-font-size-12);
+  font-weight: 600;
+}
+
+.am-splash-folded-note {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--am-splash-muted);
+  font-size: var(--kilo-font-size-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.am-splash-show {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: var(--am-splash-accent);
+  font: inherit;
+  font-size: var(--kilo-font-size-12);
+  cursor: pointer;
+}
+
+.am-splash-show:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.18));
+}
+
+.am-splash-folded-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 720px) {
+  .am-splash {
+    padding: 4px;
+  }
+
+  .am-splash-hero {
+    padding: 18px;
+  }
+
+  .am-splash-folded-text {
+    flex-direction: column;
+    gap: 0;
+  }
+}

@@ -517,6 +517,16 @@ export const dict = {
   "agentManager.intro.guide": "Читати посібник",
   "agentManager.intro.dismiss": "Пропустити вступ",
   "agentManager.intro.reopen": "Як працює Agent Manager",
+  "agentManager.splash.eyebrow": "МЕНЕДЖЕР АГЕНТІВ",
+  "agentManager.splash.hide": "Сховати",
+  "agentManager.splash.title": "Запряжіть флот агентів Kilo в роботу.",
+  "agentManager.splash.subtitle":
+    "Виконуйте кілька завдань паралельно, делегуйте роботу, стежте за прогресом кожного агента й підтримуйте кілька робочих потоків з одного місця.",
+  "agentManager.splash.start": "Почніть першу сесію",
+  "agentManager.splash.hint": "або опишіть завдання в полі нижче",
+  "agentManager.splash.folded.title": "Запряжіть флот агентів Kilo в роботу",
+  "agentManager.splash.folded.note": "Кросстекові функції, оркестратор, команда експлуатації та багато іншого",
+  "agentManager.splash.showExamples": "Показати приклади",
   "agentManager.worktree.health.absent-restorable": "Теку видалено",
   "agentManager.worktree.health.absent-restorableNote":
     "Теки немає, але гілка {{branch}} збереглася. Відновіть її, щоб продовжити роботу тут.",

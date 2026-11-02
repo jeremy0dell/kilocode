@@ -514,6 +514,16 @@ export const dict = {
   "agentManager.intro.guide": "Kılavuzu okuyun",
   "agentManager.intro.dismiss": "Tanıtımı atla",
   "agentManager.intro.reopen": "Agent Manager nasıl çalışır",
+  "agentManager.splash.eyebrow": "AJAN YÖNETİCİSİ",
+  "agentManager.splash.hide": "Gizle",
+  "agentManager.splash.title": "Bir Kilo ajanı filosunu işe koşun.",
+  "agentManager.splash.subtitle":
+    "Birden çok görevi paralel olarak ele alın, işi devredin, her ajanın ilerlemesini izleyin ve birden çok iş akışını tek yerden sürdürün.",
+  "agentManager.splash.start": "İlk oturumunuzu başlatın",
+  "agentManager.splash.hint": "veya aşağıdaki kutuya bir görev yazın",
+  "agentManager.splash.folded.title": "Bir Kilo ajanı filosunu işe koşun",
+  "agentManager.splash.folded.note": "Stack'ler arası özellikler, bir orkestratör, bir operasyon ekibi ve daha fazlası",
+  "agentManager.splash.showExamples": "Örnekleri göster",
   "agentManager.worktree.health.absent-restorable": "Klasör silindi",
   "agentManager.worktree.health.absent-restorableNote":
     "Klasör yok, ancak {{branch}} dalı hâlâ duruyor. Buradan devam etmek için geri yükleyin.",

@@ -509,6 +509,16 @@ export const dict = {
   "agentManager.intro.guide": "Ler o guia",
   "agentManager.intro.dismiss": "Pular introdução",
   "agentManager.intro.reopen": "Como o Agent Manager funciona",
+  "agentManager.splash.eyebrow": "GERENCIADOR DE AGENTES",
+  "agentManager.splash.hide": "Ocultar",
+  "agentManager.splash.title": "Coloque uma frota de agentes do Kilo para trabalhar.",
+  "agentManager.splash.subtitle":
+    "Resolva várias tarefas em paralelo, delegue trabalho, acompanhe o progresso de cada agente e mantenha vários fluxos de trabalho em andamento a partir de um só lugar.",
+  "agentManager.splash.start": "Inicie sua primeira sessão",
+  "agentManager.splash.hint": "ou descreva uma tarefa na caixa abaixo",
+  "agentManager.splash.folded.title": "Coloque uma frota de agentes do Kilo para trabalhar",
+  "agentManager.splash.folded.note": "Recursos entre stacks, um orquestrador, uma equipe de operações e mais",
+  "agentManager.splash.showExamples": "Ver exemplos",
   "agentManager.worktree.health.absent-restorable": "Pasta excluída",
   "agentManager.worktree.health.absent-restorableNote":
     "A pasta não existe mais, mas o branch {{branch}} continua lá. Restaure para continuar trabalhando aqui.",

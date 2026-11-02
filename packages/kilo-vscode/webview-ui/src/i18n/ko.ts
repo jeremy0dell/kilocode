@@ -1440,6 +1440,9 @@ export const dict = {
   "chat.search.close": "검색 닫기",
   "chat.search.invalidRegex": "정규식이 잘못되었습니다",
   "chat.search.noResults": "검색 결과 없음",
+  "settings.experimental.agentManagerSplash.title": "Agent Manager 스플래시",
+  "settings.experimental.agentManagerSplash.description":
+    "예시 플릿이 포함된 새 Agent Manager 스플래시를 표시하며, 숨기면 간결한 막대로 접힙니다.",
   "settings.experimental.browserAutomation.title": "통합 브라우저",
   "settings.experimental.browserAutomation.description":
     "Agent Manager에서 로컬 애플리케이션 미리보기를 표시하고 browser_open 도구를 Agent Manager 세션에 노출합니다.",
