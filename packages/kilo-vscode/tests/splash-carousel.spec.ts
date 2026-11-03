@@ -41,7 +41,7 @@ for (const width of [520, 1010]) {
     const choices = width < 880 ? controls : cards
     await expect(choices).toHaveCount(5)
     await expect(controls).toHaveCount(5)
-    await expect(page.locator(".am-splash-hint")).toHaveText("or describe a task below")
+    await expect(page.locator(".am-splash-hint")).toHaveText("or proceed locally in the message box below")
     await ready(page, "en")
     const height = (await hero.boundingBox())!.height
     const heights = await choices.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height))

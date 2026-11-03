@@ -41,7 +41,7 @@ import { PRConversation } from "../../agent-manager/pr/PRConversation"
 import { PRPanel } from "../../agent-manager/pr/PRPanel"
 import { PRReviewers } from "../../agent-manager/pr/PRReviewers"
 import type { PRComment, PRReviewer, PRTimelineItem } from "../../agent-manager/pr/pr-types"
-import { For, createSignal, onCleanup, onMount, type JSX } from "solid-js"
+import { For, Show, createSignal, onCleanup, onMount, type JSX } from "solid-js"
 import type {
   AgentProjectSnapshot,
   WorktreeFileDiff,
@@ -153,13 +153,16 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-function EmptyPreview(props: { folded?: boolean; height?: string }) {
+function EmptyPreview(props: { folded?: boolean; height?: string; composer?: boolean }) {
   const splash = createSplashState(() => {}, { folded: props.folded === true })
+  const [created, setCreated] = createSignal(false)
+  let composer: HTMLTextAreaElement | undefined
   const intro = createIntro({
+    onCreateWorktree: () => setCreated(true),
     onSelectSession: () => {},
     onShowHistory: () => {},
     focus: () => {},
-    start: () => {},
+    start: () => composer?.focus(),
     splash,
   })
   const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
@@ -182,9 +185,28 @@ function EmptyPreview(props: { folded?: boolean; height?: string }) {
   }
   return (
     <SessionContext.Provider value={session}>
-      <div style={{ height: props.height ?? "auto" }}>{intro.render()}</div>
+      <div style={{ height: props.height ?? "auto" }}>
+        {intro.render()}
+        <output data-testid="splash-created" hidden={!created()}>
+          {created() ? "Worktree requested" : ""}
+        </output>
+        <Show when={props.composer}>
+          <textarea ref={composer} aria-label="Local prompt" />
+        </Show>
+      </div>
     </SessionContext.Provider>
   )
+}
+
+export const SplashActionsStory: Story = {
+  name: "Splash actions",
+  render: () => (
+    <StoryProviders>
+      <LanguageProvider languageOverride={() => "en"}>
+        <EmptyPreview composer />
+      </LanguageProvider>
+    </StoryProviders>
+  ),
 }
 
 export const SplashExpandedStory: Story = {
@@ -208,7 +230,12 @@ function SplashPreview(props: { example: number; width?: string; height?: string
         >
           <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
             <div data-slot="message-list-content">
-              <SplashExpanded onHide={() => {}} onStart={() => {}} initialExample={props.example} />
+              <SplashExpanded
+                onHide={() => {}}
+                onStart={() => {}}
+                onCreateWorktree={() => {}}
+                initialExample={props.example}
+              />
             </div>
           </div>
         </div>

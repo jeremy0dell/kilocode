@@ -1806,6 +1806,7 @@ const AgentManagerContent: Component = () => {
   const intro = createIntro({
     hints: hints.list,
     sessions: projectSessionsLive.current,
+    onCreateWorktree: showNewWorktreeDialog,
     onSelectSession: selectChatSession,
     onShowHistory: () => openHistory(),
     focus: requestChatFocus,

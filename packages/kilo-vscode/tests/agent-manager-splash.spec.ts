@@ -240,7 +240,8 @@ test("carousel announces selections and only preview markers enter forward and r
     expect(order[0]?.label).toBe("Hide Agent Manager introduction")
     expect(order.at(-1)?.label).toBe("Hide Agent Manager introduction")
     expect(order.some((state) => !state.splash)).toBe(true)
-    expect(order.filter((state) => state.label === "Start your first session")).toHaveLength(1)
+    expect(order.filter((state) => state.label === "Create Worktree")).toHaveLength(1)
+    expect(order.filter((state) => state.label === "proceed locally in the message box below")).toHaveLength(1)
     expect(order.filter((state) => state.label.startsWith("Feature "))).toHaveLength(3)
   }
   const result = await new AxeBuilder({ page })
@@ -729,7 +730,8 @@ test("compact forward and reverse focus traversal includes the panel but exclude
   await page.setViewportSize({ width: 420, height: 1400 })
   await open(page)
   const hide = page.getByRole("button", { name: "Hide Agent Manager introduction", exact: true })
-  const start = page.getByRole("button", { name: "Start your first session", exact: true })
+  const create = page.getByRole("button", { name: "Create Worktree", exact: true })
+  const proceed = page.getByRole("button", { name: "proceed locally in the message box below", exact: true })
   for (const tab of await page.locator(".am-splash-tab").all()) {
     await tab.click()
     const panel = page.locator(".am-splash-compact-panel.am-splash-example-panel-active")
@@ -737,7 +739,9 @@ test("compact forward and reverse focus traversal includes the panel but exclude
     for (const [key, target] of [
       ["Tab", tab],
       ["Tab", panel],
-      ["Tab", start],
+      ["Tab", create],
+      ["Tab", proceed],
+      ["Shift+Tab", create],
       ["Shift+Tab", panel],
       ["Shift+Tab", tab],
       ["Shift+Tab", hide],

@@ -6,6 +6,7 @@ import "./intro.css"
 
 export function createIntro(opts: {
   sessions?: () => SessionInfo[]
+  onCreateWorktree: () => void
   onSelectSession?: (id: string) => void
   onShowHistory?: () => void
   focus: () => void
@@ -38,6 +39,7 @@ export function createIntro(opts: {
             opts.focus()
           }}
           onStart={opts.start}
+          onCreateWorktree={opts.onCreateWorktree}
         />
       </Show>
     ),
