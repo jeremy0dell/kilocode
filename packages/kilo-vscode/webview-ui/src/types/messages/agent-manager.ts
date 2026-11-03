@@ -7,6 +7,9 @@ export type WorktreeErrorCode =
   | "worktree_unregistered"
   | "git_timeout"
 
+/** Which surface started a creation, for telemetry: the New Worktree modal, quick create, or anything else. */
+export type WorktreeEntry = "modal" | "quick" | "other"
+
 /** Fixes a readiness card can ask the extension to run. */
 export type ReadinessFix = "useProject" | "initGit" | "initialCommit" | "pickFolder"
 

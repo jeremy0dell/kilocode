@@ -4090,6 +4090,66 @@ body.am-wt-dragging-active * {
   }
 }
 
+/* A readiness blocker keeps Create focusable for its tooltip, so it uses aria-disabled
+   instead of disabled and needs its own disabled look. */
+.am-nv-submit[aria-disabled="true"],
+.am-nv-submit[aria-disabled="true"]:hover,
+.am-nv-submit[aria-disabled="true"]:active {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+  box-shadow: none;
+  background-color: var(--surface-brand-base);
+}
+
+/* Worktree readiness card */
+
+.am-readiness:not(:empty) {
+  display: flex;
+  flex-direction: column;
+}
+
+.am-readiness-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.am-readiness-working {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-weak);
+}
+
+.am-readiness-ready {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.am-readiness-ready [data-component="icon"] {
+  color: var(--icon-success-base);
+  flex-shrink: 0;
+}
+
+.am-readiness-ready-title {
+  color: var(--text-strong);
+}
+
+.am-readiness-ready-body {
+  color: var(--text-weak);
+}
+
+.am-readiness-details {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: var(--kilo-font-size-12, 12px);
+  color: var(--text-weak);
+}
+
 /* Branch selector */
 
 .am-branch-badge {

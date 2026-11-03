@@ -4,9 +4,9 @@ import { chooseBaseBranch } from "./base-branch"
 import { classifyWorktreeError, type WorktreeSetupErrorCode } from "./git-import"
 import { PLATFORM } from "./constants"
 import type { AgentManagerInMessage, AgentManagerOutMessage } from "./types"
+import type { WorktreeEntry } from "../../webview-ui/src/types/messages/agent-manager"
 
-/** Which surface started a creation, for telemetry: the New Worktree modal, quick create, or anything else. */
-export type WorktreeEntry = "modal" | "quick" | "other"
+export type { WorktreeEntry } from "../../webview-ui/src/types/messages/agent-manager"
 
 type Capture = (event: string, properties?: Record<string, unknown>) => void
 
