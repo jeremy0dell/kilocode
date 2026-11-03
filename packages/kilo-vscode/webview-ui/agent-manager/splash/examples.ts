@@ -256,7 +256,7 @@ export const examples: readonly Example[] = [
         {
           name: "api",
           id: "api",
-          count: 7,
+          count: 6,
           rows: [
             {
               kind: "section",
@@ -296,21 +296,21 @@ export const examples: readonly Example[] = [
                     id: "merge-captain",
                     note: "queue: #412, #414",
                     status: "working",
-                    shortcut: 5,
+                    shortcut: 4,
                   },
                   {
                     title: "Issue Delegator",
                     id: "issue-delegator",
                     note: "triaged 6 issues",
                     status: "finished",
-                    shortcut: 6,
+                    shortcut: 5,
                   },
                   {
                     title: "Adversarial Reviewer",
                     id: "adversarial-reviewer",
                     note: "objection on #414",
                     status: "needs-you",
-                    shortcut: 7,
+                    shortcut: 6,
                     selected: true,
                   },
                 ],

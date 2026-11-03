@@ -157,7 +157,7 @@
 }
 
 .am-splash-card-tag {
-  color: var(--am-splash-accent, var(--text-weak));
+  color: var(--am-splash-tone);
   font-size: var(--kilo-font-size-10);
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -265,31 +265,36 @@
   height: 16px;
   margin-top: 1px;
   border-radius: 999px;
-  background: var(--am-splash-accent, var(--text-weak));
-  color: var(--black);
+  background: var(--am-splash-tone);
+  color: var(--background-base);
   font-size: var(--kilo-font-size-10);
   font-weight: 800;
   line-height: 1;
 }
 
+.am-splash [data-tone] {
+  /* Chart hues need a text-weight mix for small tags and inverse marker numbers. */
+  --am-splash-tone: color-mix(in srgb, var(--am-splash-accent, var(--text-base)) 25%, var(--text-base));
+}
+
 .am-splash [data-tone="crossStack"] {
-  --am-splash-accent: var(--vscode-charts-orange);
+  --am-splash-accent: var(--vscode-charts-orange, var(--text-base));
 }
 
 .am-splash [data-tone="orchestrator"] {
-  --am-splash-accent: var(--vscode-charts-purple);
+  --am-splash-accent: var(--vscode-charts-purple, var(--text-base));
 }
 
 .am-splash [data-tone="ops"] {
-  --am-splash-accent: var(--vscode-terminal-ansiGreen);
+  --am-splash-accent: var(--vscode-charts-green, var(--text-base));
 }
 
 .am-splash [data-tone="versions"] {
-  --am-splash-accent: var(--vscode-charts-blue);
+  --am-splash-accent: var(--vscode-charts-blue, var(--text-base));
 }
 
 .am-splash [data-tone="beyondCode"] {
-  --am-splash-accent: var(--vscode-terminal-ansiYellow);
+  --am-splash-accent: var(--vscode-charts-yellow, var(--text-base));
 }
 
 .am-splash-actions {

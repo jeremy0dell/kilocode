@@ -57,26 +57,6 @@ for (const width of [520, 1010]) {
         .toBeLessThan(1)
       const content = page.locator(".am-splash-example-panel-active")
       await expect(content.locator(".am-splash-feature-marker")).toHaveText(["1", "2", "3"])
-      const contrast = await content
-        .locator(".am-splash-feature-marker")
-        .first()
-        .evaluate((node) => {
-          const style = getComputedStyle(node)
-          const canvas = document.createElement("canvas").getContext("2d")!
-          const luminance = (color: string) => {
-            canvas.fillStyle = color
-            canvas.fillRect(0, 0, 1, 1)
-            const rgb = [...canvas.getImageData(0, 0, 1, 1).data].slice(0, 3).map((value) => {
-              const channel = value / 255
-              return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
-            })
-            return rgb.reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722].at(index)!, 0)
-          }
-          const background = luminance(style.backgroundColor)
-          const foreground = luminance(style.color)
-          return (Math.max(background, foreground) + 0.05) / (Math.min(background, foreground) + 0.05)
-        })
-      expect(contrast).toBeGreaterThanOrEqual(4.5)
       const clipped = await page.locator(".am-splash-card-title, .am-splash-pitch").evaluateAll((nodes) =>
         nodes.some((node) => {
           const style = getComputedStyle(node)
@@ -120,5 +100,48 @@ for (const width of [520, 1010]) {
       expect(clipped).toBe(false)
     }
     await page.screenshot({ fullPage: true, path: info.outputPath(`splash-de-${width}.png`) })
+  })
+}
+
+for (const theme of [
+  { id: "dark-modern", scheme: "dark", kind: "vscode-dark" },
+  { id: "light-modern", scheme: "light", kind: "vscode-light" },
+  { id: "hc-black", scheme: "dark", kind: "vscode-high-contrast" },
+  { id: "hc-light", scheme: "light", kind: "vscode-high-contrast-light" },
+]) {
+  test(`feature markers meet AA in ${theme.id}`, async ({ page }, info) => {
+    await page.setViewportSize({ width: 1010, height: 1000 })
+    await page.goto(
+      `/iframe.html?id=agentmanager--splash-cross-stack-story&viewMode=story&globals=colorScheme:${theme.scheme};theme:kilo-vscode;vscodeTheme:${theme.id}`,
+    )
+    await expect(page.locator("body")).toHaveClass(new RegExp(theme.kind))
+    await expect(page.locator("html")).toHaveAttribute("data-color-scheme", theme.scheme)
+    const dots = page.locator(".am-splash-dot")
+    for (const index of [0, 1, 2, 3, 4]) {
+      await dots.nth(index).click()
+      const markers = page.locator(".am-splash-example-panel-active .am-splash-feature-marker")
+      await expect(markers).toHaveText(["1", "2", "3"])
+      const ratios = await markers.evaluateAll((nodes) => {
+        const canvas = document.createElement("canvas").getContext("2d")!
+        const luminance = (color: string) => {
+          canvas.fillStyle = color
+          canvas.fillRect(0, 0, 1, 1)
+          const rgb = [...canvas.getImageData(0, 0, 1, 1).data].slice(0, 3).map((value) => {
+            const channel = value / 255
+            return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+          })
+          return rgb.reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722].at(index)!, 0)
+        }
+        return nodes.map((node) => {
+          const style = getComputedStyle(node)
+          const background = luminance(style.backgroundColor)
+          const foreground = luminance(style.color)
+          return (Math.max(background, foreground) + 0.05) / (Math.min(background, foreground) + 0.05)
+        })
+      })
+      for (const ratio of ratios) expect(ratio, `${theme.id} example ${index}`).toBeGreaterThanOrEqual(4.5)
+    }
+    await dots.nth(1).click()
+    await page.screenshot({ fullPage: true, path: info.outputPath(`splash-${theme.id}-1010.png`) })
   })
 }
