@@ -229,7 +229,9 @@ export const SplashActionsStory: Story = {
   name: "Splash actions",
   render: () => (
     <StoryProviders>
-      <IntroductionPreview splash={{ enabled: true, folded: false }} composer />
+      <LanguageProvider languageOverride={() => "en"}>
+        <IntroductionPreview splash={{ enabled: true, folded: false }} composer />
+      </LanguageProvider>
     </StoryProviders>
   ),
 }
