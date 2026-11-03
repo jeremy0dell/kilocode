@@ -10,6 +10,38 @@ async function open(page: Page, theme = "dark-modern", locale = "en") {
 }
 
 for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
+  test(`${theme} hero and preview pass axe, including nested-interactive and aria-hidden-focus`, async ({ page }) => {
+    await open(page, theme)
+    for (const dot of await page.locator(".am-splash-dot").all()) {
+      await dot.click()
+      const result = await new AxeBuilder({ page })
+        .include(".am-splash-hero")
+        .include(".am-splash-preview-card")
+        .analyze()
+      expect([...result.passes, ...result.inapplicable].map((rule) => rule.id)).toEqual(
+        expect.arrayContaining(["nested-interactive", "aria-hidden-focus"]),
+      )
+      const violations = await page.evaluate(
+        (violations) =>
+          violations.filter((rule) => {
+            if (rule.id !== "color-contrast") return true
+            // Only the reused real sidebar's colors are out of scope, inside its aria-hidden stack.
+            return !rule.nodes.every((node) =>
+              node.target.every(
+                (selector) =>
+                  typeof selector === "string" &&
+                  document
+                    .querySelector(selector)
+                    ?.closest('.am-splash-preview-card .am-splash-preview-stack[aria-hidden="true"]') != null,
+              ),
+            )
+          }),
+        result.violations,
+      )
+      expect(violations).toEqual([])
+    }
+  })
+
   for (const width of [420, 520, 760, 1100]) {
     test(`${theme} at ${width}px keeps all five hero heights stable and tags readable`, async ({ page }) => {
       await page.setViewportSize({ width, height: 1400 })
@@ -46,6 +78,23 @@ for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
     })
   }
 }
+
+test("preview rows retain native hover without accepting focus", async ({ page }) => {
+  await open(page)
+  await expect(page.locator(".am-splash-preview-card")).toHaveAttribute("role", "figure")
+  for (const dot of await page.locator(".am-splash-dot").all()) {
+    await dot.click()
+    for (const selector of [".am-local-item", ".am-worktree-item:not(.am-worktree-item-active)"]) {
+      const row = page.locator(`.am-splash-preview-panel-active ${selector}`).first()
+      await page.mouse.move(0, 0)
+      const background = await row.evaluate((node) => getComputedStyle(node).backgroundColor)
+      await row.hover()
+      await expect.poll(() => row.evaluate((node) => getComputedStyle(node).backgroundColor)).not.toBe(background)
+      await row.click()
+      expect(await page.evaluate(() => document.activeElement?.closest(".am-splash-preview-card") != null)).toBe(false)
+    }
+  }
+})
 
 test("carousel announces selections and excludes the preview from forward and reverse focus traversal", async ({
   page,
