@@ -513,9 +513,9 @@ export const dict = {
   "agentManager.splash.hide": "Скрыть",
   "agentManager.splash.title": "Запустите в работу флот агентов Kilo.",
   "agentManager.splash.subtitle":
-    "Решайте несколько задач параллельно, делегируйте работу, следите за прогрессом каждого агента и держите несколько рабочих потоков в движении из одного места.",
-  "agentManager.splash.start": "Начать первую сессию",
-  "agentManager.splash.hint": "или опишите задачу ниже",
+    "Решайте несколько задач параллельно с помощью worktree, делегируйте работу, следите за прогрессом каждого агента и поддерживайте продвижение нескольких рабочих потоков из одного места.",
+  "agentManager.splash.hint": "или",
+  "agentManager.splash.proceed": "продолжите локально в поле сообщения ниже",
   "agentManager.splash.folded.title": "Запустите в работу флот агентов Kilo",
   "agentManager.splash.folded.note": "Кросстековые функции, оркестратор, команда эксплуатации и многое другое",
   "agentManager.splash.showExamples": "Показать примеры",

@@ -35,7 +35,7 @@ for (const width of [520, 1010]) {
     const dots = page.locator(".am-splash-dot")
     await expect(cards).toHaveCount(5)
     await expect(dots).toHaveCount(5)
-    await expect(page.locator(".am-splash-hint")).toHaveText("or describe a task below")
+    await expect(page.locator(".am-splash-hint")).toHaveText("or proceed locally in the message box below")
     await page.evaluate(() => document.fonts.ready)
     const height = (await hero.boundingBox())!.height
     const heights = await cards.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height))

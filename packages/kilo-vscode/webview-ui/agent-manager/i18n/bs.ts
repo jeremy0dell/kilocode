@@ -509,9 +509,9 @@ export const dict = {
   "agentManager.splash.hide": "Sakrij",
   "agentManager.splash.title": "Stavi flotu Kilo agenata na posao.",
   "agentManager.splash.subtitle":
-    "Radi na više zadataka paralelno, delegiraj posao, prati napredak svakog agenta i održavaj više tokova rada na jednom mjestu.",
-  "agentManager.splash.start": "Započni svoju prvu sesiju",
-  "agentManager.splash.hint": "ili opiši zadatak ispod",
+    "Radi na više zadataka paralelno uz worktree radna stabla, delegiraj posao, prati napredak svakog agenta i održavaj više tokova rada u pokretu s jednog mjesta.",
+  "agentManager.splash.hint": "ili",
+  "agentManager.splash.proceed": "nastavi lokalno u polju za poruku ispod",
   "agentManager.splash.folded.title": "Stavi flotu Kilo agenata na posao",
   "agentManager.splash.folded.note": "Funkcije kroz više stekova, orkestrator, ops tim i još mnogo toga",
   "agentManager.splash.showExamples": "Prikaži primjere",
