@@ -515,7 +515,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "複数のタスクを並行して進め、作業を委任し、各エージェントの進捗を追い、複数の作業を一か所から動かし続けられます。",
   "agentManager.splash.start": "最初のセッションを開始",
-  "agentManager.splash.hint": "または下の入力欄にタスクを入力",
+  "agentManager.splash.hint": "または下にタスクを記述",
   "agentManager.splash.folded.title": "Kilo エージェントの艦隊を働かせよう",
   "agentManager.splash.folded.note": "クロススタック機能、オーケストレーター、運用チームなど",
   "agentManager.splash.showExamples": "例を表示",

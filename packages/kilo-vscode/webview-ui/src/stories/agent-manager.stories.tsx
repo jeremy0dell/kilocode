@@ -19,6 +19,7 @@ import { SessionTab } from "../components/chat/SessionTab"
 import { ChatView } from "../components/chat/ChatView"
 import { registerVscodeToolOverrides } from "../components/chat/VscodeToolOverrides"
 import { SessionContext, useSession } from "../context/session"
+import { LanguageProvider, type Locale } from "../context/language"
 import { ServerContext } from "../context/server"
 import { WorktreeModeProvider } from "../context/worktree-mode"
 import { SidebarSearchMenu } from "../../agent-manager/SidebarSearchMenu"
@@ -221,21 +222,35 @@ export const SplashExpandedStory: Story = {
   ),
 }
 
-function SplashPreview(props: { example: number; width?: string; height?: string }) {
+function SplashPreview(props: { example: number; width?: string; height?: string; locale?: Locale }) {
   return (
     <StoryProviders>
-      <div
-        class="am-intro-layout"
-        style={{ height: props.height ?? "1000px", width: props.width, "max-width": "100%" }}
-      >
-        <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
-          <div data-slot="message-list-content">
-            <SplashExpanded onHide={() => {}} onStart={() => {}} initialExample={props.example} />
+      <LanguageProvider languageOverride={() => props.locale ?? "en"}>
+        <div class="am-intro-layout" style={{ height: props.height ?? "1000px", width: props.width, "max-width": "100%" }}>
+          <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
+            <div data-slot="message-list-content">
+              <SplashExpanded onHide={() => {}} onStart={() => {}} initialExample={props.example} />
+            </div>
           </div>
         </div>
-      </div>
+      </LanguageProvider>
     </StoryProviders>
   )
+}
+
+export const SplashCrossStackStory: Story = {
+  name: "Splash cross-stack",
+  render: () => <SplashPreview example={0} />,
+}
+
+export const SplashGermanStory: Story = {
+  name: "Splash German wrapping",
+  render: () => <SplashPreview example={1} locale="de" />,
+}
+
+export const SplashArabicStory: Story = {
+  name: "Splash Arabic navigation",
+  render: () => <SplashPreview example={0} locale="ar" />,
 }
 
 export const SplashOrchestratorStory: Story = {
@@ -270,6 +285,24 @@ export const SplashFoldedStory: Story = {
       <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
     </StoryProviders>
   ),
+}
+
+export const SplashFoldedThin: Story = {
+  ...SplashFoldedStory,
+  name: "Splash folded thin",
+  decorators: [(Story: () => JSX.Element) => <div style={{ width: "440px", "max-width": "100%" }}>{Story()}</div>],
+}
+
+export const SplashFoldedNarrow: Story = {
+  ...SplashFoldedStory,
+  name: "Splash folded narrow",
+  decorators: [(Story: () => JSX.Element) => <div style={{ width: "720px", "max-width": "100%" }}>{Story()}</div>],
+}
+
+export const SplashFoldedWide: Story = {
+  ...SplashFoldedStory,
+  name: "Splash folded wide",
+  decorators: [(Story: () => JSX.Element) => <div style={{ width: "1010px", "max-width": "100%" }}>{Story()}</div>],
 }
 
 // ---------------------------------------------------------------------------

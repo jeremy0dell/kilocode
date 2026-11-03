@@ -521,7 +521,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "Aborda varias tareas en paralelo, delega trabajo, sigue el progreso de cada agente y mantén varios flujos de trabajo en marcha desde un solo lugar.",
   "agentManager.splash.start": "Inicia tu primera sesión",
-  "agentManager.splash.hint": "o describe una tarea en el cuadro de abajo",
+  "agentManager.splash.hint": "o describe una tarea abajo",
   "agentManager.splash.folded.title": "Pon a trabajar una flota de agentes de Kilo",
   "agentManager.splash.folded.note": "Funciones entre stacks, un orquestador, un equipo de operaciones y más",
   "agentManager.splash.showExamples": "Ver ejemplos",

@@ -1,4 +1,4 @@
-import { For, createSignal, createUniqueId, type Accessor, type JSX } from "solid-js"
+import { For, createEffect, createSignal, createUniqueId, onCleanup, onMount, type Accessor, type JSX } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
@@ -7,7 +7,7 @@ import { useLanguage } from "../../src/context/language"
 import type { SessionInfo } from "../../src/types/messages"
 import { examples } from "./examples"
 import { SidebarPreview } from "./Preview"
-import { visible, wrap } from "./selection"
+import { start, wrap } from "./selection"
 import "./splash.css"
 
 interface EmptyProps {
@@ -26,6 +26,37 @@ function ExamplePicker(props: {
 }) {
   const { t } = useLanguage()
   const current = () => examples.at(props.selected()) ?? examples.at(0)!
+  let track!: HTMLDivElement
+  const scroll = () => {
+    const first = track.firstElementChild as HTMLElement | null
+    const card = track.children.item(start(props.selected(), examples.length)) as HTMLElement | null
+    if (!first || !card) return
+    track.scrollTo({ left: card.offsetLeft - first.offsetLeft })
+  }
+  createEffect(scroll)
+  onMount(() => {
+    const observer = new ResizeObserver(scroll)
+    observer.observe(track)
+    onCleanup(() => observer.disconnect())
+  })
+
+  const navigate = (event: KeyboardEvent, index: number) => {
+    const rtl = getComputedStyle(track).direction === "rtl"
+    const next =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? examples.length - 1
+          : event.key === "ArrowLeft"
+            ? wrap(index, rtl ? 1 : -1, examples.length)
+            : event.key === "ArrowRight"
+              ? wrap(index, rtl ? -1 : 1, examples.length)
+              : undefined
+    if (next == null) return
+    event.preventDefault()
+    props.onSelect(next)
+    ;(track.children.item(next) as HTMLElement | null)?.focus({ preventScroll: true })
+  }
 
   return (
     <>
@@ -38,22 +69,23 @@ function ExamplePicker(props: {
             label={t("agentManager.splash.carousel.previous")}
             onClick={() => props.onSelect(wrap(props.selected(), -1, examples.length))}
           />
-          <div class="am-splash-cards">
-            <For each={visible(props.selected(), examples.length, 3)}>
-              {(index) => {
-                const example = examples.at(index)!
+          <div class="am-splash-cards" ref={track}>
+            <For each={examples}>
+              {(example, index) => {
                 return (
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
                     class="am-splash-card"
-                    classList={{ "am-splash-card-selected": index === props.selected() }}
+                    classList={{ "am-splash-card-selected": index() === props.selected() }}
                     data-tone={example.id}
-                    aria-current={index === props.selected() ? "true" : undefined}
-                    onClick={() => props.onSelect(index)}
+                    aria-current={index() === props.selected() ? "true" : undefined}
+                    tabIndex={index() === props.selected() ? 0 : -1}
+                    onClick={() => props.onSelect(index())}
+                    onKeyDown={(event: KeyboardEvent) => navigate(event, index())}
                   >
                     <span class="am-splash-card-tag">{t(example.tag)}</span>
                     <span class="am-splash-card-title">{t(example.title)}</span>
-                  </button>
+                  </Button>
                 )
               }}
             </For>
@@ -69,8 +101,8 @@ function ExamplePicker(props: {
         <div class="am-splash-dots">
           <For each={examples}>
             {(example, index) => (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 class="am-splash-dot"
                 classList={{ "am-splash-dot-selected": index() === props.selected() }}
                 aria-current={index() === props.selected() ? "true" : undefined}
@@ -78,7 +110,7 @@ function ExamplePicker(props: {
                 onClick={() => props.onSelect(index())}
               >
                 <span class="am-splash-dot-mark" />
-              </button>
+              </Button>
             )}
           </For>
         </div>
@@ -103,7 +135,9 @@ function ExamplePicker(props: {
                       onMouseEnter={() => props.onHighlight(position())}
                       onMouseLeave={() => props.onHighlight(undefined)}
                     >
-                      <span class="am-splash-feature-dot" aria-hidden="true" />
+                      <span class="am-splash-feature-marker" aria-hidden="true">
+                        {position() + 1}
+                      </span>
                       <span>
                         <strong>{t(feature.name)}</strong>
                         <span aria-hidden="true"> · </span>
@@ -179,10 +213,10 @@ export function SplashFolded(props: EmptyProps & { onShowExamples: () => void })
         <div class="am-splash-folded-logo" aria-hidden="true">
           <KiloLogo />
         </div>
-        <div class="am-splash-folded-text">
-          <span class="am-splash-folded-title">{t("agentManager.splash.folded.title")}</span>
-          <span class="am-splash-folded-note">{t("agentManager.splash.folded.note")}</span>
-        </div>
+        <span class="am-splash-folded-title">{t("agentManager.splash.folded.title")}</span>
+        <span class="am-splash-folded-note" title={t("agentManager.splash.folded.note")}>
+          {t("agentManager.splash.folded.note")}
+        </span>
         <Button variant="ghost" size="small" class="am-splash-show" onClick={props.onShowExamples}>
           {t("agentManager.splash.showExamples")}
           <Icon name="chevron-right" size="small" />

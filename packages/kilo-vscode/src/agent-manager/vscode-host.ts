@@ -127,7 +127,7 @@ export class VscodeHost implements Host {
       browserAutomation: this.browserAutomation(),
       introDismissed: this.context.globalState.get<boolean>(INTRO_KEY) === true,
       agentManagerSplash: this.agentManagerSplash(),
-      splashFolded: this.context.globalState.get<boolean>(SPLASH_KEY) === true,
+      splashFolded: this.context.globalState.get<boolean>(SPLASH_KEY),
       frameSrc: ["localhost", "127.0.0.1"].map((host) => `http://${host}:*`).join(" "),
     })
 

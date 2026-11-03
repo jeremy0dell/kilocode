@@ -523,7 +523,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "Erledige mehrere Aufgaben parallel, delegiere Arbeit, verfolge den Fortschritt jedes Agenten und halte mehrere Arbeitsströme von einem Ort aus in Bewegung.",
   "agentManager.splash.start": "Erste Sitzung starten",
-  "agentManager.splash.hint": "oder beschreibe eine Aufgabe im Feld unten",
+  "agentManager.splash.hint": "oder beschreibe unten eine Aufgabe",
   "agentManager.splash.folded.title": "Setze eine Flotte von Kilo-Agenten ein",
   "agentManager.splash.folded.note": "Stackübergreifende Features, ein Orchestrator, eine Ops-Crew und mehr",
   "agentManager.splash.showExamples": "Beispiele anzeigen",
