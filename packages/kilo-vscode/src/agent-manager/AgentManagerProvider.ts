@@ -53,6 +53,7 @@ import { sendDiffBranches as postDiffBranches } from "./project/diff-branches"
 import { WorktreeImporter } from "./worktree-importer"
 import {
   createWorktreeOnDisk,
+  reportDropped,
   reportNoRepo,
   type CreateWorktreeOnDiskOptions,
   type CreateWorktreeOnDiskResult,
@@ -568,6 +569,7 @@ export class AgentManagerProvider implements Disposable {
     if (await handleProjectMessage(m, this.projects)) return null
     const ctx = this.messageProject(m)
     if (!ctx) {
+      reportDropped((event, props) => this.host.capture(event, props), m.type)
       this.log(`dropping ${m.type}: message targets an unknown project`)
       return null
     }
@@ -1216,7 +1218,7 @@ export class AgentManagerProvider implements Disposable {
   ): Promise<null> {
     await this.waitForStateReady("onCreateMultiVersion")
     const ctx = this.context
-    if (!ctx) return reportNoRepo((event, props) => this.host.capture(event, props), "modal")
+    if (!ctx) return null
     return createMultiVersion(ctx, this.multiVersionHost, msg)
   }
 

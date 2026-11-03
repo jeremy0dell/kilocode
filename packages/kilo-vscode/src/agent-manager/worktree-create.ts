@@ -60,6 +60,17 @@ export function reportNoRepo(capture: Capture, entry: WorktreeEntry): null {
   return null
 }
 
+const ENTRIES: Partial<Record<string, WorktreeEntry>> = {
+  "agentManager.createMultiVersion": "modal",
+  "agentManager.createWorktree": "quick",
+}
+
+/** Report a create message dropped because it targets an unknown project. Other messages are ignored. */
+export function reportDropped(capture: Capture, type: string): void {
+  const entry = ENTRIES[type]
+  if (entry) reportNoRepo(capture, entry)
+}
+
 /**
  * Create a git worktree on disk and register it in state. Returns null on failure.
  *

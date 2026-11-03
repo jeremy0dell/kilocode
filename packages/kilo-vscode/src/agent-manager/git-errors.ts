@@ -4,5 +4,5 @@ export const MISSING_GIT =
 
 /** True when Apple's `/usr/bin/git` shim reports that the Command Line Tools are not installed. */
 export function missingDeveloperTools(text: string): boolean {
-  return /xcrun: error: invalid active developer path|xcode-select: note: no developer tools were found/.test(text)
+  return /xcrun: error: invalid active developer path|xcode-select: note: no developer tools were found/i.test(text)
 }
