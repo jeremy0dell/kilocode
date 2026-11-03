@@ -589,27 +589,27 @@ test("folded note is hidden below a 600px container, independently of the viewpo
   }
 })
 
-test("every splash story root contains its card and expanded selections keep height stable", async ({ page }) => {
+for (const story of [
+  "expanded",
+  "orchestrator",
+  "ops",
+  "versions",
+  "beyond-code",
+  "narrow",
+  "narrow-orchestrator",
+  "narrow-ops",
+  "narrow-versions",
+  "narrow-beyond-code",
+  "narrow-arabic",
+  "narrow-french",
+  "french",
+  "arabic",
+  "persian",
+  "folded",
+]) {
   for (const width of [420, 520, 760, 1100]) {
-    await page.setViewportSize({ width, height: 1400 })
-    for (const story of [
-      "expanded",
-      "orchestrator",
-      "ops",
-      "versions",
-      "beyond-code",
-      "narrow",
-      "narrow-orchestrator",
-      "narrow-ops",
-      "narrow-versions",
-      "narrow-beyond-code",
-      "narrow-arabic",
-      "narrow-french",
-      "french",
-      "arabic",
-      "persian",
-      "folded",
-    ]) {
+    test(`${story} at ${width}px root contains its card and selections keep height stable`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 1400 })
       await page.goto(`/iframe.html?id=agentmanager--splash-${story}-story&viewMode=story`)
       const card = page.locator(".am-splash-hero, .am-splash-folded")
       await expect(card).toBeVisible()
@@ -621,7 +621,7 @@ test("every splash story root contains its card and expanded selections keep hei
       expect(hero.y).toBeGreaterThanOrEqual(root.y)
       expect(hero.x + hero.width).toBeLessThanOrEqual(root.x + root.width)
       expect(hero.y + hero.height).toBeLessThanOrEqual(root.y + root.height)
-      if (story === "folded") continue
+      if (story === "folded") return
       const heights: number[] = []
       const controls = page.locator(".am-splash-tab, .am-splash-dot")
       await expect(controls).toHaveCount(5)
@@ -631,6 +631,6 @@ test("every splash story root contains its card and expanded selections keep hei
       }
       expect(heights).toHaveLength(5)
       expect(Math.max(...heights) - Math.min(...heights), `${story} at ${width}px`).toBe(0)
-    }
+    })
   }
-})
+}
