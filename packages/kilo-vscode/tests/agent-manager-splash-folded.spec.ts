@@ -47,7 +47,7 @@ for (const width of [300, 440, 599, 600, 720, 1010, 1400]) {
     }
     await show.click()
     await expect(page.locator(".am-splash-hero")).toBeVisible()
-    await page.getByRole("button", { name: "Hide", exact: true }).click()
+    await page.locator(".am-splash-hide").click()
     await expect(bar).toBeVisible()
   })
 }

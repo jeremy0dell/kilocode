@@ -140,7 +140,7 @@
   padding: 10px 14px;
   box-sizing: border-box;
   border: 1px solid var(--border-weak-base);
-  border-radius: 6px;
+  border-radius: var(--radius-xl);
   background: var(--surface-inset-base);
   color: var(--text-base);
 }

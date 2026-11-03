@@ -12,11 +12,10 @@ export interface SplashState {
 
 export function createSplashState(
   post: (message: WebviewMessage) => void,
-  initial: { enabled: boolean; folded: boolean },
+  initial: { enabled: boolean; folded?: boolean },
 ): SplashState {
   const [enabled, setEnabled] = createSignal(initial.enabled)
   const [folded, setFolded] = createSignal(initial.folded)
-  let started = false
   const save = (value: boolean) => {
     setFolded(value)
     post({ type: "agentManager.setSplashFolded", folded: value })
@@ -24,13 +23,11 @@ export function createSplashState(
   return {
     enabled,
     setEnabled,
-    folded,
+    folded: () => folded() === true,
     fold: () => save(true),
     unfold: () => save(false),
     start: () => {
-      if (!enabled() || started) return
-      started = true
-      if (!folded()) save(true)
+      if (enabled() && folded() === undefined) save(true)
     },
   }
 }
