@@ -212,6 +212,10 @@
   outline-offset: calc(var(--spacing) * 0.25);
 }
 
+.am-splash-actions [data-component="button"]:focus-visible {
+  outline-offset: 2px;
+}
+
 .am-splash-card-selected {
   border-color: var(--border-focus, var(--vscode-focusBorder));
   background: color-mix(in srgb, var(--border-focus) 10%, var(--surface-base));
@@ -220,11 +224,6 @@
 
 .am-splash-card-selected:dir(rtl) {
   box-shadow: inset -3px 0 0 var(--border-focus, var(--vscode-focusBorder));
-}
-
-.am-splash-arrow:dir(rtl) [data-component="icon"],
-.am-splash-show:dir(rtl) [data-component="icon"] {
-  transform: scaleX(-1);
 }
 
 .am-splash-card-tag {
