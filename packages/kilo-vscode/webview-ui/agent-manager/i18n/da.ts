@@ -567,7 +567,7 @@ export const dict = {
   "agentManager.splash.examples.versions.feature3.text":
     "Gennemgå rigtige diffs side om side, behold én, og smid resten væk.",
   "agentManager.splash.examples.beyondCode.tag": "Mere end kode",
-  "agentManager.splash.examples.beyondCode.title": "Skab brandmateriale",
+  "agentManager.splash.examples.beyondCode.title": "Skab en brandpakke",
   "agentManager.splash.examples.beyondCode.pitch":
     "Agent Manager udfører alt arbejde, en agent kan, ikke kun kodeændringer.",
   "agentManager.splash.examples.beyondCode.feature1.name": "Parallelle udkast",

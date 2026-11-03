@@ -573,7 +573,7 @@ export const dict = {
   "agentManager.splash.examples.versions.feature3.text":
     "Bekijk echte diffs naast elkaar, houd er één en gooi de rest weg.",
   "agentManager.splash.examples.beyondCode.tag": "Meer dan code",
-  "agentManager.splash.examples.beyondCode.title": "Maak merkmateriaal",
+  "agentManager.splash.examples.beyondCode.title": "Maak een merkset",
   "agentManager.splash.examples.beyondCode.pitch":
     "Agent Manager voert elk werk uit dat een agent kan doen, niet alleen codewijzigingen.",
   "agentManager.splash.examples.beyondCode.feature1.name": "Parallelle schetsen",
