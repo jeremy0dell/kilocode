@@ -1,4 +1,4 @@
-import { For, onCleanup, onMount, type Accessor } from "solid-js"
+import { For, Show, onCleanup, onMount, type Accessor } from "solid-js"
 import { useLanguage } from "../../src/context/language"
 import { ProjectsSection } from "../ProjectsSection"
 import { ProjectSidebarBody } from "../ProjectSidebarBody"
@@ -82,13 +82,15 @@ export function SidebarPreview(props: { selected: Accessor<number> }) {
       <div aria-hidden="true" class="am-splash-preview-stack" ref={(el) => onMount(() => onCleanup(guard(el)))}>
         <For each={examples}>
           {(example, index) => (
-            <div
-              class="am-splash-preview-panel"
-              classList={{ "am-splash-preview-panel-active": index() === props.selected() }}
-              aria-hidden={index() !== props.selected() ? "true" : undefined}
-            >
-              <Fleet example={example} />
-            </div>
+            <Show when={index() === props.selected()}>
+              <div
+                class="am-splash-preview-panel"
+                classList={{ "am-splash-preview-panel-active": index() === props.selected() }}
+                aria-hidden={index() !== props.selected() ? "true" : undefined}
+              >
+                <Fleet example={example} />
+              </div>
+            </Show>
           )}
         </For>
       </div>

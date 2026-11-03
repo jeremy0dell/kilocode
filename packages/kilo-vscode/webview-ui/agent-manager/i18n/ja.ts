@@ -509,6 +509,7 @@ export const dict = {
   "agentManager.intro.dismiss": "イントロダクションをスキップ",
   "agentManager.intro.reopen": "Agent Manager の仕組み",
   "agentManager.splash.preview.label": "Agent Manager サイドバーのプレビュー",
+  "agentManager.splash.thinHint": "番号をタップすると、サイドバーのその部分の役割を確認できます。",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":
     "タスクを並行して実行し、作業を委任し、すべてのエージェントの状況を1か所で確認できます。",

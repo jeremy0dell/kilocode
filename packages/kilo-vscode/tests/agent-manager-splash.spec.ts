@@ -9,6 +9,50 @@ async function open(page: Page, theme = "dark-modern", locale = "en") {
   await page.evaluate(() => document.fonts.ready)
 }
 
+async function resize(page: Page, width: number) {
+  await page.locator(".am-splash").evaluate((node, width) => {
+    const root = node as HTMLElement
+    root.style.width = `${width}px`
+    root.style.maxWidth = "none"
+    root.style.boxSizing = "content-box"
+    root.style.flex = "none"
+  }, width)
+  await expect
+    .poll(() =>
+      page.locator(".am-splash").evaluate((node) => {
+        const style = getComputedStyle(node)
+        return node.clientWidth - Number.parseFloat(style.paddingLeft) - Number.parseFloat(style.paddingRight)
+      }),
+    )
+    .toBe(width)
+  await expect(page.locator(".am-splash-tab")).toHaveCount(width < 880 ? 5 : 0)
+  await expect(page.locator(".am-splash-dot")).toHaveCount(width < 880 ? 0 : 5)
+}
+
+async function intact(page: Page) {
+  const issues = await page.locator(".am-splash-hero").evaluate((hero) => {
+    const bounds = hero.getBoundingClientRect()
+    const issues: string[] = []
+    if (hero.scrollWidth > hero.clientWidth + 1) issues.push("hero horizontal overflow")
+    for (const node of hero.querySelectorAll<HTMLElement>(
+      ".am-splash-title,.am-splash-subtitle,.am-splash-pitch,.am-splash-feature strong,.am-splash-feature-description,.am-splash-actions [data-component=button],.am-splash-tab,.am-splash-hint,.am-splash-thin-hint",
+    )) {
+      const style = getComputedStyle(node)
+      if (style.visibility === "hidden" || !node.checkVisibility()) continue
+      const label = node.textContent?.trim() ?? node.className
+      if (!["none", "", "0"].includes(style.webkitLineClamp)) issues.push(`clamped: ${label}`)
+      if (node.scrollHeight > node.clientHeight + 1) issues.push(`vertical clipping: ${label}`)
+      if (node.scrollWidth > node.clientWidth + 1) issues.push(`horizontal clipping: ${label}`)
+      const box = node.getBoundingClientRect()
+      if (!node.closest(".am-splash-tabs") && (box.left < bounds.left - 1 || box.right > bounds.right + 1)) {
+        issues.push(`outside hero: ${label}`)
+      }
+    }
+    return issues
+  })
+  expect(issues).toEqual([])
+}
+
 for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
   test(`${theme} CTA focus ring has a visible gap from its fill`, async ({ page }) => {
     await open(page, theme)
@@ -25,12 +69,13 @@ for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
     expect(outline.offset).toBeGreaterThanOrEqual(2)
   })
 
-  for (const width of [420, 1100]) {
+  for (const width of [420, 720, 1100]) {
     test(`${theme} at ${width}px hero and preview pass axe, including nested-interactive and aria-hidden-focus`, async ({
       page,
     }) => {
       await page.setViewportSize({ width, height: 1400 })
       await open(page, theme)
+      await resize(page, width)
       const controls = page.locator(width < 880 ? ".am-splash-tab" : ".am-splash-dot")
       await expect(controls).toHaveCount(5)
       for (const control of await controls.all()) {
@@ -57,7 +102,10 @@ for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
                 ),
               )
             }),
-          result.violations,
+          result.violations.map((rule) => ({
+            id: rule.id,
+            nodes: rule.nodes.map((node) => ({ target: node.target })),
+          })),
         )
         expect(violations).toEqual([])
       }
@@ -68,6 +116,7 @@ for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
     test(`${theme} at ${width}px keeps all five hero heights stable and tags readable`, async ({ page }) => {
       await page.setViewportSize({ width, height: 1400 })
       await open(page, theme)
+      await resize(page, width)
       const heights: number[] = []
       const ratios: number[] = []
       const controls = page.locator(width < 880 ? ".am-splash-tab" : ".am-splash-dot")
@@ -76,10 +125,10 @@ for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
         await control.click()
         heights.push(await page.locator(".am-splash-hero").evaluate((node) => node.getBoundingClientRect().height))
         if (width < 880) {
-          await expect(page.locator(".am-splash-compact-panel-active")).toBeVisible()
+          await expect(page.locator(".am-splash-compact-panel.am-splash-example-panel-active")).toBeVisible()
           expect(
-            await page.locator(".am-splash-compact-preview").evaluate((node) => node.getBoundingClientRect().height),
-          ).toBe(276)
+            await page.locator(".am-splash-preview-card").evaluate((node) => node.getBoundingClientRect().height),
+          ).toBe(width < 560 ? 340 : 360)
           continue
         }
         ratios.push(
@@ -102,7 +151,6 @@ for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
           }),
         )
       }
-      console.log(JSON.stringify({ theme, width, heights, ratios }))
       expect(Math.max(...heights) - Math.min(...heights)).toBe(0)
       expect(heights).toHaveLength(5)
       if (width >= 880) expect(Math.min(...ratios)).toBeGreaterThanOrEqual(4.5)
@@ -178,12 +226,12 @@ test("carousel announces selections and excludes the preview from forward and re
   expect(result.violations).toEqual([])
 })
 
-test("visible compact preview rows retain native hover inside the faded frame", async ({ page }) => {
+test("visible compact preview rows retain native hover inside the cropped preview", async ({ page }) => {
   await page.setViewportSize({ width: 520, height: 1400 })
   await open(page)
   for (const tab of await page.locator(".am-splash-tab").all()) {
     await tab.click()
-    const row = page.locator(".am-splash-compact-panel-active .am-splash-preview-panel-active .am-worktree-item-active")
+    const row = page.locator(".am-splash-hero-side .am-splash-preview-panel-active .am-worktree-item").first()
     await page.mouse.move(0, 0)
     await expect
       .poll(() => row.locator(".am-wt-hover-actions").evaluate((node) => getComputedStyle(node).visibility))
@@ -198,144 +246,87 @@ test("visible compact preview rows retain native hover inside the faded frame", 
 })
 
 for (const locale of ["en", "ar"]) {
-  for (const width of [420, 520, 760]) {
-    test(`${locale} at ${width}px frames each example's defining content above the fade`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 1400 })
+  for (const width of [1280, 1010, 900, 880, 879, 800, 720, 600, 560, 559, 500, 440, 380, 340, 320, 300]) {
+    test(`${locale} ${width}px content width preserves all five examples in the responsive mode`, async ({ page }) => {
+      await page.setViewportSize({ width: 1500, height: 1600 })
       await open(page, "dark-modern", locale)
+      await resize(page, width)
+      const mode = width < 560 ? "thin" : width < 880 ? "narrow" : "wide"
+      const preview = page.locator(".am-splash-hero-side .am-splash-preview-card")
+      await expect(preview).toHaveCount(1)
+      await expect(preview.locator(".am-splash-preview-panel")).toHaveCount(1)
+      await expect(page.locator(".am-splash-example > .am-splash-example-panel")).toHaveCount(5)
+      await expect(page.locator(".am-splash-feature-stack > .am-splash-features")).toHaveCount(5)
+      expect(await page.locator(".am-splash").evaluate((node) => getComputedStyle(node).containerType)).toBe(
+        "inline-size",
+      )
+      expect(await page.locator(".am-splash-hero").evaluate((node) => getComputedStyle(node).display)).toBe("grid")
+      expect(
+        await page
+          .locator(".am-splash-hero")
+          .evaluate((node) => getComputedStyle(node).getPropertyValue("--am-splash-mode").trim()),
+      ).toBe(mode)
+      const heights: number[] = []
       for (let index = 0; index < 5; index++) {
-        await page.locator(".am-splash-tab").nth(index).click()
-        const frame = page.locator(".am-splash-compact-preview")
-        const panel = frame.locator(".am-splash-preview-panel-active")
-        const rows = panel.locator(".am-worktree-item")
-        // Query the real fixtures by their story content, independently of the framing implementation.
-        const targets = [panel.locator(".am-worktree-item-active")]
-        if (index === 0) {
-          targets.push(
-            rows.filter({ hasText: "#889" }),
-            rows.filter({ hasText: "queue and alarms" }),
-            panel.locator(".am-project-item").filter({ hasText: "web-app" }),
-          )
-          await expect(rows.filter({ hasText: "queue and alarms" }).locator('[data-activity="waiting"]')).toHaveCount(1)
+        await page
+          .locator(mode === "wide" ? ".am-splash-dot" : ".am-splash-tab")
+          .nth(index)
+          .click()
+        await expect(page.locator(".am-splash-example-panel-active")).toBeVisible()
+        await expect(preview.locator(".am-splash-preview-panel")).toHaveCount(1)
+        await expect(page.locator(".am-splash-features-active")).toHaveCount(1)
+        await expect
+          .poll(() => preview.evaluate((node) => node.getBoundingClientRect().height))
+          .toBe(mode === "thin" ? 340 : mode === "narrow" ? 360 : 428)
+        await intact(page)
+        heights.push(await page.locator(".am-splash-hero").evaluate((node) => node.getBoundingClientRect().height))
+        if (mode === "thin") {
+          await expect(page.locator(".am-splash-feature-stack")).toBeHidden()
+          await expect(page.locator(".am-splash-thin-hint")).toBeVisible()
+          continue
         }
-        if (index === 1) targets.push(panel.locator(".am-section-group-header").filter({ hasText: "ORCHESTRATE" }))
-        if (index === 2) {
-          const implementation = panel.locator(".am-section-group-header").filter({ hasText: "IMPLEMENT" })
-          await expect(implementation).toContainText("3")
-          await expect(implementation.locator(".am-sidebar-header-toggle")).toHaveAttribute("aria-expanded", "false")
-          await expect(rows.filter({ hasText: "Rate-limit the login endpoint" })).toHaveCount(0)
-          targets.push(
-            implementation,
-            panel.locator(".am-section-group-header").filter({ hasText: /^OPS/ }),
-            rows.filter({ hasText: "Merge Captain" }),
-            rows.filter({ hasText: "Issue Delegator" }),
-          )
-          await expect(panel.locator('.am-worktree-item-active [data-activity="waiting"]')).toHaveCount(1)
-          await expect(panel.locator(".am-worktree-item-active")).toContainText("Adversarial Reviewer")
+        await expect(page.locator(".am-splash-thin-hint")).toBeHidden()
+        await expect(page.locator(".am-splash-features-active")).toBeVisible()
+        if (mode === "wide") {
+          await expect(page.locator(".am-splash-card")).toHaveCount(3)
+          continue
         }
-        if (index === 3) {
-          await expect(rows).toHaveCount(3)
-          targets.push(panel.locator(".am-wt-group-header"), ...(await rows.all()))
-        }
-        if (index === 4) {
-          targets.push(
-            rows.filter({ hasText: "monogram" }),
-            rows.filter({ hasText: "Color and type tokens" }),
-            rows.filter({ hasText: "Social card templates" }),
-          )
-        }
-        for (const target of targets) {
-          await expect
-            .poll(async () => {
-              const bounds = await target.boundingBox()
-              const crop = await frame.boundingBox()
-              if (!bounds || !crop) return false
-              return bounds.y >= crop.y - 0.5 && bounds.y + bounds.height <= crop.y + crop.height * 0.78
-            })
-            .toBe(true)
-        }
-        expect(await frame.evaluate((node) => node.scrollTop)).toBeGreaterThan(0)
-      }
-      // Re-measure the active example after a compact-to-compact resize, not just a fresh mount.
-      await page.setViewportSize({ width: width === 760 ? 520 : 760, height: 1400 })
-      await page.setViewportSize({ width, height: 1400 })
-      await expect
-        .poll(() =>
-          page.locator(".am-splash-compact-preview").evaluate((node) => {
-            const frame = node.getBoundingClientRect()
-            const row = node
-              .querySelector(".am-splash-preview-panel-active .am-worktree-item-active")!
-              .getBoundingClientRect()
-            return row.top >= frame.top - 0.5 && row.bottom <= frame.top + frame.height * 0.78
-          }),
+        const features = (await page.locator(".am-splash-feature-stack").boundingBox())!
+        const side = (await preview.boundingBox())!
+        expect(Math.min(features.y + features.height, side.y + side.height)).toBeGreaterThan(
+          Math.max(features.y, side.y),
         )
-        .toBe(true)
+        expect(features.x + features.width <= side.x + 1 || side.x + side.width <= features.x + 1).toBe(true)
+        for (const feature of await page.locator(".am-splash-features-active .am-splash-feature-text").all()) {
+          const title = (await feature.locator("strong").boundingBox())!
+          const description = (await feature.locator(".am-splash-feature-description").boundingBox())!
+          expect(description.y).toBeGreaterThanOrEqual(title.y + title.height - 1)
+        }
+      }
+      expect(Math.max(...heights) - Math.min(...heights)).toBe(0)
+      const panel = page.locator(".am-splash-preview-panel-active")
+      await page
+        .locator(mode === "wide" ? ".am-splash-dot" : ".am-splash-tab")
+        .first()
+        .click()
+      expect(await panel.locator(".am-project-item").allTextContents()).toEqual([
+        expect.stringContaining("billing-api"),
+        expect.stringContaining("web-app"),
+        expect.stringContaining("infra"),
+      ])
+      await page
+        .locator(mode === "wide" ? ".am-splash-dot" : ".am-splash-tab")
+        .nth(2)
+        .click()
+      await expect(
+        panel.locator(".am-section-group-header").filter({ hasText: "IMPLEMENT" }).locator(".am-sidebar-header-toggle"),
+      ).toHaveAttribute("aria-expanded", "true")
+      await expect(panel.locator(".am-worktree-item").filter({ hasText: "Rate-limit the login endpoint" })).toHaveCount(
+        1,
+      )
+      expect(await preview.evaluate((node) => node.scrollTop)).toBe(0)
     })
   }
-}
-
-for (const locale of ["en", "ar"]) {
-  test(`${locale} wide-to-compact examples are anchored on their first animation frame`, async ({ page }) => {
-    await page.setViewportSize({ width: 1100, height: 1400 })
-    await open(page, "dark-modern", locale)
-    const labels = [
-      ["pricing page", "queue and alarms", "web-app"],
-      ["Orchestrator · scheduler latency pass", "ORCHESTRATE"],
-      ["IMPLEMENT", "OPS", "Merge Captain", "Issue Delegator", "Adversarial Reviewer"],
-      ["Kilo Auto", "Claude", "GPT"],
-      ["wordmark", "monogram", "Color and type tokens", "Social card templates"],
-    ]
-    for (let index = 0; index < 5; index++) {
-      await page.locator(".am-splash-dot").nth(index).click()
-      const first = await page.evaluate((labels) => {
-        const pane = document.querySelector<HTMLElement>('.am-intro-layout > [data-slot="message-list"]')!
-        const result = Promise.withResolvers<{
-          height: number
-          scroll: number
-          rows: ({ label: string; top: number; bottom: number } | null)[]
-        }>()
-        // Queue sampling before the resize observer mounts Compact, so a deferred initial anchor loses this race.
-        const sample = () => {
-          const frame = pane.querySelector<HTMLElement>(".am-splash-compact-preview")
-          if (!frame) {
-            requestAnimationFrame(sample)
-            return
-          }
-          const bounds = frame.getBoundingClientRect()
-          const nodes = [
-            ...frame.querySelectorAll(
-              ".am-splash-preview-panel-active .am-worktree-item,.am-splash-preview-panel-active .am-section-group-header,.am-splash-preview-panel-active .am-project-item",
-            ),
-          ]
-          result.resolve({
-            height: bounds.height,
-            scroll: frame.scrollTop,
-            rows: labels.map((label) => {
-              const node = nodes.find((node) => node.textContent?.includes(label))
-              if (!node) return null
-              const row = node.getBoundingClientRect()
-              return { label, top: row.top - bounds.top, bottom: row.bottom - bounds.top }
-            }),
-          })
-        }
-        requestAnimationFrame(sample)
-        pane.style.flex = "none"
-        pane.style.width = "520px"
-        return result.promise
-      }, labels.at(index)!)
-      expect(first.height).toBe(276)
-      expect(first.scroll).toBeGreaterThan(0)
-      for (const row of first.rows) {
-        expect(row).not.toBeNull()
-        if (!row) continue
-        expect(row.top, row.label).toBeGreaterThanOrEqual(-0.5)
-        expect(row.bottom, row.label).toBeLessThanOrEqual(first.height * 0.78)
-      }
-      await page.locator('.am-intro-layout > [data-slot="message-list"]').evaluate((node) => {
-        ;(node as HTMLElement).style.width = "1100px"
-      })
-      await expect(page.locator(".am-splash-wide")).toBeVisible()
-    }
-  })
 }
 
 test("Show, Hide, and resize cycles emit no window errors", async ({ page }) => {
@@ -348,11 +339,11 @@ test("Show, Hide, and resize cycles emit no window errors", async ({ page }) => 
   await page.goto("/iframe.html?id=agentmanager--splash-folded-story&viewMode=story&args=locale:ar")
   for (let cycle = 0; cycle < 3; cycle++) {
     await page.locator(".am-splash-show").click()
-    await expect(page.locator(".am-splash-wide")).toBeVisible()
+    await expect(page.locator('.am-splash[data-wide="true"]')).toBeVisible()
     await page.setViewportSize({ width: 520, height: 1400 })
     await expect(page.getByRole("tab")).toHaveCount(5)
     await page.setViewportSize({ width: 1100, height: 1400 })
-    await expect(page.locator(".am-splash-wide")).toBeVisible()
+    await expect(page.locator('.am-splash[data-wide="true"]')).toBeVisible()
     await page.locator(".am-splash-hide").click()
     await expect(page.locator(".am-splash-show")).toBeVisible()
   }
@@ -370,14 +361,7 @@ for (const locale of ["br", "da", "es", "fa", "fr", "it", "nl", "no", "pl", "ru"
     for (const tab of await tabs.all()) {
       await tab.click()
       heights.push(await page.locator(".am-splash-hero").evaluate((node) => node.getBoundingClientRect().height))
-      const clipped = await page.locator(".am-splash-compact-panel-active").evaluate((node) =>
-        [...node.children]
-          // The pitch clamps to two lines and the real preview intentionally crops at 276px.
-          .filter((child) => child.matches(".am-splash-compact-features"))
-          .filter((child) => child.scrollHeight > child.clientHeight + 1 || child.scrollWidth > child.clientWidth + 1)
-          .map((child) => child.textContent),
-      )
-      expect(clipped).toEqual([])
+      await intact(page)
     }
     expect(heights).toHaveLength(5)
     expect(Math.max(...heights) - Math.min(...heights)).toBe(0)
@@ -415,32 +399,42 @@ for (const locale of ["en", "ar", "fa"]) {
     await expect(page.locator('.am-splash-show [data-component="icon"][data-directional]')).toHaveCount(1)
     expect(await scales(page, ".am-splash-show")).toEqual([scale])
     await page.locator(".am-splash-show").click()
-    await expect(page.locator(".am-splash-wide")).toBeVisible()
+    await expect(page.locator('.am-splash[data-wide="true"]')).toBeVisible()
     expect(await scales(page, ".am-splash-arrow")).toEqual([scale, scale])
     await page.locator(".am-splash-hide").click()
     await expect(page.locator(".am-splash-show")).toBeVisible()
     expect(await scales(page, ".am-splash-show")).toEqual([scale])
     await page.locator(".am-splash-show").click()
-    await expect(page.locator(".am-splash-wide")).toBeVisible()
+    await expect(page.locator('.am-splash[data-wide="true"]')).toBeVisible()
     expect(await scales(page, ".am-splash-arrow")).toEqual([scale, scale])
     await page.setViewportSize({ width: 760, height: 1400 })
     await expect(page.getByRole("tab")).toHaveCount(5)
     // Compact tabs have no chevrons or splash-owned directional icons to mirror.
     await expect(page.locator('.am-splash-tab [data-slot="icon-svg"]')).toHaveCount(0)
     await page.setViewportSize({ width: 1100, height: 1400 })
-    await expect(page.locator(".am-splash-wide")).toBeVisible()
+    await expect(page.locator('.am-splash[data-wide="true"]')).toBeVisible()
     expect(await scales(page, ".am-splash-arrow")).toEqual([scale, scale])
   })
 }
 
-test("reduced motion disables only splash-owned control motion", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await open(page)
-  const durations = await page
-    .locator(".am-splash-hero-main button:not(.am-splash-preview-card button)")
-    .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).transitionDuration))
-  expect(durations.every((duration) => duration === "0s")).toBe(true)
-})
+for (const width of [340, 720, 1100]) {
+  test(`${width}px reduced motion disables only splash-owned control motion`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.setViewportSize({ width: 1500, height: 1600 })
+    await open(page)
+    await resize(page, width)
+    const durations = await page
+      .locator(".am-splash-hero-main button")
+      .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).transitionDuration))
+    expect(durations.length).toBeGreaterThan(0)
+    expect(durations.every((duration) => duration === "0s")).toBe(true)
+    await page
+      .locator(width < 880 ? ".am-splash-tab" : ".am-splash-dot")
+      .last()
+      .click()
+    await intact(page)
+  })
+}
 
 for (const locale of ["en", "ar", "fa", "fr"]) {
   test(`${locale} compact tabs support roving focus, linked panels, and visible keyboard selections`, async ({
@@ -459,6 +453,11 @@ for (const locale of ["en", "ar", "fa", "fr"]) {
     }
     const rtl = locale === "ar" || locale === "fa"
     await tabs.first().focus()
+    for (const modifier of ["Alt", "Control", "Meta", "Shift"]) {
+      await page.keyboard.press(`${modifier}+ArrowRight`)
+      await expect(tabs.first()).toBeFocused()
+      await expect(tabs.first()).toHaveAttribute("aria-selected", "true")
+    }
     for (const [key, index] of [
       ["ArrowRight", rtl ? 4 : 1],
       ["ArrowLeft", 0],
@@ -477,19 +476,20 @@ for (const locale of ["en", "ar", "fa", "fr"]) {
         await expect(tab).toHaveAttribute("role", "tab")
         await expect(tab).toHaveAttribute("aria-selected", String(position === index))
         await expect(tab).toHaveAttribute("tabindex", position === index ? "0" : "-1")
-        await expect(tab).toHaveAttribute("aria-controls", (await panel.getAttribute("id"))!)
         await expect(panel).toHaveAttribute("role", "tabpanel")
         await expect(panel).toHaveAttribute("aria-labelledby", (await tab.getAttribute("id"))!)
-        await expect(panel).toHaveAttribute("tabindex", position === index ? "0" : "-1")
         if (position !== index) {
           await expect(panel).toBeHidden()
-          await expect(panel.locator(".am-splash-preview-card")).toHaveCount(0)
           continue
         }
-        await expect(panel.locator(".am-splash-preview-card")).toHaveAttribute("role", "figure")
-        await expect(panel).toHaveClass(/am-splash-compact-panel-active/)
+        await expect(tab).toHaveAttribute("aria-controls", (await panel.getAttribute("id"))!)
+        await expect(panel).toHaveClass(/am-splash-example-panel-active/)
         await expect(panel).toBeVisible()
+        await expect(panel).toHaveAttribute("tabindex", "0")
+        await expect(panel.locator(".am-splash-pitch")).toHaveCount(1)
+        await expect(panel.locator(".am-splash-preview-card, .am-splash-features")).toHaveCount(0)
       }
+      await expect(page.locator(".am-splash-hero-side .am-splash-preview-card")).toHaveAttribute("role", "figure")
       await expect
         .poll(() =>
           tabs.nth(index).evaluate((node) => {
@@ -503,6 +503,61 @@ for (const locale of ["en", "ar", "fa", "fr"]) {
   })
 }
 
+for (const locale of ["en", "ar", "fa", "fr"]) {
+  for (const motion of ["no-preference", "reduce"] as const) {
+    test(`${locale} ${motion} tab fades track physical clipping during keyboard selection and resize`, async ({
+      page,
+    }) => {
+      await page.emulateMedia({ reducedMotion: motion })
+      await page.setViewportSize({ width: 1500, height: 1600 })
+      await open(page, "dark-modern", locale)
+      await resize(page, 300)
+      const tabs = page.locator(".am-splash-tab")
+      const list = page.getByRole("tablist")
+      const rtl = locale === "ar" || locale === "fa"
+      expect(await list.evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true)
+      await tabs.first().focus()
+      for (const [key, index] of [
+        ["Home", 0],
+        ["End", 4],
+        ["Home", 0],
+      ] as const) {
+        await page.keyboard.press(key)
+        await expect(tabs.nth(index)).toBeFocused()
+        await expect(tabs.nth(index)).toHaveAttribute("aria-selected", "true")
+        const left = rtl ? index === 0 : index === 4
+        await expect.poll(() => list.evaluate((node) => node.classList.contains("am-splash-tabs-left"))).toBe(left)
+        await expect.poll(() => list.evaluate((node) => node.classList.contains("am-splash-tabs-right"))).toBe(!left)
+        await expect
+          .poll(() =>
+            list.evaluate((node) => {
+              const box = node.getBoundingClientRect()
+              const tabs = [...node.querySelectorAll(".am-splash-tab")].map((tab) => tab.getBoundingClientRect())
+              const left = tabs.some((tab) => tab.left < box.left - 1)
+              const right = tabs.some((tab) => tab.right > box.right + 1)
+              return (
+                node.classList.contains("am-splash-tabs-left") === left &&
+                node.classList.contains("am-splash-tabs-right") === right
+              )
+            }),
+          )
+          .toBe(true)
+      }
+      await resize(page, 879)
+      await expect.poll(() => list.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true)
+      await expect(list).not.toHaveClass(/am-splash-tabs-left|am-splash-tabs-right/)
+      await resize(page, 300)
+      await expect
+        .poll(() =>
+          list.evaluate(
+            (node) => node.classList.contains("am-splash-tabs-left") || node.classList.contains("am-splash-tabs-right"),
+          ),
+        )
+        .toBe(true)
+    })
+  }
+}
+
 test("compact forward and reverse focus traversal includes the panel but excludes every preview", async ({ page }) => {
   await page.setViewportSize({ width: 420, height: 1400 })
   await open(page)
@@ -510,7 +565,7 @@ test("compact forward and reverse focus traversal includes the panel but exclude
   const start = page.getByRole("button", { name: "Start your first session", exact: true })
   for (const tab of await page.locator(".am-splash-tab").all()) {
     await tab.click()
-    const panel = page.locator(".am-splash-compact-panel-active")
+    const panel = page.locator(".am-splash-compact-panel.am-splash-example-panel-active")
     await hide.focus()
     for (const [key, target] of [
       ["Tab", tab],
@@ -532,19 +587,35 @@ test("compact forward and reverse focus traversal includes the panel but exclude
   }
 })
 
+test("mode follows the splash content box rather than viewport or padded parent width", async ({ page }) => {
+  await page.setViewportSize({ width: 1500, height: 1600 })
+  await open(page)
+  await page.locator(".am-splash").evaluate((node) => {
+    ;(node as HTMLElement).style.padding = "17px"
+    node.parentElement!.style.padding = "23px"
+  })
+  for (const viewport of [1500, 500]) {
+    await page.setViewportSize({ width: viewport, height: 1600 })
+    for (const width of [559, 560, 879, 880]) {
+      await resize(page, width)
+      const stack = page.locator(".am-splash-feature-stack")
+      if (width < 560) await expect(stack).toBeHidden()
+      if (width >= 560) await expect(stack).toBeVisible()
+      expect(
+        await page.locator(".am-splash-preview-card").evaluate((node) => node.getBoundingClientRect().height),
+      ).toBe(width < 560 ? 340 : width < 880 ? 360 : 428)
+      await intact(page)
+    }
+  }
+})
+
 test("the 880px container breakpoint fits the wide carousel and preserves selection across remounts", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1100, height: 1400 })
   await open(page)
-  const pane = page.locator('.am-intro-layout > [data-slot="message-list"]')
-  for (const width of [879, 880, 760, 1100]) {
-    await pane.evaluate((node, width) => {
-      const pane = node as HTMLElement
-      pane.style.flex = "none"
-      pane.style.width = `${width}px`
-    }, width)
-    await expect.poll(() => pane.evaluate((node) => node.getBoundingClientRect().width)).toBe(width)
+  for (const width of [879, 880, 559, 560, 760, 1100]) {
+    await resize(page, width)
     if (width < 880) {
       const tabs = page.locator(".am-splash-tab")
       await expect(tabs).toHaveCount(5)
@@ -561,7 +632,7 @@ test("the 880px container breakpoint fits the wide carousel and preserves select
       width === 880 ? "versions" : "ops",
     )
     expect(await page.locator(".am-splash-hero").evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true)
-    const bounds = (await pane.boundingBox())!
+    const bounds = (await page.locator(".am-splash").boundingBox())!
     for (const card of await page.locator(".am-splash-card, .am-splash-preview-card").all()) {
       const box = (await card.boundingBox())!
       expect(box.x).toBeGreaterThanOrEqual(bounds.x)
@@ -634,3 +705,155 @@ for (const story of [
     })
   }
 }
+
+test.describe("standalone thin splash popover", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/iframe.html?id=agentmanager-splash-popover--thin&viewMode=story")
+    await expect(page.getByRole("region", { name: "Multi-repo projects", exact: true })).toBeVisible()
+    await page.evaluate(() => document.fonts.ready)
+  })
+
+  test("announces the initial feature and associates only its selected marker", async ({ page }) => {
+    const region = page.getByRole("region", { name: "Multi-repo projects", exact: true })
+    await expect(region).toHaveAttribute("aria-live", "polite")
+    await expect(region).toHaveAttribute("aria-atomic", "true")
+    await expect(region).toContainText("Keep agents working across your repositories in one place.")
+    const markers = page.getByRole("button", { name: /^Feature \d:/ })
+    await expect(markers).toHaveCount(3)
+    for (const [index, marker] of (await markers.all()).entries()) {
+      await expect(marker).toHaveAttribute("aria-controls", "splash-popover-story")
+      await expect(marker).toHaveAttribute("aria-expanded", index === 0 ? "true" : "false")
+    }
+    await expect(region).toHaveAttribute("id", "splash-popover-story")
+  })
+
+  test("same marker toggles, outside pointerdown dismisses, and Escape preserves marker focus", async ({ page }) => {
+    const region = page.locator("#splash-popover-story")
+    const marker = page.getByRole("button", { name: "Feature 1: Multi-repo projects", exact: true })
+    await marker.click()
+    await expect(region).toBeHidden()
+    await expect(marker).toHaveAttribute("aria-expanded", "false")
+    await marker.click()
+    await expect(region).toBeVisible()
+    await expect(marker).toHaveAttribute("aria-expanded", "true")
+    await expect(marker).toBeFocused()
+    await page.keyboard.press("Escape")
+    await expect(region).toBeHidden()
+    await expect(marker).toHaveAttribute("aria-expanded", "false")
+    await expect(marker).toBeFocused()
+    await marker.click()
+    await expect(region).toBeVisible()
+    const box = (await region.locator("..").boundingBox())!
+    await page.mouse.move(box.x + 5, box.y + 5)
+    await page.mouse.down()
+    await expect(region).toBeHidden()
+    await expect(marker).toHaveAttribute("aria-expanded", "false")
+    await page.mouse.up()
+  })
+
+  test("previous and next wrap without stealing pointer focus from the marker", async ({ page }) => {
+    const region = page.locator("#splash-popover-story")
+    const markers = page.getByRole("button", { name: /^Feature \d:/ })
+    const marker = markers.first()
+    // The story starts open; close and reopen by pointer to establish marker focus.
+    await marker.click()
+    await marker.click()
+    await expect(marker).toBeFocused()
+    for (const [label, index, name] of [
+      ["Previous feature", 2, "PR badges and diff counts"],
+      ["Next feature", 0, "Multi-repo projects"],
+      ["Next feature", 1, "Live session status"],
+      ["Next feature", 2, "PR badges and diff counts"],
+      ["Next feature", 0, "Multi-repo projects"],
+    ] as const) {
+      await region.getByRole("button", { name: label, exact: true }).click()
+      await expect(region).toHaveAccessibleName(name)
+      await expect(region.locator(".am-splash-popover__steps")).toContainText(`${index + 1}/3`)
+      await expect(markers.nth(index)).toHaveAttribute("aria-expanded", "true")
+      await expect(page.locator('button[aria-controls="splash-popover-story"][aria-expanded="true"]')).toHaveCount(1)
+      await expect(marker).toBeFocused()
+    }
+  })
+
+  for (const direction of ["ltr", "rtl"]) {
+    test(`${direction} container resizes keep every popover inside the frame and clear of its anchored row`, async ({
+      page,
+    }) => {
+      const region = page.locator("#splash-popover-story")
+      const container = region.locator("..")
+      const markers = page.getByRole("button", { name: /^Feature \d:/ })
+      await container.evaluate((node, direction) => {
+        const element = node as HTMLElement
+        element.dir = direction
+        element.style.width = "400px"
+      }, direction)
+      await expect
+        .poll(() =>
+          region.evaluate((node) => {
+            const frame = node.parentElement!.firstElementChild!.getBoundingClientRect()
+            const box = node.getBoundingClientRect()
+            return (
+              Math.abs(
+                getComputedStyle(node).direction === "rtl"
+                  ? box.right - (frame.right - 8)
+                  : box.left - (frame.left + 8),
+              ) <= 1
+            )
+          }),
+        )
+        .toBe(true)
+      for (const width of [300, 240, 400]) {
+        // Resize the observed container, not the browser viewport.
+        await container.evaluate((node, width) => ((node as HTMLElement).style.width = `${width}px`), width)
+        await expect.poll(() => container.evaluate((node) => node.getBoundingClientRect().width)).toBe(width)
+        for (let index = 0; index < 3; index++) {
+          const marker = markers.nth(index)
+          if ((await marker.getAttribute("aria-expanded")) !== "true") await marker.click()
+          await expect(region).toBeVisible()
+          await expect(region).toHaveAccessibleName(
+            (await marker.getAttribute("aria-label"))!.replace(/^Feature \d: /, ""),
+          )
+          await expect
+            .poll(() =>
+              marker.evaluate((node) => {
+                const row = node.parentElement!
+                const rows = row.parentElement!
+                const frame = rows.parentElement!
+                const pop = frame.parentElement!.querySelector<HTMLElement>("#splash-popover-story")!
+                const bounds = frame.getBoundingClientRect()
+                const anchor = row.getBoundingClientRect()
+                const viewport = rows.getBoundingClientRect()
+                const box = pop.getBoundingClientRect()
+                const rtl = getComputedStyle(frame).direction === "rtl"
+                return {
+                  ready: pop.dataset.open === "true",
+                  inside:
+                    box.left >= bounds.left + 7 &&
+                    box.right <= bounds.right - 7 &&
+                    box.top >= bounds.top + 7 &&
+                    box.bottom <= bounds.bottom - 7,
+                  separated: box.bottom <= anchor.top - 3 || box.top >= anchor.bottom + 3,
+                  aligned: Math.abs(rtl ? box.right - (bounds.right - 8) : box.left - (bounds.left + 8)) <= 1,
+                  clearance: anchor.top >= viewport.top - 1 && anchor.bottom <= viewport.bottom - 27,
+                }
+              }),
+            )
+            .toEqual({ ready: true, inside: true, separated: true, aligned: true, clearance: true })
+        }
+      }
+    })
+  }
+
+  test("reduced motion removes the popover transition and closed transform", async ({ page }) => {
+    const region = page.locator("#splash-popover-story")
+    await page.emulateMedia({ reducedMotion: "no-preference" })
+    await expect(region).toHaveCSS("transition-duration", "0.12s, 0.12s")
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await expect(region).toHaveCSS("transition-duration", "0s")
+    await expect(region).toHaveCSS("transform", "none")
+    await page.getByRole("button", { name: "Feature 1: Multi-repo projects", exact: true }).click()
+    await expect(region).toBeHidden()
+    await expect(region).toHaveCSS("transition-duration", "0s")
+    await expect(region).toHaveCSS("transform", "none")
+  })
+})

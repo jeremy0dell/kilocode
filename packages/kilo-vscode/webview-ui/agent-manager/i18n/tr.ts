@@ -515,6 +515,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Tanıtımı atla",
   "agentManager.intro.reopen": "Agent Manager nasıl çalışır",
   "agentManager.splash.preview.label": "Agent Manager kenar çubuğu önizlemesi",
+  "agentManager.splash.thinHint": "Kenar çubuğunun o bölümünün ne işe yaradığını görmek için bir numaraya dokunun.",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":
     "Görevleri paralel çalıştırın, işleri devredin ve tüm ajanları tek bir yerden takip edin.",

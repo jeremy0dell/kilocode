@@ -20,7 +20,6 @@ interface EmptyProps {
 
 function ExamplePicker(props: { selected: Accessor<number>; onSelect: (index: number) => void }) {
   const { t } = useLanguage()
-  const current = () => examples.at(props.selected()) ?? examples.at(0)!
 
   return (
     <>
@@ -78,37 +77,6 @@ function ExamplePicker(props: { selected: Accessor<number>; onSelect: (index: nu
           </For>
         </div>
       </div>
-      <div class="am-splash-example">
-        <For each={examples}>
-          {(example, index) => (
-            <div
-              class="am-splash-example-panel"
-              classList={{ "am-splash-example-panel-active": index() === props.selected() }}
-              data-tone={example.id}
-              aria-hidden={index() === props.selected() ? undefined : "true"}
-            >
-              <p class="am-splash-pitch">{t(example.pitch)}</p>
-              <ul class="am-splash-features">
-                <For each={example.features}>
-                  {(feature) => (
-                    <li class="am-splash-feature">
-                      <span class="am-splash-feature-dot" aria-hidden="true" />
-                      <span>
-                        <strong>{t(feature.name)}</strong>
-                        <span aria-hidden="true"> · </span>
-                        {t(feature.text)}
-                      </span>
-                    </li>
-                  )}
-                </For>
-              </ul>
-            </div>
-          )}
-        </For>
-      </div>
-      <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {t(current().title)} — {t(current().pitch)}
-      </div>
     </>
   )
 }
@@ -118,23 +86,22 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void;
   const titleId = createUniqueId()
   const [selected, setSelected] = createSignal(Math.max(0, Math.min(props.initialExample ?? 0, examples.length - 1)))
   const [wide, setWide] = createSignal(false)
+  const current = () => examples.at(selected())!
   let root!: HTMLElement
   onMount(() => {
-    const pane = root.closest('.am-intro-layout > [data-slot="message-list"]')
-    if (!pane) return
     let pending = 0
     const observer = new ResizeObserver(([entry]) => {
       cancelAnimationFrame(pending)
       pending = requestAnimationFrame(() => setWide((entry?.contentRect.width ?? 0) >= 880))
     })
-    observer.observe(pane)
+    observer.observe(root)
     onCleanup(() => {
       observer.disconnect()
       cancelAnimationFrame(pending)
     })
   })
   return (
-    <section ref={root} class="am-splash" classList={{ "am-splash-wide": wide() }} aria-labelledby={titleId}>
+    <section ref={root} class="am-splash" data-wide={wide()} aria-labelledby={titleId}>
       <div class="am-splash-frame">
         <article class="am-splash-hero">
           <div class="am-splash-hero-main">
@@ -161,7 +128,48 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void;
             </p>
             <Show when={wide()} fallback={<Compact selected={selected} onSelect={setSelected} />}>
               <ExamplePicker selected={selected} onSelect={setSelected} />
+              <div class="am-splash-example">
+                <For each={examples}>
+                  {(example, index) => (
+                    <div
+                      class="am-splash-example-panel"
+                      classList={{ "am-splash-example-panel-active": index() === selected() }}
+                      aria-hidden={index() !== selected() ? "true" : undefined}
+                    >
+                      <p class="am-splash-pitch">{t(example.pitch)}</p>
+                    </div>
+                  )}
+                </For>
+              </div>
             </Show>
+            <div class="am-splash-feature-stack">
+              <For each={examples}>
+                {(example, index) => (
+                  <ul
+                    class="am-splash-features"
+                    classList={{ "am-splash-features-active": index() === selected() }}
+                    data-tone={example.id}
+                    aria-hidden={index() !== selected() ? "true" : undefined}
+                  >
+                    <For each={example.features}>
+                      {(feature) => (
+                        <li class="am-splash-feature">
+                          <span class="am-splash-feature-dot" aria-hidden="true" />
+                          <span class="am-splash-feature-text">
+                            <strong>{t(feature.name)}</strong>
+                            <span class="am-splash-feature-description">{t(feature.text)}</span>
+                          </span>
+                        </li>
+                      )}
+                    </For>
+                  </ul>
+                )}
+              </For>
+            </div>
+            <p class="am-splash-thin-hint">
+              <span aria-hidden="true">1</span>
+              {t("agentManager.splash.thinHint")}
+            </p>
             <div class="am-splash-actions">
               <Button variant="primary" onClick={props.onStart}>
                 {t("agentManager.splash.start")}
@@ -171,11 +179,12 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void;
               </span>
             </div>
           </div>
-          <Show when={wide()}>
-            <div class="am-splash-hero-side">
-              <SidebarPreview selected={selected} />
-            </div>
-          </Show>
+          <div class="am-splash-hero-side">
+            <SidebarPreview selected={selected} />
+          </div>
+          <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {t(current().title)} — {t(current().pitch)}
+          </div>
         </article>
       </div>
     </section>

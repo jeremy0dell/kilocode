@@ -35,6 +35,7 @@ const TSX_FILES = [
   path.join(ROOT, "webview-ui/agent-manager/splash/Splash.tsx"),
   path.join(ROOT, "webview-ui/agent-manager/splash/Preview.tsx"),
   path.join(ROOT, "webview-ui/agent-manager/splash/Compact.tsx"),
+  path.join(ROOT, "webview-ui/agent-manager/splash/Popover.tsx"),
   path.join(ROOT, "webview-ui/src/components/chat/MessageList.tsx"),
   path.join(ROOT, "webview-ui/agent-manager/SubagentPanel.tsx"),
   path.join(ROOT, "webview-ui/agent-manager/EditPreviewPanel.tsx"),

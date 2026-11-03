@@ -1,4 +1,3 @@
-import { createContext, useContext } from "solid-js"
 import type {
   AgentManagerStateMessage,
   AgentProjectSnapshot,
@@ -17,16 +16,9 @@ const status = {
   "needs-you": "waiting",
 } satisfies Record<NonNullable<Session["status"]>, Activity>
 
-export const Framing = createContext(false)
-
 /** Adapt splash fixtures to the same data consumed by the live project sidebar. */
 export function fleet(example: Example) {
-  const compact = useContext(Framing)
-  const projects =
-    compact && example.id === "crossStack"
-      ? example.fixture.projects.toSorted((a, b) => Number(a.name === "web-app") - Number(b.name === "web-app"))
-      : example.fixture.projects
-  return projects.map((fixture, index) => {
+  return example.fixture.projects.map((fixture, index) => {
     const id = `splash:${example.id}:${index}`
     const worktrees: WorktreeState[] = []
     const sections: SectionState[] = []
@@ -94,7 +86,7 @@ export function fleet(example: Example) {
         name: row.section.name,
         color: row.section.color,
         order: position,
-        collapsed: compact && example.id === "ops" && row.section.name === "IMPLEMENT",
+        collapsed: false,
       })
       order.push(key)
       row.section.sessions.forEach((session) => add(session, key))

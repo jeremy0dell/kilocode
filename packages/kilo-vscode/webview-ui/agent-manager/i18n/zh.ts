@@ -488,6 +488,7 @@ export const dict = {
   "agentManager.intro.dismiss": "跳过介绍",
   "agentManager.intro.reopen": "Agent Manager 的工作原理",
   "agentManager.splash.preview.label": "Agent Manager 侧边栏预览",
+  "agentManager.splash.thinHint": "点击数字，了解侧边栏对应部分的功能。",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle": "并行运行任务、委派工作，并在同一处跟踪每个智能体的进展。",
   "agentManager.splash.compact.hint": "或在下方描述任务",

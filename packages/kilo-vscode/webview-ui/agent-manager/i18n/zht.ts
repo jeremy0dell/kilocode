@@ -487,6 +487,7 @@ export const dict = {
   "agentManager.intro.dismiss": "略過介紹",
   "agentManager.intro.reopen": "Agent Manager 的運作方式",
   "agentManager.splash.preview.label": "Agent Manager 側邊欄預覽",
+  "agentManager.splash.thinHint": "點選數字，了解側邊欄對應部分的功能。",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle": "平行執行任務、委派工作，並在同一處追蹤每個智慧體的進度。",
   "agentManager.splash.compact.hint": "或在下方描述任務",

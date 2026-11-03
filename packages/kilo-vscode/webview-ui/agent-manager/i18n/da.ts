@@ -509,6 +509,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Spring introduktion over",
   "agentManager.intro.reopen": "Sådan fungerer Agent Manager",
   "agentManager.splash.preview.label": "Forhåndsvisning af Agent Manager-sidepanelet",
+  "agentManager.splash.thinHint": "Tryk på et tal for at se, hvad den del af sidepanelet gør.",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle": "Kør opgaver parallelt, uddelegér arbejde og følg hver agent fra ét sted.",
   "agentManager.splash.compact.hint": "eller beskriv en opgave nedenfor",

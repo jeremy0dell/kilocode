@@ -21,7 +21,7 @@ import { ChatView } from "../components/chat/ChatView"
 import { registerVscodeToolOverrides } from "../components/chat/VscodeToolOverrides"
 import { SessionContext, useSession } from "../context/session"
 import { LanguageContext, useLanguage, type Locale } from "../context/language"
-import { resolveTemplate } from "../context/language-utils"
+import { localeToBcp47, resolveTemplate } from "../context/language-utils"
 import { ServerContext } from "../context/server"
 import { WorktreeModeProvider } from "../context/worktree-mode"
 import { SidebarSearchMenu } from "../../agent-manager/SidebarSearchMenu"
@@ -34,6 +34,7 @@ import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { TooltipKeybind } from "@kilocode/kilo-ui/tooltip"
 import { ContextMenu } from "@kilocode/kilo-ui/context-menu"
+import { I18nProvider, useI18n } from "@kilocode/kilo-ui/context"
 import { ThinkingSelectorBase } from "../components/shared/ThinkingSelector"
 import { WorktreeOrigin } from "../../agent-manager/WorktreeOrigin"
 import { ProjectsSection } from "../../agent-manager/ProjectsSection"
@@ -228,6 +229,7 @@ const locales = import.meta.glob<{ dict: Record<string, string> }>("../../agent-
 
 function SplashLanguage(props: { locale?: Locale; children: JSX.Element }) {
   const language = useLanguage()
+  const i18n = useI18n()
   const dict = () => locales[`../../agent-manager/i18n/${props.locale ?? "en"}.ts`]?.dict ?? {}
   return (
     <LanguageContext.Provider
@@ -237,7 +239,9 @@ function SplashLanguage(props: { locale?: Locale; children: JSX.Element }) {
         t: (key, params) => resolveTemplate(dict()[key] ?? language.t(key, params), params),
       }}
     >
-      {props.children}
+      <I18nProvider value={{ ...i18n, locale: () => localeToBcp47(props.locale ?? "en") }}>
+        {props.children}
+      </I18nProvider>
     </LanguageContext.Provider>
   )
 }

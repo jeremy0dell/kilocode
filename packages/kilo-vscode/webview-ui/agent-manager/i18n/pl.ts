@@ -508,6 +508,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Pomiń wprowadzenie",
   "agentManager.intro.reopen": "Jak działa Agent Manager",
   "agentManager.splash.preview.label": "Podgląd paska bocznego Agent Manager",
+  "agentManager.splash.thinHint": "Dotknij numeru, aby zobaczyć, do czego służy ta część paska bocznego.",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":
     "Uruchamiaj zadania równolegle, deleguj pracę i śledź każdego agenta w jednym miejscu.",

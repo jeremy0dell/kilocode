@@ -498,6 +498,7 @@ export const dict = {
   "agentManager.intro.dismiss": "ข้ามบทนำ",
   "agentManager.intro.reopen": "Agent Manager ทำงานอย่างไร",
   "agentManager.splash.preview.label": "ตัวอย่างแถบด้านข้างของ Agent Manager",
+  "agentManager.splash.thinHint": "แตะตัวเลขเพื่อดูว่าส่วนนั้นของแถบด้านข้างทำอะไรได้บ้าง",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle": "ทำงานหลายอย่างพร้อมกัน มอบหมายงาน และติดตามเอเจนต์ทุกตัวได้จากที่เดียว",
   "agentManager.splash.compact.hint": "หรืออธิบายงานด้านล่าง",

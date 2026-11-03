@@ -506,6 +506,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Preskoči uvod",
   "agentManager.intro.reopen": "Kako radi Agent Manager",
   "agentManager.splash.preview.label": "Pregled bočne trake Agent Manager",
+  "agentManager.splash.thinHint": "Dodirni broj da vidiš čemu služi taj dio bočne trake.",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":
     "Pokreći zadatke paralelno, delegiraj posao i prati svakog agenta s jednog mjesta.",

@@ -510,6 +510,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Пропустить введение",
   "agentManager.intro.reopen": "Как работает Agent Manager",
   "agentManager.splash.preview.label": "Предпросмотр боковой панели Agent Manager",
+  "agentManager.splash.thinHint": "Нажмите на номер, чтобы узнать, за что отвечает эта часть боковой панели.",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":
     "Запускайте задачи параллельно, делегируйте работу и следите за каждым агентом в одном месте.",

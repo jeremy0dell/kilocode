@@ -508,6 +508,7 @@ export const dict = {
   "agentManager.intro.dismiss": "رد کردن مقدمه",
   "agentManager.intro.reopen": "Agent Manager چگونه کار می‌کند",
   "agentManager.splash.preview.label": "پیش‌نمایش نوار کناری Agent Manager",
+  "agentManager.splash.thinHint": "روی یک شماره بزنید تا ببینید آن بخش از نوار کناری چه کاری انجام می‌دهد.",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":
     "کارها را به‌صورت موازی اجرا کنید، کار را واگذار کنید و همهٔ عامل‌ها را از یک‌جا دنبال کنید.",

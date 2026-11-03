@@ -517,6 +517,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Einführung überspringen",
   "agentManager.intro.reopen": "So funktioniert Agent Manager",
   "agentManager.splash.preview.label": "Agent Manager Seitenleisten-Vorschau",
+  "agentManager.splash.thinHint": "Tippe auf eine Zahl, um zu sehen, was dieser Teil der Seitenleiste macht.",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":
     "Führe Aufgaben parallel aus, delegiere Arbeit und behalte alle Agenten an einem Ort im Blick.",
