@@ -26,20 +26,17 @@ describe("decorative sidebar interaction boundary", () => {
     dispose()
   })
 
-  it("prevents activation, dragging, keyboard and touch events from reaching controls", () => {
+  it("blocks gesture origins and activation at both controls and document", () => {
     const { window, root, dispose } = setup()
     const button = root.querySelector("button")!
     const events = [
       "pointerdown",
-      "pointerup",
       "mousedown",
-      "mouseup",
       "click",
       "dblclick",
       "auxclick",
       "contextmenu",
       "dragstart",
-      "drop",
       "keydown",
       "keyup",
       "touchstart",
@@ -54,13 +51,79 @@ describe("decorative sidebar interaction boundary", () => {
     dispose()
   })
 
+  it("allows document resize listeners to receive movement and release after an outside origin", () => {
+    const { window, root, dispose } = setup()
+    const outside = window.document.createElement("div")
+    window.document.body.append(outside)
+    const events: string[] = []
+    for (const event of ["mousedown", "mousemove", "mouseup"]) {
+      window.document.addEventListener(event, () => events.push(event))
+    }
+    outside.dispatchEvent(new window.MouseEvent("mousedown", { bubbles: true }))
+    const button = root.querySelector("button")!
+    button.dispatchEvent(new window.MouseEvent("mousemove", { bubbles: true }))
+    button.dispatchEvent(new window.MouseEvent("mouseup", { bubbles: true }))
+    expect(events).toEqual(["mousedown", "mousemove", "mouseup"])
+    dispose()
+  })
+
+  it("allows document DnD listeners to receive movement and release after an outside origin", () => {
+    const { window, root, dispose } = setup()
+    const outside = window.document.createElement("div")
+    window.document.body.append(outside)
+    const events: string[] = []
+    for (const event of ["pointerdown", "pointermove", "pointerup"]) {
+      window.document.addEventListener(event, () => events.push(event))
+    }
+    outside.dispatchEvent(new window.PointerEvent("pointerdown", { bubbles: true }))
+    const button = root.querySelector("button")!
+    button.dispatchEvent(new window.PointerEvent("pointermove", { bubbles: true }))
+    button.dispatchEvent(new window.PointerEvent("pointerup", { bubbles: true }))
+    expect(events).toEqual(["pointerdown", "pointermove", "pointerup"])
+    dispose()
+  })
+
+  it("never cancels or swallows gesture continuation and hover tracking events", () => {
+    const { window, root, dispose } = setup()
+    const button = root.querySelector("button")!
+    const events = [
+      "pointermove",
+      "mousemove",
+      "pointerup",
+      "mouseup",
+      "pointercancel",
+      "pointerover",
+      "mouseover",
+      "pointerout",
+      "mouseout",
+      "pointerleave",
+      "mouseleave",
+      "lostpointercapture",
+      "drag",
+      "dragover",
+      "dragleave",
+      "dragend",
+      "drop",
+    ]
+    const controls: string[] = []
+    const document: string[] = []
+    for (const event of events) {
+      button.addEventListener(event, () => controls.push(event))
+      window.document.addEventListener(event, () => document.push(event))
+      expect(button.dispatchEvent(new window.Event(event, { bubbles: true, cancelable: true }))).toBe(true)
+    }
+    expect(controls).toEqual(events)
+    expect(document).toEqual(events)
+    dispose()
+  })
+
   it("stops event-driven hover portals without making the DOM inert", () => {
     const { window, root, dispose } = setup()
     const button = root.querySelector("button")!
     let calls = 0
-    for (const event of ["pointerenter", "pointerover", "pointermove", "mouseenter", "mouseover", "mousemove"]) {
+    for (const event of ["pointerenter", "mouseenter"]) {
       button.addEventListener(event, () => calls++)
-      button.dispatchEvent(new window.Event(event, { bubbles: true }))
+      button.dispatchEvent(new window.Event(event, { bubbles: false }))
     }
     expect(calls).toBe(0)
     expect(root.hasAttribute("inert")).toBe(false)

@@ -18,32 +18,22 @@ export function guard(root: HTMLElement) {
       event.target.blur()
     }
   }
+  // Only block origins and portal openers; live drags need document move/release events.
   const events = [
     "pointerdown",
-    "pointerup",
     "mousedown",
-    "mouseup",
     "click",
     "dblclick",
     "auxclick",
     "contextmenu",
     "dragstart",
-    "drop",
     "keydown",
     "keyup",
     "touchstart",
     "focus",
     "focusin",
     "pointerenter",
-    "pointerover",
-    "pointerleave",
-    "pointerout",
-    "pointermove",
     "mouseenter",
-    "mouseover",
-    "mouseleave",
-    "mouseout",
-    "mousemove",
   ]
   for (const event of events) root.addEventListener(event, block, { capture: true, passive: false })
   update()

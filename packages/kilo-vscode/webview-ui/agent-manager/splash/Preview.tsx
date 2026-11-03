@@ -78,7 +78,7 @@ function Fleet(props: { example: Example }) {
 export function SidebarPreview(props: { selected: Accessor<number> }) {
   const { t } = useLanguage()
   return (
-    <div class="am-splash-preview-card" role="img" aria-label={t("agentManager.splash.preview.label")}>
+    <div class="am-splash-preview-card" role="figure" aria-label={t("agentManager.splash.preview.label")}>
       <div aria-hidden="true" class="am-splash-preview-stack" ref={(el) => onMount(() => onCleanup(guard(el)))}>
         <For each={examples}>
           {(example, index) => (
