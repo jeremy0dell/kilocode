@@ -343,7 +343,13 @@ export const SplashFoldedThin: Story = {
     <div style={{ width: "440px" }}>
       <StoryProviders>
         <LanguageProvider languageOverride={() => "en"}>
-          <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+          <div class="am-intro-layout" style={{ height: "640px" }}>
+            <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
+              <div data-slot="message-list-content">
+                <EmptyPreview folded height="100%" />
+              </div>
+            </div>
+          </div>
         </LanguageProvider>
       </StoryProviders>
     </div>
@@ -356,7 +362,13 @@ export const SplashFoldedNarrow: Story = {
     <div style={{ width: "720px" }}>
       <StoryProviders>
         <LanguageProvider languageOverride={() => "en"}>
-          <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+          <div class="am-intro-layout" style={{ height: "640px" }}>
+            <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
+              <div data-slot="message-list-content">
+                <EmptyPreview folded height="100%" />
+              </div>
+            </div>
+          </div>
         </LanguageProvider>
       </StoryProviders>
     </div>
@@ -369,7 +381,13 @@ export const SplashFoldedWide: Story = {
     <div style={{ width: "1010px" }}>
       <StoryProviders>
         <LanguageProvider languageOverride={() => "en"}>
-          <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+          <div class="am-intro-layout" style={{ height: "640px" }}>
+            <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
+              <div data-slot="message-list-content">
+                <EmptyPreview folded height="100%" />
+              </div>
+            </div>
+          </div>
         </LanguageProvider>
       </StoryProviders>
     </div>
