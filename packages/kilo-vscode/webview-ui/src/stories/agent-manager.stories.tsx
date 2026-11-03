@@ -318,7 +318,9 @@ export const SplashFoldedThin: Story = {
   render: () => (
     <div style={{ width: "440px" }}>
       <StoryProviders>
-        <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+        <LanguageProvider languageOverride={() => "en"}>
+          <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+        </LanguageProvider>
       </StoryProviders>
     </div>
   ),
@@ -329,7 +331,9 @@ export const SplashFoldedNarrow: Story = {
   render: () => (
     <div style={{ width: "720px" }}>
       <StoryProviders>
-        <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+        <LanguageProvider languageOverride={() => "en"}>
+          <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+        </LanguageProvider>
       </StoryProviders>
     </div>
   ),
@@ -340,7 +344,9 @@ export const SplashFoldedWide: Story = {
   render: () => (
     <div style={{ width: "1010px" }}>
       <StoryProviders>
-        <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+        <LanguageProvider languageOverride={() => "en"}>
+          <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+        </LanguageProvider>
       </StoryProviders>
     </div>
   ),
