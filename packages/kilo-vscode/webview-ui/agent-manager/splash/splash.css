@@ -531,7 +531,7 @@
 
 .am-splash-compact-panel {
   display: grid;
-  grid-template-rows: auto 236px 1fr;
+  grid-template-rows: auto 276px 1fr;
   grid-area: 1 / 1;
   min-width: 0;
   visibility: hidden;
@@ -558,13 +558,23 @@
   line-height: 19px;
 }
 
-.am-splash-compact-panel .am-splash-preview-card {
+.am-splash-compact-preview {
   grid-row: 2;
-  height: 236px;
+  height: 276px;
   overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 78%, transparent);
+}
+
+/* Allow the last fixture rows to anchor above the fade without changing sidebar layout. */
+.am-splash-compact-preview::after {
+  content: "";
+  display: block;
+  height: 276px;
+}
+
+.am-splash-compact-panel .am-splash-preview-card {
   border: 0;
   border-radius: 0;
-  mask-image: linear-gradient(to bottom, #000 78%, transparent);
 }
 
 .am-splash-compact-features {

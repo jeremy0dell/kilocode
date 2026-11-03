@@ -1,4 +1,4 @@
-import { For, Show, createEffect, createUniqueId, type Accessor, type JSX } from "solid-js"
+import { For, Show, createEffect, createUniqueId, onMount, onCleanup, type Accessor, type JSX } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { useLanguage } from "../../src/context/language"
 import { examples } from "./examples"
@@ -10,6 +10,35 @@ export function Compact(props: { selected: Accessor<number>; onSelect: (index: n
   const id = createUniqueId()
   const tabs: HTMLButtonElement[] = []
   createEffect(() => tabs.at(props.selected())?.scrollIntoView({ block: "nearest", inline: "nearest" }))
+  const frame = (root: HTMLDivElement, example: (typeof examples)[number]) => {
+    onMount(() => {
+      let pending = 0
+      const schedule = () => {
+        cancelAnimationFrame(pending)
+        pending = requestAnimationFrame(() => {
+          const panel = root.querySelector(".am-splash-preview-panel-active")
+          const selected = panel?.querySelector(".am-worktree-item-active")
+          if (!selected) return
+          const group =
+            selected.closest(".am-section-group")?.querySelector(".am-section-group-header") ??
+            panel?.querySelector(".am-wt-group-header") ??
+            selected.closest(".am-project")?.querySelector(".am-project-item")
+          // These two examples need later rows more than a header above their selection.
+          const anchor = example.id === "crossStack" || example.id === "beyondCode" ? selected : (group ?? selected)
+          root.scrollTop += anchor.getBoundingClientRect().top - root.getBoundingClientRect().top - 1
+        })
+      }
+      const observer = new ResizeObserver(schedule)
+      observer.observe(root)
+      const panel = root.querySelector(".am-splash-preview-panel-active")
+      if (panel) observer.observe(panel)
+      schedule()
+      onCleanup(() => {
+        observer.disconnect()
+        cancelAnimationFrame(pending)
+      })
+    })
+  }
   return (
     <div class="am-splash-compact">
       <div
@@ -73,7 +102,9 @@ export function Compact(props: { selected: Accessor<number>; onSelect: (index: n
             >
               <p class="am-splash-compact-pitch">{t(example.pitch)}</p>
               <Show when={index() === props.selected()}>
-                <SidebarPreview selected={props.selected} />
+                <div class="am-splash-compact-preview" ref={(root) => frame(root, example)}>
+                  <SidebarPreview selected={props.selected} />
+                </div>
               </Show>
               <ul class="am-splash-compact-features">
                 <For each={example.features}>

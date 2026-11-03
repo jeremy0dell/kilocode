@@ -122,9 +122,16 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void;
   onMount(() => {
     const pane = root.closest('.am-intro-layout > [data-slot="message-list"]')
     if (!pane) return
-    const observer = new ResizeObserver(([entry]) => setWide((entry?.contentRect.width ?? 0) >= 880))
+    let pending = 0
+    const observer = new ResizeObserver(([entry]) => {
+      cancelAnimationFrame(pending)
+      pending = requestAnimationFrame(() => setWide((entry?.contentRect.width ?? 0) >= 880))
+    })
     observer.observe(pane)
-    onCleanup(() => observer.disconnect())
+    onCleanup(() => {
+      observer.disconnect()
+      cancelAnimationFrame(pending)
+    })
   })
   return (
     <section ref={root} class="am-splash" classList={{ "am-splash-wide": wide() }} aria-labelledby={titleId}>
