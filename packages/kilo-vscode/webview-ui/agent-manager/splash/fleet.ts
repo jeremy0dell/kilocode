@@ -1,0 +1,114 @@
+import type {
+  AgentManagerStateMessage,
+  AgentProjectSnapshot,
+  LocalGitStats,
+  PRStatus,
+  SectionState,
+  WorktreeGitStats,
+  WorktreeState,
+} from "../../src/types/messages"
+import type { Activity } from "../../src/utils/session-activity"
+import type { Example, Session } from "./examples"
+
+/** Adapt splash fixtures to the same data consumed by the live project sidebar. */
+export function fleet(example: Example) {
+  return example.fixture.projects.map((fixture, index) => {
+    const id = `splash:${example.id}:${index}`
+    const worktrees: WorktreeState[] = []
+    const sections: SectionState[] = []
+    const order: string[] = []
+    const stats: Record<string, WorktreeGitStats> = {}
+    const prs: Record<string, PRStatus> = {}
+    const activity: Record<string, Activity> = {}
+    const selected: string[] = []
+    const local: LocalGitStats = {
+      branch: fixture.rows.find((row) => row.kind === "local")?.branch ?? "main",
+      files: 0,
+      additions: 0,
+      deletions: 0,
+      ahead: 0,
+      behind: 0,
+    }
+    const add = (session: Session, section?: string, group?: string) => {
+      const key = `${id}:worktree:${worktrees.length}`
+      worktrees.push({
+        id: key,
+        label: session.title,
+        branch: session.branch ?? session.note ?? session.title,
+        path: `${fixture.name}/.kilo/worktrees/${key}`,
+        parentBranch: local.branch,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        sectionId: section,
+        groupId: group,
+      })
+      order.push(key)
+      stats[key] = {
+        worktreeId: key,
+        files: 0,
+        additions: session.diff?.additions ?? 0,
+        deletions: session.diff?.deletions ?? 0,
+        ahead: 0,
+        behind: 0,
+      }
+      activity[key] =
+        session.status === "working"
+          ? "busy"
+          : session.status === "finished"
+            ? "done"
+            : session.status === "needs-you"
+              ? "waiting"
+              : "idle"
+      if (session.selected) selected.push(key)
+      if (session.pr) {
+        prs[key] = {
+          number: session.pr,
+          title: session.title,
+          url: "",
+          state: "open",
+          review: "approved",
+          checks: { status: "success", total: 1, passed: 1, failed: 0, pending: 0, checks: [] },
+          reviewers: [],
+          additions: stats[key]!.additions,
+          deletions: stats[key]!.deletions,
+          files: 0,
+        }
+      }
+    }
+    fixture.rows.forEach((row, index) => {
+      if (row.kind === "local") return
+      if (row.kind === "session") return add(row.session)
+      if (row.kind === "versions") {
+        row.sessions.forEach((session) => add(session, undefined, `${id}:group:${index}`))
+        return
+      }
+      const key = `${id}:section:${index}`
+      sections.push({ id: key, name: row.section.name, color: row.section.color, order: index, collapsed: false })
+      order.push(key)
+      row.section.sessions.forEach((session) => add(session, key))
+    })
+    const selection = selected.at(0)
+    const project: AgentProjectSnapshot = {
+      id,
+      root: fixture.name,
+      label: fixture.name,
+      pinned: index === 0,
+      active: selection !== undefined,
+      expanded: true,
+      initialized: true,
+      missing: false,
+    }
+    const state: AgentManagerStateMessage = {
+      type: "agentManager.state",
+      projectId: id,
+      worktrees,
+      sessions: worktrees.map((wt) => ({ id: `${wt.id}:session`, worktreeId: wt.id, createdAt: wt.createdAt })),
+      sections,
+      worktreeOrder: order,
+      staleWorktreeIds: [],
+      isGitRepo: true,
+      defaultBaseBranch: local.branch,
+      sessionsCollapsed: false,
+    }
+    return { project, state, stats, prs, activity, local, selection }
+  })
+}

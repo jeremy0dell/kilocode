@@ -1,4 +1,4 @@
-import { For, createSignal, createUniqueId, type JSX } from "solid-js"
+import { For, createSignal, createUniqueId, type Accessor, type JSX } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
@@ -6,6 +6,7 @@ import { WelcomeEmptyState, KiloLogo } from "../../src/components/chat/WelcomeEm
 import { useLanguage } from "../../src/context/language"
 import type { SessionInfo } from "../../src/types/messages"
 import { examples } from "./examples"
+import { SidebarPreview } from "./Preview"
 import { visible, wrap } from "./selection"
 import "./splash.css"
 
@@ -16,10 +17,9 @@ interface EmptyProps {
   hints?: () => JSX.Element
 }
 
-function ExamplePicker(props: { initial?: number }) {
+function ExamplePicker(props: { selected: Accessor<number>; onSelect: (index: number) => void }) {
   const { t } = useLanguage()
-  const [selected, setSelected] = createSignal(Math.max(0, Math.min(props.initial ?? 0, examples.length - 1)))
-  const current = () => examples.at(selected()) ?? examples.at(0)!
+  const current = () => examples.at(props.selected()) ?? examples.at(0)!
 
   return (
     <>
@@ -30,20 +30,20 @@ function ExamplePicker(props: { initial?: number }) {
             variant="ghost"
             class="am-splash-arrow"
             label={t("agentManager.splash.carousel.previous")}
-            onClick={() => setSelected(wrap(selected(), -1, examples.length))}
+            onClick={() => props.onSelect(wrap(props.selected(), -1, examples.length))}
           />
           <div class="am-splash-cards">
-            <For each={visible(selected(), examples.length, 3)}>
+            <For each={visible(props.selected(), examples.length, 3)}>
               {(index) => {
                 const example = examples.at(index)!
                 return (
                   <button
                     type="button"
                     class="am-splash-card"
-                    classList={{ "am-splash-card-selected": index === selected() }}
+                    classList={{ "am-splash-card-selected": index === props.selected() }}
                     data-tone={example.id}
-                    aria-current={index === selected() ? "true" : undefined}
-                    onClick={() => setSelected(index)}
+                    aria-current={index === props.selected() ? "true" : undefined}
+                    onClick={() => props.onSelect(index)}
                   >
                     <span class="am-splash-card-tag">{t(example.tag)}</span>
                     <span class="am-splash-card-title">{t(example.title)}</span>
@@ -57,7 +57,7 @@ function ExamplePicker(props: { initial?: number }) {
             variant="ghost"
             class="am-splash-arrow"
             label={t("agentManager.splash.carousel.next")}
-            onClick={() => setSelected(wrap(selected(), 1, examples.length))}
+            onClick={() => props.onSelect(wrap(props.selected(), 1, examples.length))}
           />
         </div>
         <div class="am-splash-dots">
@@ -66,10 +66,10 @@ function ExamplePicker(props: { initial?: number }) {
               <button
                 type="button"
                 class="am-splash-dot"
-                classList={{ "am-splash-dot-selected": index() === selected() }}
-                aria-current={index() === selected() ? "true" : undefined}
+                classList={{ "am-splash-dot-selected": index() === props.selected() }}
+                aria-current={index() === props.selected() ? "true" : undefined}
                 aria-label={t("agentManager.splash.carousel.goTo", { title: t(example.title) })}
-                onClick={() => setSelected(index())}
+                onClick={() => props.onSelect(index())}
               >
                 <span class="am-splash-dot-mark" />
               </button>
@@ -82,9 +82,9 @@ function ExamplePicker(props: { initial?: number }) {
           {(example, index) => (
             <div
               class="am-splash-example-panel"
-              classList={{ "am-splash-example-panel-active": index() === selected() }}
+              classList={{ "am-splash-example-panel-active": index() === props.selected() }}
               data-tone={example.id}
-              aria-hidden={index() === selected() ? undefined : "true"}
+              aria-hidden={index() === props.selected() ? undefined : "true"}
             >
               <p class="am-splash-pitch">{t(example.pitch)}</p>
               <ul class="am-splash-features">
@@ -115,29 +115,35 @@ function ExamplePicker(props: { initial?: number }) {
 export function SplashExpanded(props: { onHide: () => void; onStart: () => void; initialExample?: number }) {
   const { t } = useLanguage()
   const titleId = createUniqueId()
+  const [selected, setSelected] = createSignal(Math.max(0, Math.min(props.initialExample ?? 0, examples.length - 1)))
   return (
     <section class="am-splash" aria-labelledby={titleId}>
       <div class="am-splash-frame">
         <article class="am-splash-hero">
-          <header class="am-splash-header">
-            <div class="am-splash-logo" aria-hidden="true">
-              <KiloLogo />
+          <div class="am-splash-hero-main">
+            <header class="am-splash-header">
+              <div class="am-splash-logo" aria-hidden="true">
+                <KiloLogo />
+              </div>
+              <span class="am-splash-eyebrow">{t("agentManager.splash.eyebrow")}</span>
+              <Button variant="ghost" size="small" class="am-splash-hide" onClick={props.onHide}>
+                {t("agentManager.splash.hide")}
+              </Button>
+            </header>
+            <h2 class="am-splash-title" id={titleId}>
+              {t("agentManager.splash.title")}
+            </h2>
+            <p class="am-splash-subtitle">{t("agentManager.splash.subtitle")}</p>
+            <ExamplePicker selected={selected} onSelect={setSelected} />
+            <div class="am-splash-actions">
+              <Button variant="primary" onClick={props.onStart}>
+                {t("agentManager.splash.start")}
+              </Button>
+              <span class="am-splash-hint">{t("agentManager.splash.hint")}</span>
             </div>
-            <span class="am-splash-eyebrow">{t("agentManager.splash.eyebrow")}</span>
-            <Button variant="ghost" size="small" class="am-splash-hide" onClick={props.onHide}>
-              {t("agentManager.splash.hide")}
-            </Button>
-          </header>
-          <h2 class="am-splash-title" id={titleId}>
-            {t("agentManager.splash.title")}
-          </h2>
-          <p class="am-splash-subtitle">{t("agentManager.splash.subtitle")}</p>
-          <ExamplePicker initial={props.initialExample} />
-          <div class="am-splash-actions">
-            <Button variant="primary" onClick={props.onStart}>
-              {t("agentManager.splash.start")}
-            </Button>
-            <span class="am-splash-hint">{t("agentManager.splash.hint")}</span>
+          </div>
+          <div class="am-splash-hero-side">
+            <SidebarPreview selected={selected} />
           </div>
         </article>
       </div>

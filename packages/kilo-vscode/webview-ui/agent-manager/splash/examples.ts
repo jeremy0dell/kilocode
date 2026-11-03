@@ -2,14 +2,13 @@ type Status = "working" | "finished" | "needs-you"
 
 type SectionColor = "Red" | "Orange" | "Yellow" | "Green" | "Cyan" | "Blue" | "Purple" | "Magenta"
 
-interface Session {
+export interface Session {
   title: string
   branch?: string
   note?: string
   status?: Status
   pr?: number
   diff?: { additions: number; deletions: number }
-  shortcut?: number
   selected?: boolean
 }
 
@@ -27,7 +26,6 @@ type Row =
 
 interface Project {
   name: string
-  count: number
   rows: readonly Row[]
 }
 
@@ -40,7 +38,7 @@ interface Feature {
   text: string
 }
 
-interface Example {
+export interface Example {
   id: "crossStack" | "orchestrator" | "ops" | "versions" | "beyondCode"
   tag: string
   title: string
@@ -73,7 +71,6 @@ export const examples: readonly Example[] = [
       projects: [
         {
           name: "billing-api",
-          count: 3,
           rows: [
             {
               kind: "session",
@@ -81,7 +78,6 @@ export const examples: readonly Example[] = [
                 title: "Usage billing: metering endpoint",
                 branch: "usage-metering",
                 status: "working",
-                shortcut: 2,
                 diff: { additions: 142, deletions: 18 },
               },
             },
@@ -89,7 +85,6 @@ export const examples: readonly Example[] = [
         },
         {
           name: "web-app",
-          count: 2,
           rows: [
             {
               kind: "session",
@@ -98,7 +93,6 @@ export const examples: readonly Example[] = [
                 branch: "pricing-page",
                 status: "finished",
                 pr: 889,
-                shortcut: 3,
                 selected: true,
               },
             },
@@ -106,7 +100,6 @@ export const examples: readonly Example[] = [
         },
         {
           name: "infra",
-          count: 2,
           rows: [
             {
               kind: "session",
@@ -114,7 +107,6 @@ export const examples: readonly Example[] = [
                 title: "Usage billing: queue and alarms",
                 branch: "billing-queue",
                 status: "needs-you",
-                shortcut: 4,
                 diff: { additions: 36, deletions: 4 },
               },
             },
@@ -146,7 +138,6 @@ export const examples: readonly Example[] = [
       projects: [
         {
           name: "kernel-sched",
-          count: 5,
           rows: [
             { kind: "local", branch: "main" },
             {
@@ -159,7 +150,6 @@ export const examples: readonly Example[] = [
                     title: "Orchestrator · scheduler latency pass",
                     note: "started 3 sessions · 1 done",
                     status: "working",
-                    shortcut: 2,
                   },
                 ],
               },
@@ -175,20 +165,17 @@ export const examples: readonly Example[] = [
                     branch: "rq-lock",
                     status: "finished",
                     pr: 212,
-                    shortcut: 3,
                   },
                   {
                     title: "Batch io_uring submissions",
                     branch: "uring-batch",
                     status: "working",
-                    shortcut: 4,
                     diff: { additions: 58, deletions: 21 },
                   },
                   {
                     title: "Pin hot kthreads to isolated cores",
                     branch: "kthread-pin",
                     status: "needs-you",
-                    shortcut: 5,
                   },
                 ],
               },
@@ -221,7 +208,6 @@ export const examples: readonly Example[] = [
       projects: [
         {
           name: "api",
-          count: 7,
           rows: [
             {
               kind: "section",
@@ -234,13 +220,11 @@ export const examples: readonly Example[] = [
                     branch: "rate-limit-login",
                     status: "finished",
                     pr: 412,
-                    shortcut: 2,
                   },
                   {
                     title: "Paginate the audit log",
                     branch: "audit-pagination",
                     status: "working",
-                    shortcut: 3,
                     diff: { additions: 88, deletions: 12 },
                   },
                   {
@@ -248,7 +232,6 @@ export const examples: readonly Example[] = [
                     branch: "webhook-retries",
                     status: "finished",
                     pr: 414,
-                    shortcut: 4,
                   },
                 ],
               },
@@ -263,19 +246,16 @@ export const examples: readonly Example[] = [
                     title: "Merge Captain",
                     note: "queue: #412, #414",
                     status: "working",
-                    shortcut: 5,
                   },
                   {
                     title: "Issue Delegator",
                     note: "triaged 6 issues",
                     status: "finished",
-                    shortcut: 6,
                   },
                   {
                     title: "Adversarial Reviewer",
                     note: "objection on #414",
                     status: "needs-you",
-                    shortcut: 7,
                     selected: true,
                   },
                 ],
@@ -309,7 +289,6 @@ export const examples: readonly Example[] = [
       projects: [
         {
           name: "storefront",
-          count: 4,
           rows: [
             { kind: "local", branch: "main" },
             {
@@ -319,7 +298,6 @@ export const examples: readonly Example[] = [
                   title: "Cut cold start time · Kilo Auto",
                   branch: "cold-start-a",
                   status: "finished",
-                  shortcut: 2,
                   diff: { additions: 64, deletions: 40 },
                 },
                 {
@@ -327,14 +305,12 @@ export const examples: readonly Example[] = [
                   branch: "cold-start-b",
                   status: "finished",
                   pr: 58,
-                  shortcut: 3,
                   selected: true,
                 },
                 {
                   title: "Cut cold start time · GPT",
                   branch: "cold-start-c",
                   status: "working",
-                  shortcut: 4,
                   diff: { additions: 21, deletions: 9 },
                 },
               ],
@@ -367,7 +343,6 @@ export const examples: readonly Example[] = [
       projects: [
         {
           name: "brand-kit",
-          count: 5,
           rows: [
             { kind: "local", branch: "main" },
             {
@@ -377,20 +352,17 @@ export const examples: readonly Example[] = [
                   title: "Logo direction · geometric",
                   branch: "logo-geo",
                   status: "finished",
-                  shortcut: 2,
                 },
                 {
                   title: "Logo direction · wordmark",
                   branch: "logo-word",
                   status: "finished",
-                  shortcut: 3,
                   selected: true,
                 },
                 {
                   title: "Logo direction · monogram",
                   branch: "logo-mono",
                   status: "needs-you",
-                  shortcut: 4,
                 },
               ],
             },
@@ -400,7 +372,6 @@ export const examples: readonly Example[] = [
                 title: "Color and type tokens",
                 branch: "tokens",
                 status: "working",
-                shortcut: 5,
               },
             },
             {
@@ -408,7 +379,6 @@ export const examples: readonly Example[] = [
               session: {
                 title: "Social card templates",
                 branch: "social-cards",
-                shortcut: 6,
               },
             },
           ],

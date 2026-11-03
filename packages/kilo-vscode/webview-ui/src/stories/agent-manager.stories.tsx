@@ -221,10 +221,10 @@ export const SplashExpandedStory: Story = {
   ),
 }
 
-function SplashPreview(props: { example: number }) {
+function SplashPreview(props: { example: number; width?: string; height?: string }) {
   return (
     <StoryProviders>
-      <div class="am-intro-layout" style={{ height: "640px" }}>
+      <div class="am-intro-layout" style={{ height: props.height ?? "1000px", width: props.width }}>
         <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
           <div data-slot="message-list-content">
             <SplashExpanded onHide={() => {}} onStart={() => {}} initialExample={props.example} />
@@ -253,6 +253,11 @@ export const SplashVersionsStory: Story = {
 export const SplashBeyondCodeStory: Story = {
   name: "Splash beyond code",
   render: () => <SplashPreview example={4} />,
+}
+
+export const SplashNarrowStory: Story = {
+  name: "Splash narrow",
+  render: () => <SplashPreview example={0} width="560px" height="1100px" />,
 }
 
 export const SplashFoldedStory: Story = {
