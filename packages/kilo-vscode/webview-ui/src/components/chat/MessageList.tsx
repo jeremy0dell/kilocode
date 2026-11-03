@@ -165,6 +165,7 @@ export const MessageList: Component<MessageListProps> = (props) => {
   )
   const isEmpty = () => turns().length === 0 && !session.loading() && !revert()
   const introduction = createMemo(() => isEmpty() && !props.readonly && props.introduction)
+  const splashFolded = createMemo(() => isEmpty() && !props.readonly && props.splashFolded)
 
   const activeUserID = createMemo(() =>
     getActiveUserMessageID(
@@ -862,7 +863,7 @@ export const MessageList: Component<MessageListProps> = (props) => {
   return (
     <div
       class="message-list-container"
-      classList={{ "am-intro-layout": introduction(), "am-splash-host-folded": props.splashFolded }}
+      classList={{ "am-intro-layout": introduction(), "am-splash-host-folded": splashFolded() }}
     >
       <Show when={props.announce === false}>
         <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">

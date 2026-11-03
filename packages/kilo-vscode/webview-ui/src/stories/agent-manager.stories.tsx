@@ -13,13 +13,11 @@ import { createReviewComposers } from "../../agent-manager/review-composers"
 import { FullScreenDiffView } from "../../diff-viewer/FullScreenDiffView"
 import { WorktreeItem } from "../../agent-manager/WorktreeItem"
 import { createIntro } from "../../agent-manager/intro/AgentManagerIntro"
-import { SplashExpanded, SplashFolded } from "../../agent-manager/splash/Splash"
 import { createSplashState } from "../../agent-manager/splash/state"
 import { SessionTab } from "../components/chat/SessionTab"
 import { ChatView } from "../components/chat/ChatView"
 import { registerVscodeToolOverrides } from "../components/chat/VscodeToolOverrides"
 import { SessionContext, useSession } from "../context/session"
-import { AccountSwitcher } from "../components/shared/AccountSwitcher"
 import { ServerContext } from "../context/server"
 import { WorktreeModeProvider } from "../context/worktree-mode"
 import { SidebarSearchMenu } from "../../agent-manager/SidebarSearchMenu"
@@ -152,8 +150,12 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-function IntroductionPreview(props: { skipped?: boolean }) {
-  const splash = createSplashState(() => {}, { enabled: false, folded: false })
+function IntroductionPreview(props: {
+  skipped?: boolean
+  splash?: { enabled: boolean; folded: boolean }
+  height?: string
+}) {
+  const splash = createSplashState(() => {}, props.splash ?? { enabled: false, folded: false })
   const intro = createIntro({
     base: () => "main",
     git: () => true,
@@ -184,7 +186,11 @@ function IntroductionPreview(props: { skipped?: boolean }) {
       },
     ],
   }
-  return <SessionContext.Provider value={session}>{intro.render()}</SessionContext.Provider>
+  return (
+    <SessionContext.Provider value={session}>
+      <div style={{ height: props.height ?? "auto" }}>{intro.render()}</div>
+    </SessionContext.Provider>
+  )
 }
 
 export const Introduction: Story = {
@@ -209,7 +215,7 @@ export const SplashExpandedStory: Story = {
   name: "Splash expanded",
   render: () => (
     <StoryProviders>
-      <SplashExpanded onHide={() => {}} onStart={() => {}} />
+      <IntroductionPreview splash={{ enabled: true, folded: false }} height="640px" />
     </StoryProviders>
   ),
 }
@@ -218,16 +224,7 @@ export const SplashFoldedStory: Story = {
   name: "Splash folded",
   render: () => (
     <StoryProviders>
-      <div class="message-list-container am-splash-host-folded" style={{ height: "640px" }}>
-        <div class="welcome-header" data-slot="welcome-header">
-          <AccountSwitcher class="account-switcher-welcome" />
-        </div>
-        <div class="message-list" data-slot="message-list">
-          <div class="message-list-content-empty">
-            <SplashFolded onShowExamples={() => {}} />
-          </div>
-        </div>
-      </div>
+      <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
     </StoryProviders>
   ),
 }
