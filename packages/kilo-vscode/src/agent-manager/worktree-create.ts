@@ -3,7 +3,7 @@ import type { WorktreeManager, CreateWorktreeResult } from "./WorktreeManager"
 import { chooseBaseBranch } from "./base-branch"
 import { classifyWorktreeError, type WorktreeSetupErrorCode } from "./git-import"
 import { PLATFORM } from "./constants"
-import type { AgentManagerOutMessage } from "./types"
+import type { AgentManagerInMessage, AgentManagerOutMessage } from "./types"
 
 /** Which surface started a creation, for telemetry: the New Worktree modal, quick create, or anything else. */
 export type WorktreeEntry = "modal" | "quick" | "other"
@@ -60,15 +60,10 @@ export function reportNoRepo(capture: Capture, entry: WorktreeEntry): null {
   return null
 }
 
-const ENTRIES: Partial<Record<string, WorktreeEntry>> = {
-  "agentManager.createMultiVersion": "modal",
-  "agentManager.createWorktree": "quick",
-}
-
 /** Report a create message dropped because it targets an unknown project. Other messages are ignored. */
-export function reportDropped(capture: Capture, type: string): void {
-  const entry = ENTRIES[type]
-  if (entry) reportNoRepo(capture, entry)
+export function reportDropped(capture: Capture, type: AgentManagerInMessage["type"]): void {
+  if (type === "agentManager.createMultiVersion") reportNoRepo(capture, "modal")
+  if (type === "agentManager.createWorktree") reportNoRepo(capture, "quick")
 }
 
 /**
