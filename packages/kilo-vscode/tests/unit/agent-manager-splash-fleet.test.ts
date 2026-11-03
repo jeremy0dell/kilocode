@@ -88,8 +88,8 @@ describe("splash sidebar adapter", () => {
       const states = Object.fromEntries(rows.map((row) => [row.project.id, row.state]))
       const entries = buildProjectNavEntries(projects, states)
       const shortcuts = buildShortcutMap(entries)
-      rows.forEach((row, index) => {
-        expect(row.project.id).toBe(`splash:${example.id}:${index}`)
+      rows.forEach((row) => {
+        expect(row.project.id).toBe(`splash:${example.id}:${row.project.root}`)
         ids.push(row.project.id, ...row.state.worktrees.map((wt) => wt.id), ...row.state.sections!.map((s) => s.id))
         expect(shortcuts.get(`${row.project.id}:local`)).toBeDefined()
       })

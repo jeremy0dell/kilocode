@@ -17,7 +17,13 @@ interface EmptyProps {
   hints?: () => JSX.Element
 }
 
-function ExamplePicker(props: { selected: Accessor<number>; onSelect: (index: number) => void }) {
+function ExamplePicker(props: {
+  selected: Accessor<number>
+  onSelect: (index: number) => void
+  highlight: Accessor<number | undefined>
+  onHighlight: (index: number | undefined) => void
+  features: string
+}) {
   const { t } = useLanguage()
   const current = () => examples.at(props.selected()) ?? examples.at(0)!
 
@@ -89,8 +95,14 @@ function ExamplePicker(props: { selected: Accessor<number>; onSelect: (index: nu
               <p class="am-splash-pitch">{t(example.pitch)}</p>
               <ul class="am-splash-features">
                 <For each={example.features}>
-                  {(feature) => (
-                    <li class="am-splash-feature">
+                  {(feature, position) => (
+                    <li
+                      id={`${props.features}-${example.id}-${position()}`}
+                      class="am-splash-feature"
+                      classList={{ "am-splash-feature-highlight": props.highlight() === position() }}
+                      onMouseEnter={() => props.onHighlight(position())}
+                      onMouseLeave={() => props.onHighlight(undefined)}
+                    >
                       <span class="am-splash-feature-dot" aria-hidden="true" />
                       <span>
                         <strong>{t(feature.name)}</strong>
@@ -115,6 +127,8 @@ function ExamplePicker(props: { selected: Accessor<number>; onSelect: (index: nu
 export function SplashExpanded(props: { onHide: () => void; onStart: () => void; initialExample?: number }) {
   const { t } = useLanguage()
   const titleId = createUniqueId()
+  const features = createUniqueId()
+  const [highlight, setHighlight] = createSignal<number>()
   const [selected, setSelected] = createSignal(Math.max(0, Math.min(props.initialExample ?? 0, examples.length - 1)))
   return (
     <section class="am-splash" aria-labelledby={titleId}>
@@ -134,7 +148,13 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void;
               {t("agentManager.splash.title")}
             </h2>
             <p class="am-splash-subtitle">{t("agentManager.splash.subtitle")}</p>
-            <ExamplePicker selected={selected} onSelect={setSelected} />
+            <ExamplePicker
+              selected={selected}
+              onSelect={setSelected}
+              highlight={highlight}
+              onHighlight={setHighlight}
+              features={features}
+            />
             <div class="am-splash-actions">
               <Button variant="primary" onClick={props.onStart}>
                 {t("agentManager.splash.start")}
@@ -143,7 +163,7 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void;
             </div>
           </div>
           <div class="am-splash-hero-side">
-            <SidebarPreview selected={selected} />
+            <SidebarPreview selected={selected} highlight={highlight} onHighlight={setHighlight} features={features} />
           </div>
         </article>
       </div>

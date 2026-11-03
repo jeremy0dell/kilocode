@@ -9,6 +9,7 @@ import type {
 } from "../../src/types/messages"
 import type { Activity } from "../../src/utils/session-activity"
 import type { Example, Session } from "./examples"
+import { aliases } from "./anchors"
 
 const status = {
   working: "busy",
@@ -19,7 +20,7 @@ const status = {
 /** Adapt splash fixtures to the same data consumed by the live project sidebar. */
 export function fleet(example: Example) {
   return example.fixture.projects.map((fixture, index) => {
-    const id = `splash:${example.id}:${index}`
+    const id = `splash:${example.id}:${fixture.name}`
     const worktrees: WorktreeState[] = []
     const sections: SectionState[] = []
     const order: string[] = []
@@ -36,7 +37,7 @@ export function fleet(example: Example) {
       behind: 0,
     }
     const add = (session: Session, section?: string, group?: string) => {
-      const key = `${id}:worktree:${worktrees.length}`
+      const key = `${id}:worktree:${session.branch ?? aliases[session.title] ?? session.title}`
       worktrees.push({
         id: key,
         label: session.title,
@@ -77,10 +78,12 @@ export function fleet(example: Example) {
       if (row.kind === "local") return
       if (row.kind === "session") return add(row.session)
       if (row.kind === "versions") {
-        row.sessions.forEach((session) => add(session, undefined, `${id}:group:${position}`))
+        const first = row.sessions.at(0)!
+        const name = first.branch ?? first.title
+        row.sessions.forEach((session) => add(session, undefined, `${id}:group:${aliases[name] ?? name}`))
         return
       }
-      const key = `${id}:section:${position}`
+      const key = `${id}:section:${row.section.name.toLowerCase()}`
       sections.push({ id: key, name: row.section.name, color: row.section.color, order: position, collapsed: false })
       order.push(key)
       row.section.sessions.forEach((session) => add(session, key))
