@@ -1,4 +1,4 @@
-import { For, type Accessor } from "solid-js"
+import { For, onCleanup, onMount, type Accessor } from "solid-js"
 import { useLanguage } from "../../src/context/language"
 import { ProjectsSection } from "../ProjectsSection"
 import { ProjectSidebarBody } from "../ProjectSidebarBody"
@@ -8,6 +8,7 @@ import { buildShortcutMap } from "../section-helpers"
 import type { WorktreeDelete } from "../worktree-delete"
 import { examples, type Example } from "./examples"
 import { fleet } from "./fleet"
+import { guard } from "./guard"
 
 const noop = () => undefined
 const deletion: WorktreeDelete = { pending: noop, cancel: noop, confirm: noop, select: noop }
@@ -77,8 +78,8 @@ function Fleet(props: { example: Example }) {
 export function SidebarPreview(props: { selected: Accessor<number> }) {
   const { t } = useLanguage()
   return (
-    <div class="am-splash-preview-card" role="img" aria-label={t("agentManager.splash.preview.label")}>
-      <div inert class="am-splash-preview-stack">
+    <div class="am-splash-preview-card" role="figure" aria-label={t("agentManager.splash.preview.label")}>
+      <div aria-hidden="true" class="am-splash-preview-stack" ref={(el) => onMount(() => onCleanup(guard(el)))}>
         <For each={examples}>
           {(example, index) => (
             <div
