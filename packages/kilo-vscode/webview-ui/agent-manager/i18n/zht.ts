@@ -492,7 +492,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "並行處理多項任務、委派工作、追蹤每個代理程式的進度，並在同一個地方讓多條工作流程持續推進。",
   "agentManager.splash.start": "開始第一個工作階段",
-  "agentManager.splash.hint": "或在下方輸入框中描述任務",
+  "agentManager.splash.hint": "或在下方描述任務",
   "agentManager.splash.folded.title": "讓一隊 Kilo 代理程式為你工作",
   "agentManager.splash.folded.note": "跨技術堆疊功能、編排器、維運團隊等更多內容",
   "agentManager.splash.showExamples": "查看範例",

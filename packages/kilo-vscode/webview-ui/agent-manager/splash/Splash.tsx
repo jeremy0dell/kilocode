@@ -1,4 +1,4 @@
-import { For, createSignal, createUniqueId, type JSX } from "solid-js"
+import { For, createEffect, createSignal, createUniqueId, onCleanup, onMount, type JSX } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
@@ -6,7 +6,7 @@ import { WelcomeEmptyState, KiloLogo } from "../../src/components/chat/WelcomeEm
 import { useLanguage } from "../../src/context/language"
 import type { SessionInfo } from "../../src/types/messages"
 import { examples } from "./examples"
-import { visible, wrap } from "./selection"
+import { start, wrap } from "./selection"
 import "./splash.css"
 
 interface EmptyProps {
@@ -20,6 +20,37 @@ function ExamplePicker(props: { initial?: number }) {
   const { t } = useLanguage()
   const [selected, setSelected] = createSignal(Math.max(0, Math.min(props.initial ?? 0, examples.length - 1)))
   const current = () => examples.at(selected()) ?? examples.at(0)!
+  let track!: HTMLDivElement
+  const scroll = () => {
+    const first = track.firstElementChild as HTMLElement | null
+    const card = track.children.item(start(selected(), examples.length)) as HTMLElement | null
+    if (!first || !card) return
+    track.scrollTo({ left: card.offsetLeft - first.offsetLeft })
+  }
+  createEffect(scroll)
+  onMount(() => {
+    const observer = new ResizeObserver(scroll)
+    observer.observe(track)
+    onCleanup(() => observer.disconnect())
+  })
+
+  const navigate = (event: KeyboardEvent, index: number) => {
+    const rtl = getComputedStyle(track).direction === "rtl"
+    const next =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? examples.length - 1
+          : event.key === "ArrowLeft"
+            ? wrap(index, rtl ? 1 : -1, examples.length)
+            : event.key === "ArrowRight"
+              ? wrap(index, rtl ? -1 : 1, examples.length)
+              : undefined
+    if (next == null) return
+    event.preventDefault()
+    setSelected(next)
+    ;(track.children.item(next) as HTMLElement | null)?.focus({ preventScroll: true })
+  }
 
   return (
     <>
@@ -32,18 +63,19 @@ function ExamplePicker(props: { initial?: number }) {
             label={t("agentManager.splash.carousel.previous")}
             onClick={() => setSelected(wrap(selected(), -1, examples.length))}
           />
-          <div class="am-splash-cards">
-            <For each={visible(selected(), examples.length, 3)}>
-              {(index) => {
-                const example = examples.at(index)!
+          <div class="am-splash-cards" ref={track}>
+            <For each={examples}>
+              {(example, index) => {
                 return (
                   <button
                     type="button"
                     class="am-splash-card"
-                    classList={{ "am-splash-card-selected": index === selected() }}
+                    classList={{ "am-splash-card-selected": index() === selected() }}
                     data-tone={example.id}
-                    aria-current={index === selected() ? "true" : undefined}
-                    onClick={() => setSelected(index)}
+                    aria-current={index() === selected() ? "true" : undefined}
+                    tabIndex={index() === selected() ? 0 : -1}
+                    onClick={() => setSelected(index())}
+                    onKeyDown={(event) => navigate(event, index())}
                   >
                     <span class="am-splash-card-tag">{t(example.tag)}</span>
                     <span class="am-splash-card-title">{t(example.title)}</span>
@@ -89,9 +121,11 @@ function ExamplePicker(props: { initial?: number }) {
               <p class="am-splash-pitch">{t(example.pitch)}</p>
               <ul class="am-splash-features">
                 <For each={example.features}>
-                  {(feature) => (
+                  {(feature, number) => (
                     <li class="am-splash-feature">
-                      <span class="am-splash-feature-dot" aria-hidden="true" />
+                      <span class="am-splash-feature-marker" aria-hidden="true">
+                        {number() + 1}
+                      </span>
                       <span>
                         <strong>{t(feature.name)}</strong>
                         <span aria-hidden="true"> · </span>

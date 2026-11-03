@@ -19,6 +19,7 @@ import { SessionTab } from "../components/chat/SessionTab"
 import { ChatView } from "../components/chat/ChatView"
 import { registerVscodeToolOverrides } from "../components/chat/VscodeToolOverrides"
 import { SessionContext, useSession } from "../context/session"
+import { LanguageProvider, type Locale } from "../context/language"
 import { ServerContext } from "../context/server"
 import { WorktreeModeProvider } from "../context/worktree-mode"
 import { SidebarSearchMenu } from "../../agent-manager/SidebarSearchMenu"
@@ -221,18 +222,30 @@ export const SplashExpandedStory: Story = {
   ),
 }
 
-function SplashPreview(props: { example: number }) {
+function SplashPreview(props: { example: number; locale?: Locale }) {
   return (
     <StoryProviders>
-      <div class="am-intro-layout" style={{ height: "640px" }}>
-        <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
-          <div data-slot="message-list-content">
-            <SplashExpanded onHide={() => {}} onStart={() => {}} initialExample={props.example} />
+      <LanguageProvider languageOverride={() => props.locale ?? "en"}>
+        <div class="am-intro-layout" style={{ height: "640px" }}>
+          <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
+            <div data-slot="message-list-content">
+              <SplashExpanded onHide={() => {}} onStart={() => {}} initialExample={props.example} />
+            </div>
           </div>
         </div>
-      </div>
+      </LanguageProvider>
     </StoryProviders>
   )
+}
+
+export const SplashCrossStackStory: Story = {
+  name: "Splash cross-stack",
+  render: () => <SplashPreview example={0} />,
+}
+
+export const SplashGermanStory: Story = {
+  name: "Splash German wrapping",
+  render: () => <SplashPreview example={1} locale="de" />,
 }
 
 export const SplashOrchestratorStory: Story = {

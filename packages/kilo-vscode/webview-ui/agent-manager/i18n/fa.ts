@@ -513,7 +513,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "چندین کار را هم‌زمان انجام دهید، کار را واگذار کنید، پیشرفت هر عامل را دنبال کنید و چند جریان کاری را از یک جا به حرکت درآورید.",
   "agentManager.splash.start": "اولین نشست خود را شروع کنید",
-  "agentManager.splash.hint": "یا یک کار را در کادر زیر توصیف کنید",
+  "agentManager.splash.hint": "یا یک کار را در زیر توصیف کنید",
   "agentManager.splash.folded.title": "یک ناوگان از عامل‌های Kilo را به کار بگیرید",
   "agentManager.splash.folded.note": "قابلیت‌های چندپشته‌ای، یک هماهنگ‌کننده، یک تیم عملیات و بیشتر",
   "agentManager.splash.showExamples": "نمایش نمونه‌ها",

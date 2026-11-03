@@ -511,7 +511,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "Ta tak i flere oppgaver parallelt, deleger arbeid, følg fremdriften til hver agent og hold flere arbeidsstrømmer i gang fra ett sted.",
   "agentManager.splash.start": "Start din første økt",
-  "agentManager.splash.hint": "eller beskriv en oppgave i feltet under",
+  "agentManager.splash.hint": "eller beskriv en oppgave under",
   "agentManager.splash.folded.title": "Sett en flåte med Kilo-agenter i arbeid",
   "agentManager.splash.folded.note": "Funksjoner på tvers av stakker, en orkestrator, et driftsteam og mer",
   "agentManager.splash.showExamples": "Vis eksempler",
