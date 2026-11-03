@@ -1,3 +1,8 @@
 /** Reported when Git cannot be spawned because the binary is missing from PATH. */
 export const MISSING_GIT =
   "Git is not installed or not found in PATH. Please install Git (https://git-scm.com) and restart VS Code."
+
+/** True when Apple's `/usr/bin/git` shim reports that the Command Line Tools are not installed. */
+export function missingDeveloperTools(text: string): boolean {
+  return /xcrun: error: invalid active developer path|xcode-select: note: no developer tools were found/.test(text)
+}

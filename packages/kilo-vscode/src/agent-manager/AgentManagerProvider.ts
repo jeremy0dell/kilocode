@@ -53,6 +53,7 @@ import { sendDiffBranches as postDiffBranches } from "./project/diff-branches"
 import { WorktreeImporter } from "./worktree-importer"
 import {
   createWorktreeOnDisk,
+  reportNoRepo,
   type CreateWorktreeOnDiskOptions,
   type CreateWorktreeOnDiskResult,
 } from "./worktree-create"
@@ -924,7 +925,7 @@ export class AgentManagerProvider implements Disposable {
   // Shared helpers
 
   /** Create a git worktree on disk and register it in state. Returns null on failure. */
-  private async createWorktreeOnDisk(opts?: CreateWorktreeOnDiskOptions): Promise<CreateWorktreeOnDiskResult | null> {
+  private async createWorktreeOnDisk(opts: CreateWorktreeOnDiskOptions): Promise<CreateWorktreeOnDiskResult | null> {
     return createWorktreeOnDisk(
       {
         getWorktreeManager: () => this.getWorktreeManager(),
@@ -1122,7 +1123,7 @@ export class AgentManagerProvider implements Disposable {
   /** Create a new worktree with an auto-created first session. */
   private async onCreateWorktree(baseBranch?: string, branchName?: string): Promise<null> {
     const ctx = this.context
-    if (!ctx) return null
+    if (!ctx) return reportNoRepo((event, props) => this.host.capture(event, props), "quick")
     await createLifecycleWorktree(ctx, this.lifecycleHost, { baseBranch, branchName })
     return null
   }
@@ -1215,7 +1216,7 @@ export class AgentManagerProvider implements Disposable {
   ): Promise<null> {
     await this.waitForStateReady("onCreateMultiVersion")
     const ctx = this.context
-    if (!ctx) return null
+    if (!ctx) return reportNoRepo((event, props) => this.host.capture(event, props), "modal")
     return createMultiVersion(ctx, this.multiVersionHost, msg)
   }
 

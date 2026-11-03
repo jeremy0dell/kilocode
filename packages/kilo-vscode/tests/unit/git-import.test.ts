@@ -417,6 +417,16 @@ describe("classifyWorktreeError", () => {
     ).toBe("git_not_found")
   })
 
+  it("detects missing macOS developer tools from the Apple Git shim", () => {
+    const xcrun =
+      "Command failed: git worktree add\nxcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun at: /Library/Developer/CommandLineTools/usr/bin/xcrun"
+    const select =
+      "xcode-select: note: no developer tools were found at '/Applications/Xcode.app', requesting install. Choose an option in the dialog to download the command line developer tools."
+    // A cwd that still exists must not hide the shim's verdict.
+    expect(classifyWorktreeError(xcrun, { cwd: "/repo", exists: () => true })).toBe("git_not_found")
+    expect(classifyWorktreeError(select, { cwd: "/repo", exists: () => true })).toBe("git_not_found")
+  })
+
   it("detects not a git repository", () => {
     expect(
       classifyWorktreeError(
