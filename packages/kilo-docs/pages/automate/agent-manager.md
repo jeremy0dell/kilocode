@@ -87,6 +87,8 @@ Every stored post includes the receipt text "Stored only. This does not confirm 
 
 The panel opens as an editor tab and stays active across focus changes.
 
+An empty session shows a splash with example fleets for working with agents in parallel. The examples adapt to narrow panes. Select **Hide** to fold the splash into a compact bar above your recent sessions, or **Show examples** to expand it again. Your fold preference is remembered.
+
 ## Requirements
 
 - Open a VS Code workspace folder

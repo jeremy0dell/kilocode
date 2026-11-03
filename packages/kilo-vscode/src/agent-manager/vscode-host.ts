@@ -26,8 +26,8 @@ import { TelemetryProxy, type TelemetryEventName } from "../services/telemetry"
 import type { AutoApproveController } from "../commands/toggle-auto-approve"
 import type { RemoteStatusService } from "../services/RemoteStatusService"
 import type { CaffeinationService } from "../services/caffeination"
+import { folded } from "./panel-preferences"
 
-const INTRO_KEY = "kilo.agentManager.introDismissed"
 const SPLASH_KEY = "kilo.agentManager.splashFolded"
 const PR_MERGE_METHODS_KEY = "agentManager.prMergeMethod"
 
@@ -125,9 +125,7 @@ export class VscodeHost implements Host {
       title: "Agent Manager",
       port,
       browserAutomation: this.browserAutomation(),
-      introDismissed: this.context.globalState.get<boolean>(INTRO_KEY) === true,
-      agentManagerSplash: this.agentManagerSplash(),
-      splashFolded: this.context.globalState.get<boolean>(SPLASH_KEY) === true,
+      splashFolded: folded(this.context.globalState),
       frameSrc: ["localhost", "127.0.0.1"].map((host) => `http://${host}:*`).join(" "),
     })
 
@@ -183,9 +181,7 @@ export class VscodeHost implements Host {
           if (typeof msg.folded === "boolean") await this.context.globalState.update(SPLASH_KEY, msg.folded)
           return null
         }
-        if (msg.type !== "agentManager.setIntroDismissed") return opts.onBeforeMessage(msg)
-        if (typeof msg.dismissed === "boolean") await this.context.globalState.update(INTRO_KEY, msg.dismissed)
-        return null
+        return opts.onBeforeMessage(msg)
       },
     })
     provider.setStreamVisibility(panel.active && panel.visible)
@@ -416,10 +412,6 @@ export class VscodeHost implements Host {
 
   browserAutomation(): boolean {
     return vscode.workspace.getConfiguration("kilo-code.new.experimental").get("browserAutomation", false)
-  }
-
-  agentManagerSplash(): boolean {
-    return vscode.workspace.getConfiguration("kilo-code.new.experimental").get("agentManagerSplash", false)
   }
 
   async approveBrowserNavigation(origin: string): Promise<boolean> {

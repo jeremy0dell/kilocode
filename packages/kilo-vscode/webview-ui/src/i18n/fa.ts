@@ -1462,9 +1462,6 @@ export const dict = {
   "chat.search.close": "بستن جستجو",
   "chat.search.invalidRegex": "عبارت منظم نامعتبر",
   "chat.search.noResults": "نتیجه‌ای یافت نشد",
-  "settings.experimental.agentManagerSplash.title": "صفحه شروع Agent Manager",
-  "settings.experimental.agentManagerSplash.description":
-    "صفحه شروع جدید Agent Manager را با ناوگان‌های نمونه نشان می‌دهد و پس از پنهان کردن، آن را به نواری فشرده جمع می‌کند.",
   "settings.experimental.browserAutomation.title": "مرورگر یکپارچه",
   "settings.experimental.browserAutomation.description":
     "پیش‌نمایش برنامه‌های محلی را در Agent Manager نشان دهید و ابزار browser_open را در اختیار جلسات Agent Manager قرار دهید.",

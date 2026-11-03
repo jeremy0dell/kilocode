@@ -1386,9 +1386,6 @@ export const dict = {
   "chat.search.close": "關閉搜尋",
   "chat.search.invalidRegex": "規則運算式無效",
   "chat.search.noResults": "無結果",
-  "settings.experimental.agentManagerSplash.title": "Agent Manager 啟動畫面",
-  "settings.experimental.agentManagerSplash.description":
-    "顯示含有範例團隊的 Agent Manager 新啟動畫面，隱藏後會收合成精簡列。",
   "settings.experimental.browserAutomation.title": "整合瀏覽器",
   "settings.experimental.browserAutomation.description":
     "在 Agent Manager 中顯示本機應用程式預覽，並向 Agent Manager 工作階段公開 browser_open 工具。",

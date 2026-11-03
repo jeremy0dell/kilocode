@@ -227,7 +227,6 @@ const AgentManagerContent: Component = () => {
   const vscode = useVSCode()
   const dialog = useDialog()
   const splash = createSplashState((message) => vscode.postMessage(message), {
-    enabled: (window as { KILO_AGENT_MANAGER_SPLASH?: boolean }).KILO_AGENT_MANAGER_SPLASH === true,
     folded: (window as { KILO_AGENT_MANAGER_SPLASH_FOLDED?: boolean }).KILO_AGENT_MANAGER_SPLASH_FOLDED === true,
   })
   const updateBase = useBaseUpdate(session)
@@ -1092,7 +1091,6 @@ const AgentManagerContent: Component = () => {
     routeState: router.routeState,
     isActive: isActivePayload,
     font: (font) => font && setTerminalFont(font),
-    splash: splash.setEnabled,
     ...browser.bind(session.currentSessionID),
   })
   const preserveSidebarScroll = createSidebarScrollPreserver(() => selection() ?? session.currentSessionID())
@@ -1805,22 +1803,9 @@ const AgentManagerContent: Component = () => {
   })
   const intro = createIntro({
     hints: hints.list,
-    base: repoDefaultBranch,
-    git: isGitRepo,
     sessions: projectSessionsLive.current,
-    onCreateWorktree: showNewWorktreeDialog,
     onSelectSession: selectChatSession,
     onShowHistory: () => openHistory(),
-    reveal: () => {
-      const id = session.currentSessionID() ?? activePendingId()
-      if (!id || session.messages().length || session.loading() || readOnly() || settingUpSelection()) {
-        selectLocal()
-        addPendingTab()
-      }
-      closeHistory()
-      terms.setActiveId(undefined)
-      setReviewActive(false)
-    },
     focus: requestChatFocus,
     start: prompt.focus,
     splash,

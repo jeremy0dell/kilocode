@@ -525,7 +525,6 @@ export interface ChatSettingsLoadedMessage {
   settings: {
     shiftTabCyclesVariant: boolean
     browserAutomation: boolean
-    agentManagerSplash: boolean
     agentManagerBrowserOpenLinksIn: "external" | "integrated"
     workspaceTrusted: boolean
   }
@@ -1006,7 +1005,6 @@ export interface AgentManagerStateMessage {
   terminalDestination?: TerminalDestination
   terminalFont?: TerminalFont
   browserAutomation?: boolean
-  splash?: boolean
   restricted?: boolean
 }
 

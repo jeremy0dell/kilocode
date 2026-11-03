@@ -1471,9 +1471,6 @@ export const dict = {
   "chat.search.close": "Zamknij wyszukiwanie",
   "chat.search.invalidRegex": "Nieprawidłowe wyrażenie regularne",
   "chat.search.noResults": "Brak wyników",
-  "settings.experimental.agentManagerSplash.title": "Ekran startowy Agent Manager",
-  "settings.experimental.agentManagerSplash.description":
-    "Pokazuje nowy ekran startowy Agent Manager z przykładowymi flotami i po ukryciu zwija go do kompaktowego paska.",
   "settings.experimental.browserAutomation.title": "Zintegrowana przeglądarka",
   "settings.experimental.browserAutomation.description":
     "Wyświetlaj podglądy lokalnych aplikacji w Agent Manager i udostępniaj narzędzie browser_open sesjom Agent Manager.",

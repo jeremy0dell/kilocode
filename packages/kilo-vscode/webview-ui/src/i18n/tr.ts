@@ -1481,9 +1481,6 @@ export const dict = {
   "chat.search.close": "Aramayı kapat",
   "chat.search.invalidRegex": "Geçersiz normal ifade",
   "chat.search.noResults": "Sonuç yok",
-  "settings.experimental.agentManagerSplash.title": "Agent Manager açılış ekranı",
-  "settings.experimental.agentManagerSplash.description":
-    "Örnek filolar içeren yeni Agent Manager açılış ekranını gösterir ve gizlediğinizde kompakt bir çubuğa indirir.",
   "settings.experimental.browserAutomation.title": "Entegre Tarayıcı",
   "settings.experimental.browserAutomation.description":
     "Agent Manager'da yerel uygulama önizlemelerini gösterin ve browser_open aracını Agent Manager oturumlarına sunun.",

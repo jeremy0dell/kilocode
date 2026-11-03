@@ -152,7 +152,6 @@ export interface Host {
   cloneRepository(url: string, parent: string): Promise<string | undefined>
 
   browserAutomation(): boolean
-  agentManagerSplash(): boolean
   approveBrowserNavigation?(origin: string): Promise<boolean>
 
   /** Whether background worktree pre-warming is enabled. */

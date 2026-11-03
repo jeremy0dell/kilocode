@@ -488,32 +488,6 @@ export const dict = {
     "Ejecuta 'gh auth login' en tu terminal para restaurar el estado del PR.",
   "agentManager.pr.error.gh_missing.title": "GitHub CLI no está instalado",
   "agentManager.pr.error.gh_missing.description": "Instala GitHub CLI para habilitar el estado del PR.",
-  "agentManager.intro.title": "Tareas paralelas. Worktrees separados.",
-  "agentManager.intro.subtitle":
-    "Un worktree es una carpeta y una rama separadas para una tarea. Tus agentes pueden trabajar juntos sin modificar los mismos archivos.",
-  "agentManager.intro.graph.agent": "Agente de Kilo",
-  "agentManager.intro.graph.pr": "Pull request",
-  "agentManager.intro.stage1.title": "Tu repositorio",
-  "agentManager.intro.stage1.text": "Los archivos locales no cambian",
-  "agentManager.intro.stage2.title": "Ejemplo: dos tareas en paralelo",
-  "agentManager.intro.stage2.text":
-    "Ambos worktrees pertenecen a este repositorio. Para otro repositorio, elige otro proyecto.",
-  "agentManager.intro.stage3.title": "Worktree",
-  "agentManager.intro.stage3.text": "Carpeta y rama propias",
-  "agentManager.intro.stage4.title": "Devuelve los cambios cuando estés listo",
-  "agentManager.intro.stage4.text":
-    "Pide al agente de cada worktree que abra un pull request. O usa Apply en el panel de diff para copiar los cambios a Local.",
-  "agentManager.intro.updateTitle": "Resuelve los conflictos con Kilo",
-  "agentManager.intro.updateText":
-    "Antes de aplicar cambios a Local o fusionar una pull request, ejecuta /update-from-base en la sesión de ese worktree. Kilo fusiona los últimos cambios de la rama base y resuelve primero los conflictos dentro de ese worktree.",
-  "agentManager.intro.prDetection":
-    "Las insignias de PR se actualizan automáticamente para cada rama de worktree (se requiere iniciar sesión en GitHub CLI).",
-  "agentManager.intro.checksRunning": "Comprobaciones en curso",
-  "agentManager.intro.approved": "Aprobado",
-  "agentManager.intro.create": "Crear un worktree",
-  "agentManager.intro.guide": "Leer la guía",
-  "agentManager.intro.dismiss": "Omitir introducción",
-  "agentManager.intro.reopen": "Cómo funciona Agent Manager",
   "agentManager.splash.preview.label": "Vista previa de la barra lateral de Agent Manager",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":

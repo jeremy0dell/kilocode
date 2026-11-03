@@ -30,7 +30,6 @@ describe("createProjectStateHandlers", () => {
       isActive: () => true,
       font: () => {},
       browser: () => {},
-      splash: () => {},
       current: () => "session-a",
       closeBrowser: () => {},
       openBrowser: () => {},
@@ -45,7 +44,7 @@ describe("createProjectStateHandlers", () => {
     expect(value.browserAutomation).toBe(true)
   })
 
-  it("applies the splash flag from state messages", () => {
+  it("keeps applying browser automation changes from state messages", () => {
     const values: boolean[] = []
     const handler = createProjectStateHandlers({
       setProjects: () => {},
@@ -58,15 +57,14 @@ describe("createProjectStateHandlers", () => {
       routeState: () => {},
       isActive: () => true,
       font: () => {},
-      browser: () => {},
-      splash: (value) => values.push(value),
+      browser: (value) => values.push(value),
       current: () => "session-a",
       closeBrowser: () => {},
       openBrowser: () => {},
     })
 
-    handler.state({ ...state("project-a"), splash: false })
-    handler.state({ ...state("project-a"), splash: true })
+    handler.state({ ...state("project-a"), browserAutomation: false })
+    handler.state({ ...state("project-a"), browserAutomation: true })
 
     expect(values).toEqual([false, true])
   })
@@ -85,7 +83,6 @@ describe("createProjectStateHandlers", () => {
       isActive: () => true,
       font: () => {},
       browser: () => {},
-      splash: () => {},
       current: () => "session-a",
       closeBrowser: () => {},
       openBrowser: () => {},
@@ -126,7 +123,6 @@ describe("createProjectStateHandlers", () => {
       browser: (value) => {
         enabled = value
       },
-      splash: () => {},
       current: () => "session-a",
       closeBrowser: () => {
         closed++
@@ -213,7 +209,6 @@ describe("createProjectStateHandlers", () => {
               routeState: () => {},
               isActive: (project) => project === "project-a",
               font: () => {},
-              splash: () => {},
               ...binding,
             })
             const state = (projectId, browserAutomation = false) => ({

@@ -1378,7 +1378,6 @@ export class AgentManagerProvider implements Disposable {
       terminalDestination: this.destination.value(),
       terminalFont: readTerminalFont(),
       browserAutomation: this.host.browserAutomation(),
-      splash: this.host.agentManagerSplash(),
       isGitRepo: true,
       restricted: isRestrictedRoot(target.root),
       defaultBaseBranch: state.getDefaultBaseBranch(),
@@ -1415,7 +1414,6 @@ export class AgentManagerProvider implements Disposable {
       runStatuses: [],
       runScriptConfigured: false,
       browserAutomation: this.host.browserAutomation(),
-      splash: this.host.agentManagerSplash(),
     })
   }
   private get lifecycleHost(): LifecycleHost {

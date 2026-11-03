@@ -1,5 +1,5 @@
 ---
-"kilo-code": patch
+"kilo-code": minor
 ---
 
-Add an experimental Agent Manager splash that shows how a fleet of Kilo agents works and folds into a compact bar once hidden.
+Show a new Agent Manager splash with example fleets and a compact layout for narrow panes.

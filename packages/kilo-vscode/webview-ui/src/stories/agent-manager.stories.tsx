@@ -154,24 +154,15 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-function IntroductionPreview(props: {
-  skipped?: boolean
-  splash?: { enabled: boolean; folded: boolean }
-  height?: string
-}) {
-  const splash = createSplashState(() => {}, props.splash ?? { enabled: false, folded: false })
+function EmptyPreview(props: { folded?: boolean; height?: string }) {
+  const splash = createSplashState(() => {}, { folded: props.folded === true })
   const intro = createIntro({
-    base: () => "main",
-    git: () => true,
-    onCreateWorktree: () => {},
     onSelectSession: () => {},
     onShowHistory: () => {},
-    reveal: () => {},
     focus: () => {},
     start: () => {},
     splash,
   })
-  if (props.skipped) intro.dismiss()
   const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
   const session = {
     ...useSession(),
@@ -197,29 +188,11 @@ function IntroductionPreview(props: {
   )
 }
 
-export const Introduction: Story = {
-  name: "Introduction",
-  render: () => (
-    <StoryProviders>
-      <IntroductionPreview />
-    </StoryProviders>
-  ),
-}
-
-export const IntroductionSkipped: Story = {
-  name: "Introduction skipped",
-  render: () => (
-    <StoryProviders>
-      <IntroductionPreview skipped />
-    </StoryProviders>
-  ),
-}
-
 export const SplashExpandedStory: Story = {
   name: "Splash expanded",
   render: () => (
     <StoryProviders>
-      <IntroductionPreview splash={{ enabled: true, folded: false }} height="1400px" />
+      <EmptyPreview height="1400px" />
     </StoryProviders>
   ),
 }
@@ -352,7 +325,7 @@ export const SplashFoldedStory: StoryObj<{ locale: Locale }> = {
         >
           <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
             <div data-slot="message-list-content">
-              <IntroductionPreview splash={{ enabled: true, folded: true }} height="100%" />
+              <EmptyPreview folded height="100%" />
             </div>
           </div>
         </div>

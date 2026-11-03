@@ -484,31 +484,6 @@ export const dict = {
   "agentManager.pr.error.gh_auth.description": "Execute 'gh auth login' no terminal para restaurar o status do PR.",
   "agentManager.pr.error.gh_missing.title": "GitHub CLI não instalado",
   "agentManager.pr.error.gh_missing.description": "Instale o GitHub CLI para habilitar o status do PR.",
-  "agentManager.intro.title": "Tarefas paralelas. Worktrees separadas.",
-  "agentManager.intro.subtitle":
-    "Um worktree é uma pasta e branch separadas para uma tarefa. Seus agentes podem trabalhar lado a lado sem editar os mesmos arquivos.",
-  "agentManager.intro.graph.agent": "agente Kilo",
-  "agentManager.intro.graph.pr": "Pull request",
-  "agentManager.intro.updateTitle": "Resolva conflitos com o Kilo",
-  "agentManager.intro.updateText":
-    "Antes de aplicar alterações no Local ou mesclar um pull request, execute /update-from-base na sessão desse worktree. O Kilo mescla as alterações mais recentes da base e resolve os conflitos primeiro dentro desse worktree.",
-  "agentManager.intro.stage1.title": "Seu repositório",
-  "agentManager.intro.stage1.text": "Os arquivos locais permanecem inalterados",
-  "agentManager.intro.stage2.title": "Exemplo: duas tarefas em paralelo",
-  "agentManager.intro.stage2.text":
-    "Ambos os worktrees pertencem a este repositório. Para outro repositório, escolha outro projeto.",
-  "agentManager.intro.stage3.title": "Worktree",
-  "agentManager.intro.stage3.text": "Pasta e branch próprias",
-  "agentManager.intro.stage4.title": "Traga as alterações de volta quando estiver pronto",
-  "agentManager.intro.stage4.text": "Peça ao agente para abrir um pull request ou use Apply no painel de diff.",
-  "agentManager.intro.prDetection":
-    "Os badges de PR são atualizados automaticamente para cada branch de worktree (é necessário iniciar sessão no GitHub CLI).",
-  "agentManager.intro.checksRunning": "Verificações em andamento",
-  "agentManager.intro.approved": "Aprovado",
-  "agentManager.intro.create": "Criar um worktree",
-  "agentManager.intro.guide": "Ler o guia",
-  "agentManager.intro.dismiss": "Pular introdução",
-  "agentManager.intro.reopen": "Como o Agent Manager funciona",
   "agentManager.splash.preview.label": "Prévia da barra lateral do Agent Manager",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":

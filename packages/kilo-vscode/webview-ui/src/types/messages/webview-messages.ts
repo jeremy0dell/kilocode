@@ -974,11 +974,6 @@ export interface AgentManagerCopyToClipboardRequest {
   text: string
 }
 
-export interface AgentManagerSetIntroDismissedRequest {
-  type: "agentManager.setIntroDismissed"
-  dismissed: boolean
-}
-
 export interface AgentManagerSetSplashFoldedRequest {
   type: "agentManager.setSplashFolded"
   folded: boolean
@@ -1916,7 +1911,6 @@ export type WebviewMessage =
   | OpenWorktreeRequest
   | ContinueInCloudRequest
   | AgentManagerCopyToClipboardRequest
-  | AgentManagerSetIntroDismissedRequest
   | AgentManagerSetSplashFoldedRequest
   | CopyToClipboardRequest
   | ShowExistingLocalTerminalRequest

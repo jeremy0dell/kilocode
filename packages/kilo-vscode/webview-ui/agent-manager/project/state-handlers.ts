@@ -16,7 +16,6 @@ export function createProjectStateHandlers(opts: {
   isActive: (id: string | undefined) => boolean
   font: (font: AgentManagerStateMessage["terminalFont"]) => void
   browser: (enabled: boolean) => void
-  splash: (enabled: boolean) => void
   current: () => string | undefined
   closeBrowser: () => void
   openBrowser: () => void
@@ -37,7 +36,6 @@ export function createProjectStateHandlers(opts: {
     if (msg.type !== "agentManager.state") return
     if (msg.browserAutomation !== undefined) opts.browser(msg.browserAutomation)
     if (msg.browserAutomation === false) opts.closeBrowser()
-    if (msg.splash !== undefined) opts.splash(msg.splash)
     if (msg.terminalFont) opts.font(msg.terminalFont)
     if (msg.projectId) opts.setStates((prev) => ({ ...prev, [msg.projectId!]: msg }))
     const store = msg.projectId ? opts.ensure(msg.projectId) : opts.active()

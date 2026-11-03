@@ -1457,9 +1457,6 @@ export const dict = {
   "chat.search.close": "検索を閉じる",
   "chat.search.invalidRegex": "正規表現が無効です",
   "chat.search.noResults": "見つかりませんでした",
-  "settings.experimental.agentManagerSplash.title": "Agent Manager スプラッシュ",
-  "settings.experimental.agentManagerSplash.description":
-    "例のフリートを備えた新しい Agent Manager スプラッシュを表示し、非表示にするとコンパクトなバーに折りたたみます。",
   "settings.experimental.browserAutomation.title": "統合ブラウザー",
   "settings.experimental.browserAutomation.description":
     "Agent Manager でローカルアプリケーションのプレビューを表示し、browser_open ツールを Agent Manager セッションに公開します。",

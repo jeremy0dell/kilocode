@@ -392,10 +392,7 @@ export async function activate(context: vscode.ExtensionContext) {
   agentManager = agentManagerProvider
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (
-        event.affectsConfiguration("kilo-code.new.experimental.browserAutomation") ||
-        event.affectsConfiguration("kilo-code.new.experimental.agentManagerSplash")
-      ) {
+      if (event.affectsConfiguration("kilo-code.new.experimental.browserAutomation")) {
         agentManagerProvider.refreshExperimentalFlags()
       }
     }),
