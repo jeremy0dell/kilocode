@@ -13,7 +13,7 @@ interface EmptyProps {
   hints?: () => JSX.Element
 }
 
-export function SplashExpanded(props: { onHide: () => void; onStart: () => void }) {
+export function SplashExpanded(props: { onHide: () => void; onStart: () => void; onCreateWorktree: () => void }) {
   const { t } = useLanguage()
   const titleId = createUniqueId()
   return (
@@ -34,8 +34,8 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void 
           </h2>
           <p class="am-splash-subtitle">{t("agentManager.splash.subtitle")}</p>
           <div class="am-splash-actions">
-            <Button variant="primary" onClick={props.onStart}>
-              {t("agentManager.splash.start")}
+            <Button variant="primary" onClick={props.onCreateWorktree}>
+              {t("agentManager.dialog.createWorktree")}
             </Button>
             <span class="am-splash-hint">{t("agentManager.splash.hint")}</span>
           </div>

@@ -502,8 +502,7 @@ export const dict = {
   "agentManager.splash.hide": "إخفاء",
   "agentManager.splash.title": "شغّل أسطولًا من وكلاء Kilo.",
   "agentManager.splash.subtitle":
-    "أنجز عدة مهام بالتوازي، وفوّض العمل، وتابع تقدّم كل وكيل، وأبقِ عدة مسارات عمل قائمة من مكان واحد.",
-  "agentManager.splash.start": "ابدأ جلستك الأولى",
+    "أنجز عدة مهام بالتوازي باستخدام worktrees، وفوّض العمل، وتابع تقدّم كل وكيل، وحافظ على تقدّم عدة مسارات عمل من مكان واحد.",
   "agentManager.splash.hint": "أو صف مهمة في المربع أدناه",
   "agentManager.splash.folded.title": "شغّل أسطولًا من وكلاء Kilo",
   "agentManager.splash.folded.note": "ميزات عبر التقنيات، ومنسّق، وفريق عمليات، والمزيد",

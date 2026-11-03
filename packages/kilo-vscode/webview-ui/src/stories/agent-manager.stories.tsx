@@ -156,10 +156,11 @@ function IntroductionPreview(props: {
   height?: string
 }) {
   const splash = createSplashState(() => {}, props.splash ?? { enabled: false, folded: false })
+  const [created, setCreated] = createSignal(false)
   const intro = createIntro({
     base: () => "main",
     git: () => true,
-    onCreateWorktree: () => {},
+    onCreateWorktree: () => setCreated(true),
     onSelectSession: () => {},
     onShowHistory: () => {},
     reveal: () => {},
@@ -188,7 +189,12 @@ function IntroductionPreview(props: {
   }
   return (
     <SessionContext.Provider value={session}>
-      <div style={{ height: props.height ?? "auto" }}>{intro.render()}</div>
+      <div style={{ height: props.height ?? "auto" }}>
+        {intro.render()}
+        <output data-testid="splash-created" hidden={!created()}>
+          {created() ? "Worktree requested" : ""}
+        </output>
+      </div>
     </SessionContext.Provider>
   )
 }

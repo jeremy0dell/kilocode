@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test"
 
+test("splash primary CTA requests a worktree", async ({ page }) => {
+  await page.goto("/iframe.html?id=agentmanager--splash-expanded-story&viewMode=story")
+  await page.locator(".am-splash-actions").getByRole("button", { name: "Create Worktree", exact: true }).click()
+  await expect(page.getByTestId("splash-created")).toHaveText("Worktree requested")
+})
+
 for (const width of [300, 440, 599, 600, 720, 1010, 1400]) {
   test(`folded bar stays in one row at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width: width + 64, height: 800 })

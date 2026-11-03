@@ -501,8 +501,7 @@ export const dict = {
   "agentManager.splash.hide": "ซ่อน",
   "agentManager.splash.title": "ให้กองทัพเอเจนต์ Kilo ลงมือทำงาน",
   "agentManager.splash.subtitle":
-    "จัดการหลายงานพร้อมกัน มอบหมายงาน ติดตามความคืบหน้าของทุกเอเจนต์ และรักษาหลายสายงานให้เดินหน้าจากที่เดียว",
-  "agentManager.splash.start": "เริ่มเซสชันแรกของคุณ",
+    "จัดการหลายงานพร้อมกันด้วย worktrees มอบหมายงาน ติดตามความคืบหน้าของทุกเอเจนต์ และขับเคลื่อนหลายสายงานให้เดินหน้าอย่างต่อเนื่องจากที่เดียว",
   "agentManager.splash.hint": "หรืออธิบายงานในช่องด้านล่าง",
   "agentManager.splash.folded.title": "ให้กองทัพเอเจนต์ Kilo ลงมือทำงาน",
   "agentManager.splash.folded.note": "ฟีเจอร์ข้ามสแตก ตัวประสานงาน ทีมปฏิบัติการ และอื่นๆ",

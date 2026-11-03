@@ -491,8 +491,7 @@ export const dict = {
   "agentManager.splash.hide": "隐藏",
   "agentManager.splash.title": "让一队 Kilo 智能体为你工作。",
   "agentManager.splash.subtitle":
-    "并行处理多项任务、委派工作、跟进每个智能体的进度，并在一个地方保持多条工作流持续推进。",
-  "agentManager.splash.start": "开始第一个会话",
+    "使用 worktree 并行处理多项任务、委派工作、跟进每个智能体的进度，并在一个地方让多条工作流持续推进。",
   "agentManager.splash.hint": "或在下方输入框中描述任务",
   "agentManager.splash.folded.title": "让一队 Kilo 智能体为你工作",
   "agentManager.splash.folded.note": "跨技术栈功能、编排器、运维团队等更多内容",
