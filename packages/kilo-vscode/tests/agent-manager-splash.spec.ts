@@ -1,18 +1,11 @@
 import AxeBuilder from "@axe-core/playwright"
 import { expect, test, type Page } from "@playwright/test"
 import { createRequire } from "node:module"
+import { ready } from "./story-locale"
 
 const require = createRequire(import.meta.url)
-const language: typeof import("../webview-ui/src/context/language-utils") = require("../webview-ui/src/context/language-utils")
 const french: typeof import("../webview-ui/src/context/language-dictionaries/fr") = require("../webview-ui/src/context/language-dictionaries/fr")
 const arabic: typeof import("../webview-ui/src/context/language-dictionaries/ar") = require("../webview-ui/src/context/language-dictionaries/ar")
-
-async function ready(page: Page, locale: string) {
-  const normalized = language.normalizeLocale(locale)
-  await expect(page.locator("html")).toHaveAttribute("lang", language.localeToBcp47(normalized))
-  await expect(page.locator("html")).toHaveAttribute("dir", language.RTL_LOCALES.has(normalized) ? "rtl" : "ltr")
-  await page.evaluate(() => document.fonts.ready)
-}
 
 async function open(page: Page, theme = "dark-modern", locale = "en") {
   await page.goto(
@@ -239,6 +232,37 @@ for (const [locale, dictionary] of [
     await expect(page.locator(".show-history-btn")).toHaveText(dict["session.showHistory"]!)
     await expect(page.locator(".feedback-button")).toHaveText(dict["feedback.button"]!)
     await expect(page.locator(".am-splash-show")).toHaveText(dict["agentManager.splash.showExamples"]!)
+  })
+}
+
+for (const locale of ["fr", "ar", "fa"]) {
+  test(`${locale} capture waits for a delayed production dictionary`, async ({ page }) => {
+    const requested = Promise.withResolvers<void>()
+    const release = Promise.withResolvers<void>()
+    await page.route(
+      new RegExp(`/(language-dictionaries/${locale}\\.ts|${locale}-[^/]+\\.js)(\\?|$)`),
+      async (route) => {
+        requested.resolve()
+        await release.promise
+        await route.continue()
+      },
+    )
+    await page.goto(`/iframe.html?id=agentmanager--splash-french-story&viewMode=story&args=locale:${locale}`)
+    await requested.promise
+    await expect(page.locator(".am-splash-hero")).toBeVisible()
+    await expect(page.locator("html")).toHaveAttribute("lang", "en")
+    let captured = false
+    const capture = ready(page, locale).then(() => {
+      captured = true
+      return page.screenshot()
+    })
+    await page.evaluate(
+      () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+    )
+    expect(captured).toBe(false)
+    release.resolve()
+    await capture
+    expect(captured).toBe(true)
   })
 }
 
