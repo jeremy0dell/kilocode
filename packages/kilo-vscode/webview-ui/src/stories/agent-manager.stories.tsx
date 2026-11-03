@@ -282,6 +282,24 @@ export const SplashFoldedStory: Story = {
   ),
 }
 
+export const SplashFoldedThin: Story = {
+  ...SplashFoldedStory,
+  name: "Splash folded thin",
+  decorators: [(Story: () => JSX.Element) => <div style={{ width: "440px", "max-width": "100%" }}>{Story()}</div>],
+}
+
+export const SplashFoldedNarrow: Story = {
+  ...SplashFoldedStory,
+  name: "Splash folded narrow",
+  decorators: [(Story: () => JSX.Element) => <div style={{ width: "720px", "max-width": "100%" }}>{Story()}</div>],
+}
+
+export const SplashFoldedWide: Story = {
+  ...SplashFoldedStory,
+  name: "Splash folded wide",
+  decorators: [(Story: () => JSX.Element) => <div style={{ width: "1010px", "max-width": "100%" }}>{Story()}</div>],
+}
+
 // ---------------------------------------------------------------------------
 // Wide chat layout
 // ---------------------------------------------------------------------------
