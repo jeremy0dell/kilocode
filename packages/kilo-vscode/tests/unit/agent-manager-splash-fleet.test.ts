@@ -7,6 +7,21 @@ import { buildProjectNavEntries, navSelector } from "../../webview-ui/agent-mana
 import { buildShortcutMap } from "../../webview-ui/agent-manager/section-helpers"
 
 describe("splash sidebar adapter", () => {
+  it("selects exactly one worktree in every example", () => {
+    for (const example of examples) {
+      const rows = fleet(example)
+      const selected = rows.filter((row) => row.selection !== undefined)
+      expect(selected).toHaveLength(1)
+      const row = selected.at(0)!
+      expect(row.project.active).toBe(true)
+      expect(row.state.worktrees.some((wt) => wt.id === row.selection)).toBe(true)
+    }
+    const row = fleet(examples.at(1)!).at(0)!
+    expect(row.state.worktrees.find((wt) => wt.id === row.selection)?.label).toBe(
+      "Orchestrator · scheduler latency pass",
+    )
+  })
+
   it("maps real activity, selection, stats and approved successful PRs", () => {
     const rows = fleet(examples.at(0)!)
     expect(rows.map((row) => Object.values(row.activity))).toEqual([["busy"], ["done"], ["waiting"]])

@@ -10,6 +10,12 @@ import type {
 import type { Activity } from "../../src/utils/session-activity"
 import type { Example, Session } from "./examples"
 
+const status = {
+  working: "busy",
+  finished: "done",
+  "needs-you": "waiting",
+} satisfies Record<NonNullable<Session["status"]>, Activity>
+
 /** Adapt splash fixtures to the same data consumed by the live project sidebar. */
 export function fleet(example: Example) {
   return example.fixture.projects.map((fixture, index) => {
@@ -50,14 +56,7 @@ export function fleet(example: Example) {
         ahead: 0,
         behind: 0,
       }
-      activity[key] =
-        session.status === "working"
-          ? "busy"
-          : session.status === "finished"
-            ? "done"
-            : session.status === "needs-you"
-              ? "waiting"
-              : "idle"
+      activity[key] = session.status ? status[session.status] : "idle"
       if (session.selected) selected.push(key)
       if (session.pr) {
         prs[key] = {
@@ -68,21 +67,21 @@ export function fleet(example: Example) {
           review: "approved",
           checks: { status: "success", total: 1, passed: 1, failed: 0, pending: 0, checks: [] },
           reviewers: [],
-          additions: stats[key]!.additions,
-          deletions: stats[key]!.deletions,
+          additions: session.diff?.additions ?? 0,
+          deletions: session.diff?.deletions ?? 0,
           files: 0,
         }
       }
     }
-    fixture.rows.forEach((row, index) => {
+    fixture.rows.forEach((row, position) => {
       if (row.kind === "local") return
       if (row.kind === "session") return add(row.session)
       if (row.kind === "versions") {
-        row.sessions.forEach((session) => add(session, undefined, `${id}:group:${index}`))
+        row.sessions.forEach((session) => add(session, undefined, `${id}:group:${position}`))
         return
       }
-      const key = `${id}:section:${index}`
-      sections.push({ id: key, name: row.section.name, color: row.section.color, order: index, collapsed: false })
+      const key = `${id}:section:${position}`
+      sections.push({ id: key, name: row.section.name, color: row.section.color, order: position, collapsed: false })
       order.push(key)
       row.section.sessions.forEach((session) => add(session, key))
     })

@@ -224,7 +224,10 @@ export const SplashExpandedStory: Story = {
 function SplashPreview(props: { example: number; width?: string; height?: string }) {
   return (
     <StoryProviders>
-      <div class="am-intro-layout" style={{ height: props.height ?? "1000px", width: props.width }}>
+      <div
+        class="am-intro-layout"
+        style={{ height: props.height ?? "1000px", width: props.width, "max-width": "100%" }}
+      >
         <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
           <div data-slot="message-list-content">
             <SplashExpanded onHide={() => {}} onStart={() => {}} initialExample={props.example} />

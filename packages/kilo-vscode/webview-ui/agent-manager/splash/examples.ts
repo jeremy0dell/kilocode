@@ -150,6 +150,7 @@ export const examples: readonly Example[] = [
                     title: "Orchestrator · scheduler latency pass",
                     note: "started 3 sessions · 1 done",
                     status: "working",
+                    selected: true,
                   },
                 ],
               },

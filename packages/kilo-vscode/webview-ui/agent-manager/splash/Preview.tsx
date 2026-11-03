@@ -42,7 +42,7 @@ function Fleet(props: { example: Example }) {
       count={(id) => states[id]!.worktrees.length + 1}
       baseBranch={(id) => rows.find((row) => row.project.id === id)?.local.branch ?? "main"}
       body={(project) => {
-        const row = rows.find((row) => row.project.id === project.id)!
+        const row = rows.find((item) => item.project.id === project.id)!
         return (
           <ProjectSidebarBody
             project={project}
