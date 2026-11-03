@@ -508,6 +508,7 @@ export const dict = {
   "agentManager.splash.preview.label": "Pregled bočne trake Agent Manager",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Sakrij",
+  "agentManager.splash.hideLabel": "Sakrij uvod u Agent Manager",
   "agentManager.splash.title": "Stavi flotu Kilo agenata na posao.",
   "agentManager.splash.subtitle":
     "Radi na više zadataka paralelno, delegiraj posao, prati napredak svakog agenta i održavaj više tokova rada na jednom mjestu.",

@@ -126,7 +126,13 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void;
                 <KiloLogo />
               </div>
               <span class="am-splash-eyebrow">{t("agentManager.splash.eyebrow")}</span>
-              <Button variant="ghost" size="small" class="am-splash-hide" onClick={props.onHide}>
+              <Button
+                variant="ghost"
+                size="small"
+                class="am-splash-hide"
+                aria-label={t("agentManager.splash.hideLabel")}
+                onClick={props.onHide}
+              >
                 {t("agentManager.splash.hide")}
               </Button>
             </header>

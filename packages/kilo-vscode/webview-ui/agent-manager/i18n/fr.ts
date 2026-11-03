@@ -518,6 +518,7 @@ export const dict = {
   "agentManager.splash.preview.label": "Aperçu de la barre latérale d’Agent Manager",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Masquer",
+  "agentManager.splash.hideLabel": "Masquer la présentation d'Agent Manager",
   "agentManager.splash.title": "Mettez une flotte d'agents Kilo au travail.",
   "agentManager.splash.subtitle":
     "Traitez plusieurs tâches en parallèle, déléguez le travail, suivez la progression de chaque agent et faites avancer plusieurs flux de travail depuis un seul endroit.",
@@ -527,7 +528,7 @@ export const dict = {
   "agentManager.splash.folded.note": "Fonctionnalités multi-stacks, un orchestrateur, une équipe ops et plus",
   "agentManager.splash.showExamples": "Voir des exemples",
   "agentManager.splash.examples.crossStack.tag": "Multi-dépôt",
-  "agentManager.splash.examples.crossStack.title": "Livrer une fonctionnalité sur trois dépôts",
+  "agentManager.splash.examples.crossStack.title": "Une fonction, trois dépôts",
   "agentManager.splash.examples.crossStack.pitch":
     "Un brief, un agent par dépôt et toute la fonctionnalité dans une seule vue.",
   "agentManager.splash.examples.crossStack.feature1.name": "Projets multi-dépôts",
@@ -539,7 +540,7 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature3.name": "Badges de PR et compteurs de diff",
   "agentManager.splash.examples.crossStack.feature3.text": "Sachez ce que chaque agent a modifié avant de l’ouvrir.",
   "agentManager.splash.examples.orchestrator.tag": "Orchestrateur",
-  "agentManager.splash.examples.orchestrator.title": "Un orchestrateur divise le gros travail",
+  "agentManager.splash.examples.orchestrator.title": "Divisez une grande tâche",
   "agentManager.splash.examples.orchestrator.pitch":
     "Désignez n’importe quelle session comme orchestrateur, confiez-lui des tâches et laissez-la constituer l’équipe nécessaire.",
   "agentManager.splash.examples.orchestrator.feature1.name": "Des sessions qui lancent des sessions",
@@ -552,7 +553,7 @@ export const dict = {
   "agentManager.splash.examples.orchestrator.feature3.text":
     "Rejoignez une session lancée ou suivez tout le travail depuis le sommet.",
   "agentManager.splash.examples.ops.tag": "Ops",
-  "agentManager.splash.examples.ops.title": "Mettez en place une équipe ops permanente",
+  "agentManager.splash.examples.ops.title": "Formez une équipe ops fixe",
   "agentManager.splash.examples.ops.pitch":
     "Gardez des agents de longue durée en service à côté des sessions qui construisent.",
   "agentManager.splash.examples.ops.feature1.name": "Instructions permanentes",
@@ -565,7 +566,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature3.text":
     "Les agents s’arrêtent et signalent les décisions risquées au lieu de forcer.",
   "agentManager.splash.examples.versions.tag": "Versions",
-  "agentManager.splash.examples.versions.title": "Trois approches, gardez la meilleure",
+  "agentManager.splash.examples.versions.title": "Testez trois, gardez le meilleur",
   "agentManager.splash.examples.versions.pitch":
     "Envoyez un prompt à plusieurs agents ou modèles et gardez le meilleur résultat.",
   "agentManager.splash.examples.versions.feature1.name": "Exécutions multi-versions",
@@ -575,8 +576,8 @@ export const dict = {
   "agentManager.splash.examples.versions.feature3.name": "Comparez et gardez",
   "agentManager.splash.examples.versions.feature3.text":
     "Examinez de vrais diffs côte à côte, gardez-en un et abandonnez le reste.",
-  "agentManager.splash.examples.beyondCode.tag": "Au-delà du code",
-  "agentManager.splash.examples.beyondCode.title": "Rédigez vos assets de marque",
+  "agentManager.splash.examples.beyondCode.tag": "Hors code",
+  "agentManager.splash.examples.beyondCode.title": "Créez vos visuels de marque",
   "agentManager.splash.examples.beyondCode.pitch":
     "Agent Manager exécute tout travail qu’un agent peut faire, pas seulement les changements de code.",
   "agentManager.splash.examples.beyondCode.feature1.name": "Brouillons parallèles",

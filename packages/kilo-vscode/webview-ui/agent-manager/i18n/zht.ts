@@ -489,6 +489,7 @@ export const dict = {
   "agentManager.splash.preview.label": "Agent Manager 側邊欄預覽",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "隱藏",
+  "agentManager.splash.hideLabel": "隱藏 Agent Manager 簡介",
   "agentManager.splash.title": "讓一隊 Kilo 代理程式為你工作。",
   "agentManager.splash.subtitle":
     "並行處理多項任務、委派工作、追蹤每個代理程式的進度，並在同一個地方讓多條工作流程持續推進。",

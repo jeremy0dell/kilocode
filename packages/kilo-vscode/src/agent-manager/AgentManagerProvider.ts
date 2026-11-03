@@ -1841,6 +1841,7 @@ export class AgentManagerProvider implements Disposable {
 
   public refreshExperimentalFlags(): void {
     if (!this.host.browserAutomation()) void this.browserLifecycle.closeAll()
+    if (!this.panel) return
     void this.stateReady
       ?.catch((err) => this.log("refreshExperimentalFlags: state initialization failed:", err))
       .then(() => (this.state ? this.pushState() : this.pushEmptyState()))

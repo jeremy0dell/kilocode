@@ -519,6 +519,7 @@ export const dict = {
   "agentManager.splash.preview.label": "Agent Manager Seitenleisten-Vorschau",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Ausblenden",
+  "agentManager.splash.hideLabel": "Einführung zu Agent Manager ausblenden",
   "agentManager.splash.title": "Setze eine Flotte von Kilo-Agenten ein.",
   "agentManager.splash.subtitle":
     "Erledige mehrere Aufgaben parallel, delegiere Arbeit, verfolge den Fortschritt jedes Agenten und halte mehrere Arbeitsströme von einem Ort aus in Bewegung.",

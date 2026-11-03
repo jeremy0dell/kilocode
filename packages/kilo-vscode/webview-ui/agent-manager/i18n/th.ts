@@ -500,6 +500,7 @@ export const dict = {
   "agentManager.splash.preview.label": "ตัวอย่างแถบด้านข้างของ Agent Manager",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "ซ่อน",
+  "agentManager.splash.hideLabel": "ซ่อนคำแนะนำเบื้องต้นเกี่ยวกับ Agent Manager",
   "agentManager.splash.title": "ให้กองทัพเอเจนต์ Kilo ลงมือทำงาน",
   "agentManager.splash.subtitle":
     "จัดการหลายงานพร้อมกัน มอบหมายงาน ติดตามความคืบหน้าของทุกเอเจนต์ และรักษาหลายสายงานให้เดินหน้าจากที่เดียว",

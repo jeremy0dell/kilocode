@@ -511,6 +511,7 @@ export const dict = {
   "agentManager.splash.preview.label": "Agent Manager サイドバーのプレビュー",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "非表示",
+  "agentManager.splash.hideLabel": "Agent Manager の紹介を非表示にする",
   "agentManager.splash.title": "Kilo エージェントの艦隊を働かせよう。",
   "agentManager.splash.subtitle":
     "複数のタスクを並行して進め、作業を委任し、各エージェントの進捗を追い、複数の作業を一か所から動かし続けられます。",

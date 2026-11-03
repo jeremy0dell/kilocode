@@ -511,6 +511,7 @@ export const dict = {
   "agentManager.splash.preview.label": "Forhåndsvisning af Agent Manager-sidepanelet",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Skjul",
+  "agentManager.splash.hideLabel": "Skjul introduktionen til Agent Manager",
   "agentManager.splash.title": "Sæt en flåde af Kilo-agenter i arbejde.",
   "agentManager.splash.subtitle":
     "Tag flere opgaver parallelt, deleger arbejde, følg hver agents fremgang, og hold flere arbejdsgange i gang fra ét sted.",
@@ -520,7 +521,7 @@ export const dict = {
   "agentManager.splash.folded.note": "Funktioner på tværs af stacks, en orkestrator, et driftsteam og mere",
   "agentManager.splash.showExamples": "Vis eksempler",
   "agentManager.splash.examples.crossStack.tag": "Flere repos",
-  "agentManager.splash.examples.crossStack.title": "Lever en funktion på tværs af tre repos",
+  "agentManager.splash.examples.crossStack.title": "Én funktion, tre repos",
   "agentManager.splash.examples.crossStack.pitch": "Én briefing, én agent pr. repo og hele funktionen i én visning.",
   "agentManager.splash.examples.crossStack.feature1.name": "Projekter med flere repos",
   "agentManager.splash.examples.crossStack.feature1.text": "Backend, frontend og infra side om side i én sidebjælke.",
@@ -530,7 +531,7 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature3.name": "PR-mærker og diff-tællinger",
   "agentManager.splash.examples.crossStack.feature3.text": "Vid, hvad hver agent har ændret, før du åbner det.",
   "agentManager.splash.examples.orchestrator.tag": "Orkestrator",
-  "agentManager.splash.examples.orchestrator.title": "Lad en orkestrator dele en stor opgave op",
+  "agentManager.splash.examples.orchestrator.title": "Del en stor opgave op",
   "agentManager.splash.examples.orchestrator.pitch":
     "Udnævn en vilkårlig session til orkestrator, giv den en række opgaver, og lad den bygge det hold, opgaven kræver.",
   "agentManager.splash.examples.orchestrator.feature1.name": "Sessioner, der starter sessioner",
@@ -543,7 +544,7 @@ export const dict = {
   "agentManager.splash.examples.orchestrator.feature3.text":
     "Spring ind i en session, den startede, eller følg hele opgaven fra toppen.",
   "agentManager.splash.examples.ops.tag": "Drift",
-  "agentManager.splash.examples.ops.title": "Sæt et fast driftsteam",
+  "agentManager.splash.examples.ops.title": "Saml et fast driftsteam",
   "agentManager.splash.examples.ops.pitch": "Hold langvarige agenter på vagt ved siden af de sessioner, der bygger.",
   "agentManager.splash.examples.ops.feature1.name": "Faste instruktioner",
   "agentManager.splash.examples.ops.feature1.text": "Giv en session en rolle, der varer længere end en enkelt opgave.",
@@ -553,7 +554,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature3.text":
     "Agenter stopper og markerer risikable beslutninger i stedet for at presse igennem.",
   "agentManager.splash.examples.versions.tag": "Versioner",
-  "agentManager.splash.examples.versions.title": "Prøv tre tilgange, behold den bedste",
+  "agentManager.splash.examples.versions.title": "Prøv tre, vælg den bedste",
   "agentManager.splash.examples.versions.pitch":
     "Send én prompt til flere agenter eller modeller, og behold det bedste resultat.",
   "agentManager.splash.examples.versions.feature1.name": "Kørsler med flere versioner",
@@ -564,7 +565,7 @@ export const dict = {
   "agentManager.splash.examples.versions.feature3.text":
     "Gennemgå rigtige diffs side om side, behold én, og smid resten væk.",
   "agentManager.splash.examples.beyondCode.tag": "Mere end kode",
-  "agentManager.splash.examples.beyondCode.title": "Udkast til et sæt brandaktiver",
+  "agentManager.splash.examples.beyondCode.title": "Skab brandmateriale",
   "agentManager.splash.examples.beyondCode.pitch":
     "Agent Manager udfører alt arbejde, en agent kan, ikke kun kodeændringer.",
   "agentManager.splash.examples.beyondCode.feature1.name": "Parallelle udkast",

@@ -510,6 +510,7 @@ export const dict = {
   "agentManager.splash.preview.label": "پیش‌نمایش نوار کناری Agent Manager",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "پنهان کردن",
+  "agentManager.splash.hideLabel": "پنهان کردن معرفی Agent Manager",
   "agentManager.splash.title": "یک ناوگان از عامل‌های Kilo را به کار بگیرید.",
   "agentManager.splash.subtitle":
     "چندین کار را هم‌زمان انجام دهید، کار را واگذار کنید، پیشرفت هر عامل را دنبال کنید و چند جریان کاری را از یک جا به حرکت درآورید.",
@@ -519,7 +520,7 @@ export const dict = {
   "agentManager.splash.folded.note": "قابلیت‌های چندپشته‌ای، یک هماهنگ‌کننده، یک تیم عملیات و بیشتر",
   "agentManager.splash.showExamples": "نمایش نمونه‌ها",
   "agentManager.splash.examples.crossStack.tag": "چند مخزن",
-  "agentManager.splash.examples.crossStack.title": "یک قابلیت را در سه مخزن منتشر کنید",
+  "agentManager.splash.examples.crossStack.title": "یک قابلیت در سه مخزن",
   "agentManager.splash.examples.crossStack.pitch": "یک بریف، یک عامل برای هر مخزن و کل قابلیت در یک نما.",
   "agentManager.splash.examples.crossStack.feature1.name": "پروژه‌های چندمخزنی",
   "agentManager.splash.examples.crossStack.feature1.text": "بک‌اند، فرانت‌اند و زیرساخت کنار هم در یک نوار کناری.",
@@ -529,7 +530,7 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature3.name": "نشان‌های PR و شمارش تغییرات",
   "agentManager.splash.examples.crossStack.feature3.text": "پیش از باز کردن بدانید هر عامل چه چیزی را تغییر داده است.",
   "agentManager.splash.examples.orchestrator.tag": "هماهنگ‌کننده",
-  "agentManager.splash.examples.orchestrator.title": "بگذارید هماهنگ‌کننده یک کار بزرگ را تقسیم کند",
+  "agentManager.splash.examples.orchestrator.title": "تقسیم یک کار بزرگ",
   "agentManager.splash.examples.orchestrator.pitch":
     "هر نشستی را به‌عنوان هماهنگ‌کننده تعیین کنید، مجموعه‌ای از وظایف به آن بدهید و بگذارید تیم موردنیاز کار را بسازد.",
   "agentManager.splash.examples.orchestrator.feature1.name": "نشست‌هایی که نشست می‌سازند",
@@ -541,7 +542,7 @@ export const dict = {
   "agentManager.splash.examples.orchestrator.feature3.text":
     "به هر نشستی که شروع کرده بپیوندید یا کل کار را از بالا دنبال کنید.",
   "agentManager.splash.examples.ops.tag": "عملیات",
-  "agentManager.splash.examples.ops.title": "یک تیم عملیات ثابت مستقر کنید",
+  "agentManager.splash.examples.ops.title": "تشکیل تیم عملیات ثابت",
   "agentManager.splash.examples.ops.pitch":
     "عامل‌های بلندمدت را کنار نشست‌هایی که در حال ساختن‌اند در حال آماده‌باش نگه دارید.",
   "agentManager.splash.examples.ops.feature1.name": "دستورالعمل‌های ثابت",
@@ -552,7 +553,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature3.text":
     "عامل‌ها می‌ایستند و تصمیم‌های پرخطر را علامت می‌زنند به‌جای اینکه از آن عبور کنند.",
   "agentManager.splash.examples.versions.tag": "نسخه‌ها",
-  "agentManager.splash.examples.versions.title": "سه رویکرد را امتحان کنید و بهترین را نگه دارید",
+  "agentManager.splash.examples.versions.title": "آزمودن سه راه، حفظ بهترین",
   "agentManager.splash.examples.versions.pitch":
     "یک درخواست را به چند عامل یا مدل بفرستید و بهترین نتیجه را نگه دارید.",
   "agentManager.splash.examples.versions.feature1.name": "اجراهای چندنسخه‌ای",
@@ -563,7 +564,7 @@ export const dict = {
   "agentManager.splash.examples.versions.feature3.text":
     "تفاوت‌های واقعی را کنار هم ببینید، یکی را نگه دارید و بقیه را کنار بگذارید.",
   "agentManager.splash.examples.beyondCode.tag": "فراتر از کد",
-  "agentManager.splash.examples.beyondCode.title": "مجموعه‌ای از دارایی‌های برند بسازید",
+  "agentManager.splash.examples.beyondCode.title": "ساخت محتوای برند",
   "agentManager.splash.examples.beyondCode.pitch":
     "Agent Manager هر کاری را که یک عامل می‌تواند انجام دهد اجرا می‌کند، نه فقط تغییرات کد.",
   "agentManager.splash.examples.beyondCode.feature1.name": "پیش‌نویس‌های موازی",

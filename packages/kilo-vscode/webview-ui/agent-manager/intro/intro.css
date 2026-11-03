@@ -1,18 +1,24 @@
-.am-intro-layout {
+.am-intro-layout,
+.am-splash-host-folded {
   display: flex;
   flex-direction: column;
 }
 
-.am-intro-layout > [data-slot="welcome-header"] {
+.am-intro-layout > [data-slot="welcome-header"],
+.am-splash-host-folded > [data-slot="welcome-header"] {
   position: static;
   padding: 12px var(--chat-gutter, 16px) 0;
   flex-shrink: 0;
 }
 
-.am-intro-layout > [data-slot="message-list"] {
+.am-intro-layout > [data-slot="message-list"],
+.am-splash-host-folded > [data-slot="message-list"] {
   flex: 1;
   min-height: 0;
   height: auto;
+}
+
+.am-intro-layout > [data-slot="message-list"] {
   container: am-intro-pane / size;
 }
 

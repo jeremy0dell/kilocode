@@ -501,6 +501,7 @@ export const dict = {
   "agentManager.splash.preview.label": "معاينة الشريط الجانبي لـ Agent Manager",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "إخفاء",
+  "agentManager.splash.hideLabel": "إخفاء مقدمة Agent Manager",
   "agentManager.splash.title": "شغّل أسطولًا من وكلاء Kilo.",
   "agentManager.splash.subtitle":
     "أنجز عدة مهام بالتوازي، وفوّض العمل، وتابع تقدّم كل وكيل، وأبقِ عدة مسارات عمل قائمة من مكان واحد.",

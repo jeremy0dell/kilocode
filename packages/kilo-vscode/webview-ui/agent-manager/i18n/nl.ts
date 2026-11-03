@@ -517,6 +517,7 @@ export const dict = {
   "agentManager.splash.preview.label": "Voorbeeld van Agent Manager-zijbalk",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Verbergen",
+  "agentManager.splash.hideLabel": "Introductie van Agent Manager verbergen",
   "agentManager.splash.title": "Zet een vloot Kilo-agenten aan het werk.",
   "agentManager.splash.subtitle":
     "Pak meerdere taken parallel aan, delegeer werk, volg de voortgang van elke agent en houd meerdere werkstromen op één plek in beweging.",
@@ -526,7 +527,7 @@ export const dict = {
   "agentManager.splash.folded.note": "Functies over stacks heen, een orkestrator, een ops-team en meer",
   "agentManager.splash.showExamples": "Voorbeelden bekijken",
   "agentManager.splash.examples.crossStack.tag": "Multi-repo",
-  "agentManager.splash.examples.crossStack.title": "Lever een functie uit over drie repo's",
+  "agentManager.splash.examples.crossStack.title": "Eén functie, drie repo's",
   "agentManager.splash.examples.crossStack.pitch":
     "Eén briefing, één agent per repo en de hele functie in één overzicht.",
   "agentManager.splash.examples.crossStack.feature1.name": "Multi-repo-projecten",
@@ -537,7 +538,7 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature3.name": "PR-badges en diff-tellingen",
   "agentManager.splash.examples.crossStack.feature3.text": "Weet wat elke agent heeft gewijzigd voordat je het opent.",
   "agentManager.splash.examples.orchestrator.tag": "Orkestrator",
-  "agentManager.splash.examples.orchestrator.title": "Orkestrator deelt een grote klus op",
+  "agentManager.splash.examples.orchestrator.title": "Deel een grote klus op",
   "agentManager.splash.examples.orchestrator.pitch":
     "Wijs elke sessie aan als orkestrator, geef hem taken en laat hem het team samenstellen dat de klus nodig heeft.",
   "agentManager.splash.examples.orchestrator.feature1.name": "Sessies die sessies starten",
@@ -549,7 +550,7 @@ export const dict = {
   "agentManager.splash.examples.orchestrator.feature3.text":
     "Spring in elke gestarte sessie of volg de hele klus van bovenaf.",
   "agentManager.splash.examples.ops.tag": "Operations",
-  "agentManager.splash.examples.ops.title": "Zet een vaste operations-ploeg op",
+  "agentManager.splash.examples.ops.title": "Stel een vast ops-team samen",
   "agentManager.splash.examples.ops.pitch": "Houd langlopende agents aan het werk naast de sessies die bouwen.",
   "agentManager.splash.examples.ops.feature1.name": "Vaste instructies",
   "agentManager.splash.examples.ops.feature1.text": "Geef een sessie een rol die langer meegaat dan één taak.",
@@ -559,7 +560,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature3.text":
     "Agents stoppen en markeren riskante keuzes in plaats van door te duwen.",
   "agentManager.splash.examples.versions.tag": "Versies",
-  "agentManager.splash.examples.versions.title": "Probeer drie aanpakken, houd de beste",
+  "agentManager.splash.examples.versions.title": "Kies de beste van drie",
   "agentManager.splash.examples.versions.pitch":
     "Stuur één prompt naar meerdere agents of modellen en houd het beste resultaat.",
   "agentManager.splash.examples.versions.feature1.name": "Multi-versie-runs",
@@ -569,8 +570,8 @@ export const dict = {
   "agentManager.splash.examples.versions.feature3.name": "Vergelijk en houd",
   "agentManager.splash.examples.versions.feature3.text":
     "Bekijk echte diffs naast elkaar, houd er één en gooi de rest weg.",
-  "agentManager.splash.examples.beyondCode.tag": "Verder dan code",
-  "agentManager.splash.examples.beyondCode.title": "Stel een set merkmiddelen op",
+  "agentManager.splash.examples.beyondCode.tag": "Meer dan code",
+  "agentManager.splash.examples.beyondCode.title": "Maak merkmateriaal",
   "agentManager.splash.examples.beyondCode.pitch":
     "Agent Manager voert elk werk uit dat een agent kan doen, niet alleen codewijzigingen.",
   "agentManager.splash.examples.beyondCode.feature1.name": "Parallelle schetsen",

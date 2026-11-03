@@ -517,6 +517,7 @@ export const dict = {
   "agentManager.splash.preview.label": "Agent Manager kenar çubuğu önizlemesi",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Gizle",
+  "agentManager.splash.hideLabel": "Agent Manager tanıtımını gizle",
   "agentManager.splash.title": "Bir Kilo ajanı filosunu işe koşun.",
   "agentManager.splash.subtitle":
     "Birden çok görevi paralel olarak ele alın, işi devredin, her ajanın ilerlemesini izleyin ve birden çok iş akışını tek yerden sürdürün.",

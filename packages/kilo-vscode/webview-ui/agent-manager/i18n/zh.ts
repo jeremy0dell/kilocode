@@ -490,6 +490,7 @@ export const dict = {
   "agentManager.splash.preview.label": "Agent Manager 侧边栏预览",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "隐藏",
+  "agentManager.splash.hideLabel": "隐藏 Agent Manager 简介",
   "agentManager.splash.title": "让一队 Kilo 智能体为你工作。",
   "agentManager.splash.subtitle":
     "并行处理多项任务、委派工作、跟进每个智能体的进度，并在一个地方保持多条工作流持续推进。",

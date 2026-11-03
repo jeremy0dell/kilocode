@@ -524,6 +524,7 @@ export const dict = {
   "agentManager.splash.preview.label": "Anteprima della barra laterale di Agent Manager",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Nascondi",
+  "agentManager.splash.hideLabel": "Nascondi la presentazione di Agent Manager",
   "agentManager.splash.title": "Metti al lavoro una flotta di agenti Kilo.",
   "agentManager.splash.subtitle":
     "Affronta più attività in parallelo, delega il lavoro, segui i progressi di ogni agente e mantieni più flussi di lavoro in movimento da un unico posto.",
@@ -533,7 +534,7 @@ export const dict = {
   "agentManager.splash.folded.note": "Funzionalità tra stack, un orchestratore, un team ops e altro ancora",
   "agentManager.splash.showExamples": "Mostra esempi",
   "agentManager.splash.examples.crossStack.tag": "Multi-repo",
-  "agentManager.splash.examples.crossStack.title": "Rilascia una funzionalità su tre repository",
+  "agentManager.splash.examples.crossStack.title": "Una funzione su tre repo",
   "agentManager.splash.examples.crossStack.pitch":
     "Un brief, un agente per repository e l’intera funzionalità in un’unica vista.",
   "agentManager.splash.examples.crossStack.feature1.name": "Progetti multi-repo",
@@ -545,7 +546,7 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature3.name": "Badge PR e conteggi diff",
   "agentManager.splash.examples.crossStack.feature3.text": "Scopri cosa ha cambiato ogni agente prima di aprirlo.",
   "agentManager.splash.examples.orchestrator.tag": "Orchestratore",
-  "agentManager.splash.examples.orchestrator.title": "Un orchestratore divide un grande lavoro",
+  "agentManager.splash.examples.orchestrator.title": "Dividi un grande lavoro",
   "agentManager.splash.examples.orchestrator.pitch":
     "Designa qualsiasi sessione come orchestratore, affidale un insieme di attività e lascia che costruisca la squadra necessaria.",
   "agentManager.splash.examples.orchestrator.feature1.name": "Sessioni che avviano sessioni",
@@ -557,7 +558,7 @@ export const dict = {
   "agentManager.splash.examples.orchestrator.feature3.text":
     "Entra in qualsiasi sessione avviata o segui l’intero lavoro dall’alto.",
   "agentManager.splash.examples.ops.tag": "Operazioni",
-  "agentManager.splash.examples.ops.title": "Metti in piedi una squadra operativa stabile",
+  "agentManager.splash.examples.ops.title": "Crea un team operativo fisso",
   "agentManager.splash.examples.ops.pitch":
     "Tieni gli agenti di lunga durata in servizio accanto alle sessioni che costruiscono.",
   "agentManager.splash.examples.ops.feature1.name": "Istruzioni permanenti",
@@ -570,7 +571,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature3.text":
     "Gli agenti si fermano e segnalano le scelte rischiose invece di andare avanti.",
   "agentManager.splash.examples.versions.tag": "Versioni",
-  "agentManager.splash.examples.versions.title": "Prova tre approcci, tieni il migliore",
+  "agentManager.splash.examples.versions.title": "Prova tre, scegli il meglio",
   "agentManager.splash.examples.versions.pitch":
     "Invia un prompt a più agenti o modelli e conserva il risultato migliore.",
   "agentManager.splash.examples.versions.feature1.name": "Esecuzioni multi-versione",
@@ -582,7 +583,7 @@ export const dict = {
   "agentManager.splash.examples.versions.feature3.text":
     "Esamina diff reali fianco a fianco, tienine uno e scarta il resto.",
   "agentManager.splash.examples.beyondCode.tag": "Oltre il codice",
-  "agentManager.splash.examples.beyondCode.title": "Prepara una serie di asset di marca",
+  "agentManager.splash.examples.beyondCode.title": "Crea materiali per il brand",
   "agentManager.splash.examples.beyondCode.pitch":
     "Agent Manager esegue qualsiasi lavoro possa fare un agente, non solo modifiche al codice.",
   "agentManager.splash.examples.beyondCode.feature1.name": "Bozze parallele",

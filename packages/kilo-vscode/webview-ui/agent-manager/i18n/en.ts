@@ -553,6 +553,7 @@ export const dict = {
   "agentManager.splash.preview.label": "Agent Manager sidebar preview",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Hide",
+  "agentManager.splash.hideLabel": "Hide Agent Manager introduction",
   "agentManager.splash.title": "Put a fleet of Kilo agents to work.",
   "agentManager.splash.subtitle":
     "Tackle several tasks in parallel, delegate work, follow every agent's progress, and keep multiple work streams moving from one place.",
