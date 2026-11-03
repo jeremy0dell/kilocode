@@ -16,6 +16,8 @@ import { canonicalizePath, projectIdFor, resolveProjectRoot, samePath } from "./
 import type { SidebarTarget, SessionRef } from "./route"
 import { cloneProject, createProject, defaultParent, onboard, type Onboarding } from "./onboarding"
 import { runner } from "./prepare"
+import { check, fix, type FixOutcome } from "../worktree-readiness"
+import type { CheckReadinessRequest, FixReadinessRequest } from "../../../webview-ui/src/types/messages/agent-manager"
 
 const pending = new WeakSet<ProjectMessageDeps>()
 const selections = new WeakMap<ProjectMessageDeps, symbol>()
@@ -66,6 +68,10 @@ export interface ProjectMessageDeps {
   ready: (ctx: ProjectContext, options?: { warm?: boolean }) => Promise<ProjectInitResult>
   /** Route one session to a directory inside a project (session override + project route). */
   routeSession?: (projectId: string, sessionId: string, directory: string, generation: number) => void
+  /** Refresh VS Code's Source Control view. */
+  refreshGit: () => void
+  /** Post a project's branch list. */
+  branches: (ctx: ProjectContext) => Promise<void>
   git?: GitOps
   log: (...args: unknown[]) => void
 }
@@ -74,6 +80,10 @@ export interface ProjectMessageDeps {
 export async function handleProjectMessage(m: AgentManagerInMessage, deps: ProjectMessageDeps): Promise<boolean> {
   if (m.type === "openSettingsPanel") {
     deps.openSettings(m.tab, m.projectId)
+    return true
+  }
+  if (m.type === "agentManager.checkReadiness" || m.type === "agentManager.fixReadiness") {
+    await readiness(m, deps)
     return true
   }
   if (m.type === "agentManager.requestProjects") {
@@ -303,6 +313,17 @@ async function attachPrepared(
 
 /** Register a prepared root, then select it without warming a worktree of its own. */
 async function attach(root: string, deps: ProjectMessageDeps, git: GitOps): Promise<void> {
+  const project = await register(root, deps, git)
+  finish({ projectId: project.id, kind: "local" }, deps)
+  if (project.existing) deps.onboarding.notify("info", `Opened the existing project at ${project.root}.`)
+}
+
+/** Register and initialize a prepared root without selecting it. */
+async function register(
+  root: string,
+  deps: ProjectMessageDeps,
+  git: GitOps,
+): Promise<{ id: string; root: string; existing: boolean }> {
   root = canonicalizePath(root)
   const pinned = deps.contexts.pinned()
   const primary = pinned && (await resolveProjectRoot(pinned.root, runner(git)))
@@ -315,8 +336,32 @@ async function attach(root: string, deps: ProjectMessageDeps, git: GitOps): Prom
   const result = await deps.ready(ctx, { warm: false })
   deps.push()
   if (!result.current || !result.ok) throw new Error("Expand the project to retry initialization.")
-  finish({ projectId: id, kind: "local" }, deps)
-  if (existing) deps.onboarding.notify("info", `Opened the existing project at ${root}.`)
+  return { id, root, existing }
+}
+
+/** Check or fix a project's worktree readiness and reply with the original project and request IDs. */
+async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: ProjectMessageDeps): Promise<void> {
+  const reply = (outcome: FixOutcome) =>
+    deps.post({ type: "agentManager.readiness", projectId: m.projectId, requestID: m.requestID, ...outcome })
+  const ctx = typeof m.projectId === "string" ? deps.contexts.resolve(m.projectId) : undefined
+  if (!ctx) return reply({ result: { status: "unknown", detail: "The project is unavailable." } })
+  const git = deps.git ?? new GitOps({ log: deps.log })
+  const base = { git, trusted: () => deps.onboarding.isTrusted() }
+  try {
+    if (m.type === "agentManager.checkReadiness") return reply({ result: await check(ctx.root, base) })
+    reply(
+      await fix(ctx.root, m, {
+        ...base,
+        exclude: () => ctx.worktreeManager().ensureGitExclude(),
+        refresh: () => deps.refreshGit(),
+        branches: () => deps.branches(ctx),
+        attach: async (root) => (await register(root, deps, git)).id,
+        pick: () => deps.pickFolder({ defaultPath: ctx.root, title: "Choose your project folder" }),
+      }),
+    )
+  } finally {
+    if (!deps.git) git.dispose()
+  }
 }
 
 async function removeProject(id: string, deps: ProjectMessageDeps): Promise<void> {
