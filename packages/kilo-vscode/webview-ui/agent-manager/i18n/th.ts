@@ -499,6 +499,7 @@ export const dict = {
   "agentManager.intro.reopen": "Agent Manager ทำงานอย่างไร",
   "agentManager.splash.preview.label": "ตัวอย่างแถบด้านข้างของ Agent Manager",
   "agentManager.splash.thinHint": "แตะตัวเลขเพื่อดูว่าส่วนนั้นของแถบด้านข้างทำอะไรได้บ้าง",
+  "agentManager.splash.marker": "คุณลักษณะ {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle": "ทำงานหลายอย่างพร้อมกัน มอบหมายงาน และติดตามเอเจนต์ทุกตัวได้จากที่เดียว",
   "agentManager.splash.compact.hint": "หรืออธิบายงานด้านล่าง",
@@ -508,7 +509,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "จัดการหลายงานพร้อมกัน มอบหมายงาน ติดตามความคืบหน้าของทุกเอเจนต์ และรักษาหลายสายงานให้เดินหน้าจากที่เดียว",
   "agentManager.splash.start": "เริ่มเซสชันแรกของคุณ",
-  "agentManager.splash.hint": "หรืออธิบายงานในช่องด้านล่าง",
+  "agentManager.splash.hint": "หรืออธิบายงานด้านล่าง",
   "agentManager.splash.folded.title": "ให้กองทัพเอเจนต์ Kilo ลงมือทำงาน",
   "agentManager.splash.folded.note": "ฟีเจอร์ข้ามสแตก ตัวประสานงาน ทีมปฏิบัติการ และอื่นๆ",
   "agentManager.splash.showExamples": "ดูตัวอย่าง",

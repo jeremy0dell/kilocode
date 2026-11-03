@@ -1,4 +1,14 @@
-import { For, Show, createSignal, createUniqueId, onMount, onCleanup, type Accessor, type JSX } from "solid-js"
+import {
+  For,
+  Show,
+  createEffect,
+  createSignal,
+  createUniqueId,
+  onCleanup,
+  onMount,
+  type Accessor,
+  type JSX,
+} from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
@@ -8,7 +18,7 @@ import type { SessionInfo } from "../../src/types/messages"
 import { examples } from "./examples"
 import { SidebarPreview } from "./Preview"
 import { Compact } from "./Compact"
-import { visible, wrap } from "./selection"
+import { start, wrap } from "./selection"
 import "./splash.css"
 
 interface EmptyProps {
@@ -20,6 +30,37 @@ interface EmptyProps {
 
 function ExamplePicker(props: { selected: Accessor<number>; onSelect: (index: number) => void }) {
   const { t } = useLanguage()
+  let track!: HTMLDivElement
+  const scroll = () => {
+    const first = track.firstElementChild as HTMLElement | null
+    const card = track.children.item(start(props.selected(), examples.length)) as HTMLElement | null
+    if (!first || !card) return
+    track.scrollTo({ left: card.offsetLeft - first.offsetLeft })
+  }
+  createEffect(scroll)
+  onMount(() => {
+    const observer = new ResizeObserver(scroll)
+    observer.observe(track)
+    onCleanup(() => observer.disconnect())
+  })
+
+  const navigate = (event: KeyboardEvent, index: number) => {
+    const rtl = getComputedStyle(track).direction === "rtl"
+    const next =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? examples.length - 1
+          : event.key === "ArrowLeft"
+            ? wrap(index, rtl ? 1 : -1, examples.length)
+            : event.key === "ArrowRight"
+              ? wrap(index, rtl ? -1 : 1, examples.length)
+              : undefined
+    if (next == null) return
+    event.preventDefault()
+    props.onSelect(next)
+    ;(track.children.item(next) as HTMLElement | null)?.focus({ preventScroll: true })
+  }
 
   return (
     <>
@@ -32,22 +73,23 @@ function ExamplePicker(props: { selected: Accessor<number>; onSelect: (index: nu
             label={t("agentManager.splash.carousel.previous")}
             onClick={() => props.onSelect(wrap(props.selected(), -1, examples.length))}
           />
-          <div class="am-splash-cards">
-            <For each={visible(props.selected(), examples.length, 3)}>
-              {(index) => {
-                const example = examples.at(index)!
+          <div class="am-splash-cards" ref={track}>
+            <For each={examples}>
+              {(example, index) => {
                 return (
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
                     class="am-splash-card"
-                    classList={{ "am-splash-card-selected": index === props.selected() }}
+                    classList={{ "am-splash-card-selected": index() === props.selected() }}
                     data-tone={example.id}
-                    aria-current={index === props.selected() ? "true" : undefined}
-                    onClick={() => props.onSelect(index)}
+                    aria-current={index() === props.selected() ? "true" : undefined}
+                    tabIndex={index() === props.selected() ? 0 : -1}
+                    onClick={() => props.onSelect(index())}
+                    onKeyDown={(event: KeyboardEvent) => navigate(event, index())}
                   >
                     <span class="am-splash-card-tag">{t(example.tag)}</span>
                     <span class="am-splash-card-title">{t(example.title)}</span>
-                  </button>
+                  </Button>
                 )
               }}
             </For>
@@ -63,8 +105,8 @@ function ExamplePicker(props: { selected: Accessor<number>; onSelect: (index: nu
         <div class="am-splash-dots">
           <For each={examples}>
             {(example, index) => (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 class="am-splash-dot"
                 classList={{ "am-splash-dot-selected": index() === props.selected() }}
                 aria-current={index() === props.selected() ? "true" : undefined}
@@ -72,7 +114,7 @@ function ExamplePicker(props: { selected: Accessor<number>; onSelect: (index: nu
                 onClick={() => props.onSelect(index())}
               >
                 <span class="am-splash-dot-mark" />
-              </button>
+              </Button>
             )}
           </For>
         </div>
@@ -84,6 +126,8 @@ function ExamplePicker(props: { selected: Accessor<number>; onSelect: (index: nu
 export function SplashExpanded(props: { onHide: () => void; onStart: () => void; initialExample?: number }) {
   const { t } = useLanguage()
   const titleId = createUniqueId()
+  const features = createUniqueId()
+  const [highlight, setHighlight] = createSignal<number>()
   const [selected, setSelected] = createSignal(Math.max(0, Math.min(props.initialExample ?? 0, examples.length - 1)))
   const [wide, setWide] = createSignal(false)
   const current = () => examples.at(selected())!
@@ -152,9 +196,17 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void;
                     aria-hidden={index() !== selected() ? "true" : undefined}
                   >
                     <For each={example.features}>
-                      {(feature) => (
-                        <li class="am-splash-feature">
-                          <span class="am-splash-feature-dot" aria-hidden="true" />
+                      {(feature, position) => (
+                        <li
+                          id={`${features}-${example.id}-${position()}`}
+                          class="am-splash-feature"
+                          classList={{ "am-splash-feature-highlight": highlight() === position() }}
+                          onMouseEnter={() => setHighlight(position())}
+                          onMouseLeave={() => setHighlight(undefined)}
+                        >
+                          <span class="am-splash-feature-marker" aria-hidden="true">
+                            {position() + 1}
+                          </span>
                           <span class="am-splash-feature-text">
                             <strong>{t(feature.name)}</strong>
                             <span class="am-splash-feature-description">{t(feature.text)}</span>
@@ -174,13 +226,11 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void;
               <Button variant="primary" onClick={props.onStart}>
                 {t("agentManager.splash.start")}
               </Button>
-              <span class="am-splash-hint">
-                {t(wide() ? "agentManager.splash.hint" : "agentManager.splash.compact.hint")}
-              </span>
+              <span class="am-splash-hint">{t("agentManager.splash.hint")}</span>
             </div>
           </div>
           <div class="am-splash-hero-side">
-            <SidebarPreview selected={selected} />
+            <SidebarPreview selected={selected} highlight={highlight} onHighlight={setHighlight} features={features} />
           </div>
           <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
             {t(current().title)} — {t(current().pitch)}
@@ -199,10 +249,10 @@ export function SplashFolded(props: EmptyProps & { onShowExamples: () => void })
         <div class="am-splash-folded-logo" aria-hidden="true">
           <KiloLogo />
         </div>
-        <div class="am-splash-folded-text">
-          <span class="am-splash-folded-title">{t("agentManager.splash.folded.title")}</span>
-          <span class="am-splash-folded-note">{t("agentManager.splash.folded.note")}</span>
-        </div>
+        <span class="am-splash-folded-title">{t("agentManager.splash.folded.title")}</span>
+        <span class="am-splash-folded-note" title={t("agentManager.splash.folded.note")}>
+          {t("agentManager.splash.folded.note")}
+        </span>
         <Button variant="ghost" size="small" class="am-splash-show" onClick={props.onShowExamples}>
           {t("agentManager.splash.showExamples")}
           <Icon name="chevron-right" size="small" />

@@ -523,6 +523,7 @@ export const dict = {
   "agentManager.intro.reopen": "Come funziona Agent Manager",
   "agentManager.splash.preview.label": "Anteprima della barra laterale di Agent Manager",
   "agentManager.splash.thinHint": "Tocca un numero per scoprire a cosa serve quella parte della barra laterale.",
+  "agentManager.splash.marker": "Funzionalità {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":
     "Esegui attività in parallelo, delega il lavoro e segui ogni agente da un unico posto.",
@@ -533,7 +534,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "Affronta più attività in parallelo, delega il lavoro, segui i progressi di ogni agente e mantieni più flussi di lavoro in movimento da un unico posto.",
   "agentManager.splash.start": "Avvia la tua prima sessione",
-  "agentManager.splash.hint": "oppure descrivi un'attività nella casella qui sotto",
+  "agentManager.splash.hint": "oppure descrivi un'attività qui sotto",
   "agentManager.splash.folded.title": "Metti al lavoro una flotta di agenti Kilo",
   "agentManager.splash.folded.note": "Funzionalità tra stack, un orchestratore, un team ops e altro ancora",
   "agentManager.splash.showExamples": "Mostra esempi",

@@ -20,8 +20,7 @@ import { SessionTab } from "../components/chat/SessionTab"
 import { ChatView } from "../components/chat/ChatView"
 import { registerVscodeToolOverrides } from "../components/chat/VscodeToolOverrides"
 import { SessionContext, useSession } from "../context/session"
-import { LanguageContext, useLanguage, type Locale } from "../context/language"
-import { localeToBcp47, resolveTemplate } from "../context/language-utils"
+import { LanguageProvider, LOCALES, type Locale } from "../context/language"
 import { ServerContext } from "../context/server"
 import { WorktreeModeProvider } from "../context/worktree-mode"
 import { SidebarSearchMenu } from "../../agent-manager/SidebarSearchMenu"
@@ -34,7 +33,6 @@ import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { TooltipKeybind } from "@kilocode/kilo-ui/tooltip"
 import { ContextMenu } from "@kilocode/kilo-ui/context-menu"
-import { I18nProvider, useI18n } from "@kilocode/kilo-ui/context"
 import { ThinkingSelectorBase } from "../components/shared/ThinkingSelector"
 import { WorktreeOrigin } from "../../agent-manager/WorktreeOrigin"
 import { ProjectsSection } from "../../agent-manager/ProjectsSection"
@@ -220,39 +218,19 @@ export const SplashExpandedStory: Story = {
   name: "Splash expanded",
   render: () => (
     <StoryProviders>
-      <IntroductionPreview splash={{ enabled: true, folded: false }} height="1400px" />
+      <LanguageProvider languageOverride={() => "en"}>
+        <IntroductionPreview splash={{ enabled: true, folded: false }} height="1400px" />
+      </LanguageProvider>
     </StoryProviders>
   ),
-}
-
-const locales = import.meta.glob<{ dict: Record<string, string> }>("../../agent-manager/i18n/*.ts", { eager: true })
-
-function SplashLanguage(props: { locale?: Locale; children: JSX.Element }) {
-  const language = useLanguage()
-  const i18n = useI18n()
-  const dict = () => locales[`../../agent-manager/i18n/${props.locale ?? "en"}.ts`]?.dict ?? {}
-  return (
-    <LanguageContext.Provider
-      value={{
-        ...language,
-        locale: () => props.locale ?? "en",
-        t: (key, params) => resolveTemplate(dict()[key] ?? language.t(key, params), params),
-      }}
-    >
-      <I18nProvider value={{ ...i18n, locale: () => localeToBcp47(props.locale ?? "en") }}>
-        {props.children}
-      </I18nProvider>
-    </LanguageContext.Provider>
-  )
 }
 
 function SplashPreview(props: { example: number; width?: string; height?: string; locale?: Locale }) {
   return (
     <StoryProviders>
-      <SplashLanguage locale={props.locale}>
+      <LanguageProvider languageOverride={() => props.locale ?? "en"}>
         <div
           class="am-intro-layout"
-          dir={props.locale === "ar" || props.locale === "fa" ? "rtl" : "ltr"}
           style={{ height: props.height ?? "1400px", width: props.width, "max-width": "100%" }}
         >
           <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
@@ -261,9 +239,19 @@ function SplashPreview(props: { example: number; width?: string; height?: string
             </div>
           </div>
         </div>
-      </SplashLanguage>
+      </LanguageProvider>
     </StoryProviders>
   )
+}
+
+export const SplashCrossStackStory: Story = {
+  name: "Splash cross-stack",
+  render: () => <SplashPreview example={0} />,
+}
+
+export const SplashGermanStory: Story = {
+  name: "Splash German wrapping",
+  render: () => <SplashPreview example={1} locale="de" />,
 }
 
 export const SplashOrchestratorStory: Story = {
@@ -325,7 +313,7 @@ export const SplashFrenchStory: StoryObj<{ locale: Locale }> = {
   name: "Splash French",
   args: { locale: "fr" },
   argTypes: {
-    locale: { control: "select", options: Object.keys(locales).map((path) => path.split("/").at(-1)!.slice(0, -3)) },
+    locale: { control: "select", options: LOCALES },
   },
   render: (args) => <SplashPreview example={0} locale={args.locale} />,
 }
@@ -348,21 +336,35 @@ export const SplashFoldedStory: StoryObj<{ locale: Locale }> = {
   argTypes: SplashFrenchStory.argTypes,
   render: (args) => (
     <StoryProviders>
-      <SplashLanguage locale={args.locale}>
-        <div
-          class="am-intro-layout"
-          dir={args.locale === "ar" || args.locale === "fa" ? "rtl" : "ltr"}
-          style={{ height: "640px" }}
-        >
+      <LanguageProvider languageOverride={() => args.locale}>
+        <div class="am-intro-layout" style={{ height: "640px" }}>
           <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
             <div data-slot="message-list-content">
               <IntroductionPreview splash={{ enabled: true, folded: true }} height="100%" />
             </div>
           </div>
         </div>
-      </SplashLanguage>
+      </LanguageProvider>
     </StoryProviders>
   ),
+}
+
+export const SplashFoldedThin: Story = {
+  ...SplashFoldedStory,
+  name: "Splash folded thin",
+  decorators: [(Story: () => JSX.Element) => <div style={{ width: "440px", "max-width": "100%" }}>{Story()}</div>],
+}
+
+export const SplashFoldedNarrow: Story = {
+  ...SplashFoldedStory,
+  name: "Splash folded narrow",
+  decorators: [(Story: () => JSX.Element) => <div style={{ width: "720px", "max-width": "100%" }}>{Story()}</div>],
+}
+
+export const SplashFoldedWide: Story = {
+  ...SplashFoldedStory,
+  name: "Splash folded wide",
+  decorators: [(Story: () => JSX.Element) => <div style={{ width: "1010px", "max-width": "100%" }}>{Story()}</div>],
 }
 
 // ---------------------------------------------------------------------------

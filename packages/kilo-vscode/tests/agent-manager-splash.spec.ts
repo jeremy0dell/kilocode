@@ -1,12 +1,18 @@
 import AxeBuilder from "@axe-core/playwright"
 import { expect, test, type Page } from "@playwright/test"
+import { createRequire } from "node:module"
+import { ready } from "./story-locale"
+
+const require = createRequire(import.meta.url)
+const french: typeof import("../webview-ui/src/context/language-dictionaries/fr") = require("../webview-ui/src/context/language-dictionaries/fr")
+const arabic: typeof import("../webview-ui/src/context/language-dictionaries/ar") = require("../webview-ui/src/context/language-dictionaries/ar")
 
 async function open(page: Page, theme = "dark-modern", locale = "en") {
   await page.goto(
     `/iframe.html?id=agentmanager--splash-french-story&viewMode=story&globals=theme:kilo-vscode;vscodeTheme:${theme}&args=locale:${locale}`,
   )
   await expect(page.locator(".am-splash-hero")).toBeVisible()
-  await page.evaluate(() => document.fonts.ready)
+  await ready(page, locale)
 }
 
 async function resize(page: Page, width: number) {
@@ -171,13 +177,13 @@ test("preview rows retain native hover without accepting focus", async ({ page }
       const background = await row.evaluate((node) => getComputedStyle(node).backgroundColor)
       await row.hover()
       await expect.poll(() => row.evaluate((node) => getComputedStyle(node).backgroundColor)).not.toBe(background)
-      await row.click()
+      await row.click({ position: { x: 15, y: 15 } })
       expect(await page.evaluate(() => document.activeElement?.closest(".am-splash-preview-card") != null)).toBe(false)
     }
   }
 })
 
-test("carousel announces selections and excludes the preview from forward and reverse focus traversal", async ({
+test("carousel announces selections and only preview markers enter forward and reverse focus traversal", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1100, height: 1400 })
@@ -193,31 +199,37 @@ test("carousel announces selections and excludes the preview from forward and re
   }
   expect(new Set(names).size).toBe(5)
   await page.keyboard.press("Tab")
-  const count = await page.locator(".am-splash-hero-main button").count()
+  const count = await page
+    .locator(".am-splash-hero button")
+    .evaluateAll((nodes) => nodes.filter((node) => node.tabIndex >= 0).length)
   for (const key of ["Tab", "Shift+Tab"]) {
     await page.getByRole("button", { name: "Hide Agent Manager introduction", exact: true }).focus()
     const order = []
-    for (let index = 0; index < count + 2; index++) {
+    for (let index = 0; index < count + 4; index++) {
       order.push(
         await page.evaluate(() => {
           const node = document.activeElement!
-          if (node.closest(".am-splash-preview-card")) throw new Error("Preview received focus")
+          if (node.closest(".am-splash-preview-card") && !node.matches(".am-splash-marker")) {
+            throw new Error("Real preview row received focus")
+          }
           const style = getComputedStyle(node)
           if (node.closest(".am-splash") && (!node.matches(":focus-visible") || style.outlineStyle === "none")) {
             throw new Error("Missing focus ring")
           }
           return {
-            label: node.getAttribute("aria-label") ?? node.textContent ?? "",
+            label: node.closest(".am-splash") ? (node.getAttribute("aria-label") ?? node.textContent ?? "") : "",
             splash: node.closest(".am-splash") !== null,
           }
         }),
       )
+      if (index > 0 && order.at(-1)?.label === "Hide Agent Manager introduction") break
       await page.keyboard.press(key)
     }
     expect(order[0]?.label).toBe("Hide Agent Manager introduction")
     expect(order.at(-1)?.label).toBe("Hide Agent Manager introduction")
     expect(order.some((state) => !state.splash)).toBe(true)
     expect(order.filter((state) => state.label === "Start your first session")).toHaveLength(1)
+    expect(order.filter((state) => state.label.startsWith("Feature "))).toHaveLength(3)
   }
   const result = await new AxeBuilder({ page })
     .include(".am-splash-hero-main")
@@ -288,7 +300,7 @@ for (const locale of ["en", "ar"]) {
         await expect(page.locator(".am-splash-thin-hint")).toBeHidden()
         await expect(page.locator(".am-splash-features-active")).toBeVisible()
         if (mode === "wide") {
-          await expect(page.locator(".am-splash-card")).toHaveCount(3)
+          await expect(page.locator(".am-splash-card")).toHaveCount(5)
           continue
         }
         const features = (await page.locator(".am-splash-feature-stack").boundingBox())!
@@ -396,6 +408,7 @@ for (const locale of ["en", "ar", "fa"]) {
     expect(await scales(page, ".am-splash-arrow")).toEqual([scale, scale])
     await page.goto(`/iframe.html?id=agentmanager--splash-folded-story&viewMode=story&args=locale:${locale}`)
     await expect(page.locator(".am-splash-show")).toBeVisible()
+    await ready(page, locale)
     await expect(page.locator('.am-splash-show [data-component="icon"][data-directional]')).toHaveCount(1)
     expect(await scales(page, ".am-splash-show")).toEqual([scale])
     await page.locator(".am-splash-show").click()
@@ -424,7 +437,7 @@ for (const width of [340, 720, 1100]) {
     await open(page)
     await resize(page, width)
     const durations = await page
-      .locator(".am-splash-hero-main button")
+      .locator(".am-splash-hero-main button, .am-splash-marker")
       .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).transitionDuration))
     expect(durations.length).toBeGreaterThan(0)
     expect(durations.every((duration) => duration === "0s")).toBe(true)
@@ -587,6 +600,53 @@ test("compact forward and reverse focus traversal includes the panel but exclude
   }
 })
 
+for (const [locale, dictionary] of [
+  ["fr", french.default],
+  ["ar", arabic.default],
+] as const) {
+  test(`${locale} folded story uses merged welcome and splash translations`, async ({ page }) => {
+    await page.goto(`/iframe.html?id=agentmanager--splash-folded-story&viewMode=story&args=locale:${locale}`)
+    await ready(page, locale)
+    const dict = dictionary({})
+    await expect(page.locator(".kilo-about-text")).toHaveText(dict["session.messages.welcome"]!)
+    await expect(page.locator(".recent-sessions-label")).toHaveText(dict["session.recent"]!)
+    await expect(page.locator(".show-history-btn")).toHaveText(dict["session.showHistory"]!)
+    await expect(page.locator(".feedback-button")).toHaveText(dict["feedback.button"]!)
+    await expect(page.locator(".am-splash-show")).toHaveText(dict["agentManager.splash.showExamples"]!)
+  })
+}
+
+for (const locale of ["fr", "ar", "fa"]) {
+  test(`${locale} capture waits for a delayed production dictionary`, async ({ page }) => {
+    const requested = Promise.withResolvers<void>()
+    const release = Promise.withResolvers<void>()
+    await page.route(
+      new RegExp(`/(language-dictionaries/${locale}\\.ts|${locale}-[^/]+\\.js)(\\?|$)`),
+      async (route) => {
+        requested.resolve()
+        await release.promise
+        await route.continue()
+      },
+    )
+    await page.goto(`/iframe.html?id=agentmanager--splash-french-story&viewMode=story&args=locale:${locale}`)
+    await requested.promise
+    await expect(page.locator(".am-splash-hero")).toBeVisible()
+    await expect(page.locator("html")).toHaveAttribute("lang", "en")
+    let captured = false
+    const capture = ready(page, locale).then(() => {
+      captured = true
+      return page.screenshot()
+    })
+    await page.evaluate(
+      () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+    )
+    expect(captured).toBe(false)
+    release.resolve()
+    await capture
+    expect(captured).toBe(true)
+  })
+}
+
 test("mode follows the splash content box rather than viewport or padded parent width", async ({ page }) => {
   await page.setViewportSize({ width: 1500, height: 1600 })
   await open(page)
@@ -633,7 +693,7 @@ test("the 880px container breakpoint fits the wide carousel and preserves select
     )
     expect(await page.locator(".am-splash-hero").evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true)
     const bounds = (await page.locator(".am-splash").boundingBox())!
-    for (const card of await page.locator(".am-splash-card, .am-splash-preview-card").all()) {
+    for (const card of await page.locator(".am-splash-cards, .am-splash-preview-card").all()) {
       const box = (await card.boundingBox())!
       expect(box.x).toBeGreaterThanOrEqual(bounds.x)
       expect(box.x + box.width).toBeLessThanOrEqual(bounds.x + bounds.width)
@@ -662,6 +722,8 @@ test("folded note is hidden below a 600px container, independently of the viewpo
 
 for (const story of [
   "expanded",
+  "cross-stack",
+  "german",
   "orchestrator",
   "ops",
   "versions",
@@ -680,11 +742,21 @@ for (const story of [
 ]) {
   for (const width of [420, 520, 760, 1100]) {
     test(`${story} at ${width}px root contains its card and selections keep height stable`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 1400 })
+      await page.setViewportSize({ width, height: 1600 })
       await page.goto(`/iframe.html?id=agentmanager--splash-${story}-story&viewMode=story`)
       const card = page.locator(".am-splash-hero, .am-splash-folded")
       await expect(card).toBeVisible()
-      await page.evaluate(() => document.fonts.ready)
+      await ready(
+        page,
+        {
+          french: "fr",
+          arabic: "ar",
+          persian: "fa",
+          german: "de",
+          "narrow-arabic": "ar",
+          "narrow-french": "fr",
+        }[story] ?? "en",
+      )
       const root = (await page.locator("#storybook-root").boundingBox())!
       const hero = (await card.boundingBox())!
       expect(root.height, `${story} at ${width}px root height`).toBeGreaterThanOrEqual(hero.height)

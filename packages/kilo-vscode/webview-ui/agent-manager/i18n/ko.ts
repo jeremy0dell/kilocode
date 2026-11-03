@@ -502,6 +502,7 @@ export const dict = {
   "agentManager.intro.reopen": "Agent Manager 작동 방식",
   "agentManager.splash.preview.label": "Agent Manager 사이드바 미리보기",
   "agentManager.splash.thinHint": "숫자를 탭하면 사이드바의 해당 부분이 어떤 역할을 하는지 확인할 수 있습니다.",
+  "agentManager.splash.marker": "기능 {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":
     "작업을 병렬로 실행하고, 업무를 위임하고, 모든 에이전트의 진행 상황을 한곳에서 확인하세요.",
@@ -512,7 +513,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "여러 작업을 병렬로 처리하고, 작업을 위임하고, 모든 에이전트의 진행 상황을 추적하며, 여러 작업 흐름을 한곳에서 계속 움직이세요.",
   "agentManager.splash.start": "첫 세션 시작",
-  "agentManager.splash.hint": "또는 아래 상자에 작업을 설명하세요",
+  "agentManager.splash.hint": "또는 아래에 작업을 설명하세요",
   "agentManager.splash.folded.title": "Kilo 에이전트 함대를 일하게 하세요",
   "agentManager.splash.folded.note": "크로스 스택 기능, 오케스트레이터, 운영 팀 등",
   "agentManager.splash.showExamples": "예시 보기",
