@@ -1,37 +1,42 @@
 import { describe, expect, it } from "bun:test"
-import { createComponent, createRoot } from "solid-js"
+import { createRoot } from "solid-js"
 import { examples } from "../../webview-ui/agent-manager/splash/examples"
-import { fleet, Framing } from "../../webview-ui/agent-manager/splash/fleet"
+import { fleet } from "../../webview-ui/agent-manager/splash/fleet"
 import { createProjectStore } from "../../webview-ui/agent-manager/project/store"
 import { buildProjectNavEntries, navSelector } from "../../webview-ui/agent-manager/project-nav"
 import { buildShortcutMap } from "../../webview-ui/agent-manager/section-helpers"
 
 describe("splash sidebar adapter", () => {
-  it("uses real compact section state and project ordering without changing wide fixtures", () => {
+  it("preserves canonical fixture ordering and leaves every section uncollapsed", () => {
     const cross = examples.at(0)!
     const ops = examples.at(2)!
-    const wide = [fleet(cross), fleet(ops)]
+    expect(fleet(cross).map((row) => row.project.label)).toEqual(["billing-api", "web-app", "infra"])
+    expect(cross.fixture.projects.map((project) => project.name)).toEqual(["billing-api", "web-app", "infra"])
+    const row = fleet(ops).at(0)!
+    expect(row.state.sections!.map((section) => [section.name, section.collapsed])).toEqual([
+      ["IMPLEMENT", false],
+      ["OPS", false],
+    ])
+    expect(row.state.worktrees.filter((wt) => wt.sectionId === row.state.sections!.at(0)?.id)).toHaveLength(2)
+    expect(row.state.worktreeOrder).toEqual(
+      row.state.sections!.flatMap((section) => [
+        section.id,
+        ...row.state.worktrees.filter((wt) => wt.sectionId === section.id).map((wt) => wt.id),
+      ]),
+    )
     createRoot((dispose) => {
-      createComponent(Framing.Provider, {
-        value: true,
-        get children() {
-          expect(fleet(cross).map((row) => row.project.label)).toEqual(["billing-api", "infra", "web-app"])
-          const row = fleet(ops).at(0)!
-          expect(row.state.sections!.map((section) => [section.name, section.collapsed])).toEqual([
-            ["IMPLEMENT", true],
-            ["OPS", false],
-          ])
+      for (const example of examples) {
+        const rows = fleet(example)
+        expect(rows.map((row) => row.project.label)).toEqual(example.fixture.projects.map((project) => project.name))
+        for (const row of rows) {
           const store = createProjectStore(row.project.id)
           store.applyState(row.state)
-          expect(store.sections().at(0)?.collapsed).toBe(true)
-          expect(row.state.worktrees.filter((wt) => wt.sectionId === row.state.sections!.at(0)?.id)).toHaveLength(3)
-          return null
-        },
-      })
+          expect(store.sections().every((section) => section.collapsed === false)).toBe(true)
+          expect(store.worktrees()).toEqual(row.state.worktrees)
+        }
+      }
       dispose()
     })
-    expect([fleet(cross), fleet(ops)]).toEqual(wide)
-    expect(cross.fixture.projects.map((project) => project.name)).toEqual(["billing-api", "web-app", "infra"])
   })
 
   it("selects exactly one worktree in every example", () => {
@@ -105,6 +110,10 @@ describe("splash sidebar adapter", () => {
       label: "Orchestrator · scheduler latency pass",
     })
     expect(orchestration.state.worktrees.slice(1).every((wt) => wt.sectionId === sections.at(1)!.id)).toBe(true)
+    const ops = fleet(examples.at(2)!).at(0)!
+    const implementation = ops.state.sections!.find((section) => section.name === "IMPLEMENT")!
+    expect(ops.state.worktrees).toHaveLength(5)
+    expect(ops.state.worktrees.filter((wt) => wt.sectionId === implementation.id)).toHaveLength(2)
   })
 
   it("uses unique splash-only identities and the real cross-project shortcut order", () => {
@@ -115,8 +124,8 @@ describe("splash sidebar adapter", () => {
       const states = Object.fromEntries(rows.map((row) => [row.project.id, row.state]))
       const entries = buildProjectNavEntries(projects, states)
       const shortcuts = buildShortcutMap(entries)
-      rows.forEach((row, index) => {
-        expect(row.project.id).toBe(`splash:${example.id}:${index}`)
+      rows.forEach((row) => {
+        expect(row.project.id).toBe(`splash:${example.id}:${row.project.root}`)
         ids.push(row.project.id, ...row.state.worktrees.map((wt) => wt.id), ...row.state.sections!.map((s) => s.id))
         expect(shortcuts.get(`${row.project.id}:local`)).toBeDefined()
       })

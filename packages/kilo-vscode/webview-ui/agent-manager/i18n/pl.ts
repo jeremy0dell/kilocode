@@ -483,6 +483,8 @@ export const dict = {
   "agentManager.pr.error.gh_missing.title": "GitHub CLI nie jest zainstalowane",
   "agentManager.pr.error.gh_missing.description": "Zainstaluj GitHub CLI, aby włączyć status PR.",
   "agentManager.splash.preview.label": "Podgląd paska bocznego Agent Manager",
+  "agentManager.splash.thinHint": "Dotknij numeru, aby zobaczyć, do czego służy ta część paska bocznego.",
+  "agentManager.splash.marker": "Funkcja {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":
     "Uruchamiaj zadania równolegle, deleguj pracę i śledź każdego agenta w jednym miejscu.",
@@ -493,7 +495,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "Realizuj wiele zadań równolegle, deleguj pracę, śledź postępy każdego agenta i utrzymuj wiele strumieni pracy w jednym miejscu.",
   "agentManager.splash.start": "Rozpocznij pierwszą sesję",
-  "agentManager.splash.hint": "lub opisz zadanie w polu poniżej",
+  "agentManager.splash.hint": "lub opisz zadanie poniżej",
   "agentManager.splash.folded.title": "Postaw do pracy flotę agentów Kilo",
   "agentManager.splash.folded.note": "Funkcje między stosami, orkiestrator, zespół ops i więcej",
   "agentManager.splash.showExamples": "Pokaż przykłady",

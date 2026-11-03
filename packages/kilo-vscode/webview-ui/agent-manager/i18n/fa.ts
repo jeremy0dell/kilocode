@@ -483,6 +483,8 @@ export const dict = {
   "agentManager.pr.error.gh_missing.title": "GitHub CLI نصب نشده است",
   "agentManager.pr.error.gh_missing.description": "برای فعال کردن وضعیت PR، GitHub CLI را نصب کنید.",
   "agentManager.splash.preview.label": "پیش‌نمایش نوار کناری Agent Manager",
+  "agentManager.splash.thinHint": "روی یک شماره بزنید تا ببینید آن بخش از نوار کناری چه کاری انجام می‌دهد.",
+  "agentManager.splash.marker": "قابلیت {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":
     "کارها را به‌صورت موازی اجرا کنید، کار را واگذار کنید و همهٔ عامل‌ها را از یک‌جا دنبال کنید.",
@@ -493,7 +495,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "چندین کار را هم‌زمان انجام دهید، کار را واگذار کنید، پیشرفت هر عامل را دنبال کنید و چند جریان کاری را از یک جا به حرکت درآورید.",
   "agentManager.splash.start": "اولین نشست خود را شروع کنید",
-  "agentManager.splash.hint": "یا یک کار را در کادر زیر توصیف کنید",
+  "agentManager.splash.hint": "یا یک کار را در زیر توصیف کنید",
   "agentManager.splash.folded.title": "یک ناوگان از عامل‌های Kilo را به کار بگیرید",
   "agentManager.splash.folded.note": "قابلیت‌های چندپشته‌ای، یک هماهنگ‌کننده، یک تیم عملیات و بیشتر",
   "agentManager.splash.showExamples": "نمایش نمونه‌ها",

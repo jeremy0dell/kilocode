@@ -481,6 +481,8 @@ export const dict = {
   "agentManager.pr.error.gh_missing.title": "GitHub CLI er ikke installert",
   "agentManager.pr.error.gh_missing.description": "Installer GitHub CLI for å aktivere PR-status.",
   "agentManager.splash.preview.label": "Forhåndsvisning av Agent Manager-sidepanelet",
+  "agentManager.splash.thinHint": "Trykk på et tall for å se hva den delen av sidepanelet gjør.",
+  "agentManager.splash.marker": "Funksjon {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle": "Kjør oppgaver parallelt, deleger arbeid og følg hver agent fra ett sted.",
   "agentManager.splash.compact.hint": "eller beskriv en oppgave under",
@@ -490,7 +492,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "Ta tak i flere oppgaver parallelt, deleger arbeid, følg fremdriften til hver agent og hold flere arbeidsstrømmer i gang fra ett sted.",
   "agentManager.splash.start": "Start din første økt",
-  "agentManager.splash.hint": "eller beskriv en oppgave i feltet under",
+  "agentManager.splash.hint": "eller beskriv en oppgave under",
   "agentManager.splash.folded.title": "Sett en flåte med Kilo-agenter i arbeid",
   "agentManager.splash.folded.note": "Funksjoner på tvers av stakker, en orkestrator, et driftsteam og mer",
   "agentManager.splash.showExamples": "Vis eksempler",

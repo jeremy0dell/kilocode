@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test"
 import { platform } from "node:os"
+import { ready } from "./story-locale"
 
 const IS_DARWIN = platform() === "darwin"
 
@@ -149,6 +150,21 @@ for (const story of stories) {
     )
     await disableAnimations(page)
     await page.waitForSelector("#storybook-root *", { state: "attached" })
+    if (story.id.startsWith("agentmanager--splash-")) {
+      await ready(
+        page,
+        {
+          "agentmanager--splash-german-story": "de",
+          "agentmanager--splash-french-story": "fr",
+          "agentmanager--splash-arabic-story": "ar",
+          "agentmanager--splash-persian-story": "fa",
+          "agentmanager--splash-narrow-arabic-story": "ar",
+          "agentmanager--splash-narrow-french-story": "fr",
+          "agentmanager--splash-thin-arabic-story": "ar",
+          "agentmanager--splash-thin-french-story": "fr",
+        }[story.id] ?? "en",
+      )
+    }
     await settle(page)
 
     const [component, variant] = story.id.split("--")

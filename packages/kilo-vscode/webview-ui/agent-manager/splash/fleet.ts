@@ -1,4 +1,3 @@
-import { createContext, useContext } from "solid-js"
 import type {
   AgentManagerStateMessage,
   AgentProjectSnapshot,
@@ -17,17 +16,10 @@ const status = {
   "needs-you": "waiting",
 } satisfies Record<NonNullable<Session["status"]>, Activity>
 
-export const Framing = createContext(false)
-
 /** Adapt splash fixtures to the same data consumed by the live project sidebar. */
 export function fleet(example: Example) {
-  const compact = useContext(Framing)
-  const projects =
-    compact && example.id === "crossStack"
-      ? example.fixture.projects.toSorted((a, b) => Number(a.name === "web-app") - Number(b.name === "web-app"))
-      : example.fixture.projects
-  return projects.map((fixture, index) => {
-    const id = `splash:${example.id}:${index}`
+  return example.fixture.projects.map((fixture, index) => {
+    const id = `splash:${example.id}:${fixture.id}`
     const worktrees: WorktreeState[] = []
     const sections: SectionState[] = []
     const order: string[] = []
@@ -44,7 +36,7 @@ export function fleet(example: Example) {
       behind: 0,
     }
     const add = (session: Session, section?: string, group?: string) => {
-      const key = `${id}:worktree:${worktrees.length}`
+      const key = `${id}:worktree:${session.id}`
       worktrees.push({
         id: key,
         label: session.title,
@@ -85,17 +77,11 @@ export function fleet(example: Example) {
       if (row.kind === "local") return
       if (row.kind === "session") return add(row.session)
       if (row.kind === "versions") {
-        row.sessions.forEach((session) => add(session, undefined, `${id}:group:${position}`))
+        row.sessions.forEach((session) => add(session, undefined, `${id}:group:${row.id}`))
         return
       }
-      const key = `${id}:section:${position}`
-      sections.push({
-        id: key,
-        name: row.section.name,
-        color: row.section.color,
-        order: position,
-        collapsed: compact && example.id === "ops" && row.section.name === "IMPLEMENT",
-      })
+      const key = `${id}:section:${row.section.id}`
+      sections.push({ id: key, name: row.section.name, color: row.section.color, order: position, collapsed: false })
       order.push(key)
       row.section.sessions.forEach((session) => add(session, key))
     })

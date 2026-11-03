@@ -227,7 +227,7 @@ const AgentManagerContent: Component = () => {
   const vscode = useVSCode()
   const dialog = useDialog()
   const splash = createSplashState((message) => vscode.postMessage(message), {
-    folded: (window as { KILO_AGENT_MANAGER_SPLASH_FOLDED?: boolean }).KILO_AGENT_MANAGER_SPLASH_FOLDED === true,
+    folded: (window as { KILO_AGENT_MANAGER_SPLASH_FOLDED?: boolean }).KILO_AGENT_MANAGER_SPLASH_FOLDED,
   })
   const updateBase = useBaseUpdate(session)
   const update = () =>
@@ -1301,6 +1301,7 @@ const AgentManagerContent: Component = () => {
           )?.id
       if (owner && owner !== (currentProjectId() ?? "single")) {
         if (!projectList().some((project) => project.id === owner)) return
+        splash.start()
         if (backgroundCreated(registry.ensure(owner), created))
           vscode.postMessage({
             type: "agentManager.persistSession",
@@ -1312,6 +1313,7 @@ const AgentManagerContent: Component = () => {
       }
       const pending = created.draftID && localSessionIDs().includes(created.draftID) ? created.draftID : undefined
       if (!pending && localSessionIDs().includes(created.session.id)) return
+      splash.start()
       if (worktreeSessionIds().has(created.session.id)) return
       const active = activePendingId()
       const focus = !pending || (selection() === LOCAL && pending === active)

@@ -13,6 +13,26 @@ function setup() {
 }
 
 describe("decorative sidebar interaction boundary", () => {
+  it("leaves sibling marker buttons interactive and focusable outside the hidden guarded stack", () => {
+    const { window, root, dispose } = setup()
+    root.setAttribute("aria-hidden", "true")
+    const card = window.document.createElement("div")
+    window.document.body.append(card)
+    card.append(root)
+    const marker = window.document.createElement("button")
+    marker.textContent = "1"
+    card.append(marker)
+    let calls = 0
+    marker.addEventListener("click", () => calls++)
+    marker.focus()
+    marker.click()
+    expect(window.document.activeElement).toBe(marker)
+    expect(calls).toBe(1)
+    expect(marker.closest('[aria-hidden="true"]')).toBe(null)
+    expect([...card.querySelectorAll("button")].filter((el) => el.tabIndex >= 0)).toEqual([marker])
+    dispose()
+  })
+
   it("excludes existing and dynamically added controls from keyboard focus", async () => {
     const { window, root, dispose } = setup()
     expect([...root.children].every((el) => el.getAttribute("tabindex") === "-1")).toBe(true)

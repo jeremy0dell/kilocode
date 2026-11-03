@@ -493,6 +493,8 @@ export const dict = {
   "agentManager.pr.error.gh_missing.title": "GitHub CLI не встановлено",
   "agentManager.pr.error.gh_missing.description": "Встановіть GitHub CLI, щоб увімкнути статус PR.",
   "agentManager.splash.preview.label": "Попередній перегляд бічної панелі Agent Manager",
+  "agentManager.splash.thinHint": "Торкніться номера, щоб дізнатися, за що відповідає ця частина бічної панелі.",
+  "agentManager.splash.marker": "Функція {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle":
     "Запускайте завдання паралельно, делегуйте роботу та стежте за кожним агентом в одному місці.",
@@ -503,7 +505,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "Виконуйте кілька завдань паралельно, делегуйте роботу, стежте за прогресом кожного агента й підтримуйте кілька робочих потоків з одного місця.",
   "agentManager.splash.start": "Почніть першу сесію",
-  "agentManager.splash.hint": "або опишіть завдання в полі нижче",
+  "agentManager.splash.hint": "або опишіть завдання нижче",
   "agentManager.splash.folded.title": "Запряжіть флот агентів Kilo в роботу",
   "agentManager.splash.folded.note": "Кросстекові функції, оркестратор, команда експлуатації та багато іншого",
   "agentManager.splash.showExamples": "Показати приклади",

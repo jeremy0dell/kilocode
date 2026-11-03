@@ -465,6 +465,8 @@ export const dict = {
   "agentManager.pr.error.gh_missing.title": "未安裝 GitHub CLI",
   "agentManager.pr.error.gh_missing.description": "安裝 GitHub CLI 以啟用 PR 狀態。",
   "agentManager.splash.preview.label": "Agent Manager 側邊欄預覽",
+  "agentManager.splash.thinHint": "點選數字，了解側邊欄對應部分的功能。",
+  "agentManager.splash.marker": "功能 {{number}}：{{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.compact.subtitle": "平行執行任務、委派工作，並在同一處追蹤每個智慧體的進度。",
   "agentManager.splash.compact.hint": "或在下方描述任務",
@@ -474,7 +476,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "並行處理多項任務、委派工作、追蹤每個代理程式的進度，並在同一個地方讓多條工作流程持續推進。",
   "agentManager.splash.start": "開始第一個工作階段",
-  "agentManager.splash.hint": "或在下方輸入框中描述任務",
+  "agentManager.splash.hint": "或在下方描述任務",
   "agentManager.splash.folded.title": "讓一隊 Kilo 代理程式為你工作",
   "agentManager.splash.folded.note": "跨技術堆疊功能、編排器、維運團隊等更多內容",
   "agentManager.splash.showExamples": "查看範例",
