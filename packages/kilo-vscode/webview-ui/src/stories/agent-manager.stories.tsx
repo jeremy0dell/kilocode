@@ -365,21 +365,42 @@ export const SplashFoldedStory: StoryObj<{ locale: Locale }> = {
 }
 
 export const SplashFoldedThin: Story = {
-  ...SplashFoldedStory,
   name: "Splash folded thin",
-  decorators: [(Story: () => JSX.Element) => <div style={{ width: "440px", "max-width": "100%" }}>{Story()}</div>],
+  render: () => (
+    <div style={{ width: "440px" }}>
+      <StoryProviders>
+        <LanguageProvider languageOverride={() => "en"}>
+          <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+        </LanguageProvider>
+      </StoryProviders>
+    </div>
+  ),
 }
 
 export const SplashFoldedNarrow: Story = {
-  ...SplashFoldedStory,
   name: "Splash folded narrow",
-  decorators: [(Story: () => JSX.Element) => <div style={{ width: "720px", "max-width": "100%" }}>{Story()}</div>],
+  render: () => (
+    <div style={{ width: "720px" }}>
+      <StoryProviders>
+        <LanguageProvider languageOverride={() => "en"}>
+          <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+        </LanguageProvider>
+      </StoryProviders>
+    </div>
+  ),
 }
 
 export const SplashFoldedWide: Story = {
-  ...SplashFoldedStory,
   name: "Splash folded wide",
-  decorators: [(Story: () => JSX.Element) => <div style={{ width: "1010px", "max-width": "100%" }}>{Story()}</div>],
+  render: () => (
+    <div style={{ width: "1010px" }}>
+      <StoryProviders>
+        <LanguageProvider languageOverride={() => "en"}>
+          <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+        </LanguageProvider>
+      </StoryProviders>
+    </div>
+  ),
 }
 
 // ---------------------------------------------------------------------------
