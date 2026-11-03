@@ -338,11 +338,17 @@ export const SplashPersianStory: StoryObj<{ locale: Locale }> = {
   args: { locale: "fa" },
 }
 
-export const SplashFoldedStory: Story = {
+export const SplashFoldedStory: StoryObj<{ locale: Locale }> = {
   name: "Splash folded",
-  render: () => (
+  args: { locale: "en" },
+  argTypes: SplashFrenchStory.argTypes,
+  render: (args) => (
     <StoryProviders>
-      <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+      <SplashLanguage locale={args.locale}>
+        <div dir={args.locale === "ar" || args.locale === "fa" ? "rtl" : "ltr"}>
+          <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+        </div>
+      </SplashLanguage>
     </StoryProviders>
   ),
 }

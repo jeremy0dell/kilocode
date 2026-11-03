@@ -10,6 +10,21 @@ async function open(page: Page, theme = "dark-modern", locale = "en") {
 }
 
 for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
+  test(`${theme} CTA focus ring has a visible gap from its fill`, async ({ page }) => {
+    await open(page, theme)
+    await page.keyboard.press("Tab")
+    const button = page.locator('.am-splash-actions [data-component="button"]')
+    await button.focus()
+    const outline = await button.evaluate((node) => ({
+      visible: node.matches(":focus-visible"),
+      style: getComputedStyle(node).outlineStyle,
+      offset: Number.parseFloat(getComputedStyle(node).outlineOffset),
+    }))
+    expect(outline.visible).toBe(true)
+    expect(outline.style).toBe("solid")
+    expect(outline.offset).toBeGreaterThanOrEqual(2)
+  })
+
   for (const width of [420, 1100]) {
     test(`${theme} at ${width}px hero and preview pass axe, including nested-interactive and aria-hidden-focus`, async ({
       page,
@@ -204,17 +219,36 @@ for (const locale of ["br", "da", "es", "fa", "fr", "it", "nl", "no", "pl", "ru"
   })
 }
 
-for (const locale of ["ar", "fa"]) {
-  test(`${locale} mirrors the selection bar and chevrons`, async ({ page }) => {
+async function scales(page: Page, selector: string) {
+  return page.locator(`${selector} [data-slot="icon-svg"]`).evaluateAll((icons) =>
+    icons.map((icon) => {
+      const button = icon.closest("button")
+      let scale = 1
+      for (let node: Element | null = icon; node; node = node.parentElement) {
+        const transform = getComputedStyle(node).transform
+        scale *= transform === "none" ? 1 : new DOMMatrixReadOnly(transform).a
+        if (node === button) break
+      }
+      return scale
+    }),
+  )
+}
+
+for (const locale of ["en", "ar", "fa"]) {
+  test(`${locale} selection inset and net chevron directions are correct in expanded and folded views`, async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1100, height: 1400 })
     await open(page, "dark-modern", locale)
+    const scale = locale === "en" ? 1 : -1
     const shadow = await page.locator(".am-splash-card-selected").evaluate((node) => getComputedStyle(node).boxShadow)
-    expect(shadow).toContain("-3px")
-    const transform = await page
-      .locator('.am-splash-arrow [data-component="icon"]')
-      .first()
-      .evaluate((node) => getComputedStyle(node).transform)
-    expect(transform).toBe("matrix(-1, 0, 0, 1, 0, 0)")
+    expect(shadow).toContain(locale === "en" ? " 3px" : "-3px")
+    await expect(page.locator('.am-splash-arrow [data-component="icon"][data-directional]')).toHaveCount(2)
+    expect(await scales(page, ".am-splash-arrow")).toEqual([scale, scale])
+    await page.goto(`/iframe.html?id=agentmanager--splash-folded-story&viewMode=story&args=locale:${locale}`)
+    await expect(page.locator(".am-splash-show")).toBeVisible()
+    await expect(page.locator('.am-splash-show [data-component="icon"][data-directional]')).toHaveCount(1)
+    expect(await scales(page, ".am-splash-show")).toEqual([scale])
   })
 }
 
