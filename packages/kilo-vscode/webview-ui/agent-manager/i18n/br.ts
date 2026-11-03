@@ -510,6 +510,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Pular introdução",
   "agentManager.intro.reopen": "Como o Agent Manager funciona",
   "agentManager.splash.preview.label": "Prévia da barra lateral do Agent Manager",
+  "agentManager.splash.marker": "Recurso {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Ocultar",
   "agentManager.splash.hideLabel": "Ocultar a apresentação do Agent Manager",
@@ -517,7 +518,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "Resolva várias tarefas em paralelo, delegue trabalho, acompanhe o progresso de cada agente e mantenha vários fluxos de trabalho em andamento a partir de um só lugar.",
   "agentManager.splash.start": "Inicie sua primeira sessão",
-  "agentManager.splash.hint": "ou descreva uma tarefa na caixa abaixo",
+  "agentManager.splash.hint": "ou descreva uma tarefa abaixo",
   "agentManager.splash.folded.title": "Coloque uma frota de agentes do Kilo para trabalhar",
   "agentManager.splash.folded.note": "Recursos entre stacks, um orquestrador, uma equipe de operações e mais",
   "agentManager.splash.showExamples": "Ver exemplos",

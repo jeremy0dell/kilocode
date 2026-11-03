@@ -508,6 +508,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Pomiń wprowadzenie",
   "agentManager.intro.reopen": "Jak działa Agent Manager",
   "agentManager.splash.preview.label": "Podgląd paska bocznego Agent Manager",
+  "agentManager.splash.marker": "Funkcja {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Ukryj",
   "agentManager.splash.hideLabel": "Ukryj wprowadzenie do Agent Manager",
@@ -515,7 +516,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "Realizuj wiele zadań równolegle, deleguj pracę, śledź postępy każdego agenta i utrzymuj wiele strumieni pracy w jednym miejscu.",
   "agentManager.splash.start": "Rozpocznij pierwszą sesję",
-  "agentManager.splash.hint": "lub opisz zadanie w polu poniżej",
+  "agentManager.splash.hint": "lub opisz zadanie poniżej",
   "agentManager.splash.folded.title": "Postaw do pracy flotę agentów Kilo",
   "agentManager.splash.folded.note": "Funkcje między stosami, orkiestrator, zespół ops i więcej",
   "agentManager.splash.showExamples": "Pokaż przykłady",

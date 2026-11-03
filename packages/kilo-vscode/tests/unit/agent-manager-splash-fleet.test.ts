@@ -78,6 +78,10 @@ describe("splash sidebar adapter", () => {
       label: "Orchestrator · scheduler latency pass",
     })
     expect(orchestration.state.worktrees.slice(1).every((wt) => wt.sectionId === sections.at(1)!.id)).toBe(true)
+    const ops = fleet(examples.at(2)!).at(0)!
+    const implementation = ops.state.sections!.find((section) => section.name === "IMPLEMENT")!
+    expect(ops.state.worktrees).toHaveLength(5)
+    expect(ops.state.worktrees.filter((wt) => wt.sectionId === implementation.id)).toHaveLength(2)
   })
 
   it("uses unique splash-only identities and the real cross-project shortcut order", () => {
@@ -88,8 +92,8 @@ describe("splash sidebar adapter", () => {
       const states = Object.fromEntries(rows.map((row) => [row.project.id, row.state]))
       const entries = buildProjectNavEntries(projects, states)
       const shortcuts = buildShortcutMap(entries)
-      rows.forEach((row, index) => {
-        expect(row.project.id).toBe(`splash:${example.id}:${index}`)
+      rows.forEach((row) => {
+        expect(row.project.id).toBe(`splash:${example.id}:${row.project.root}`)
         ids.push(row.project.id, ...row.state.worktrees.map((wt) => wt.id), ...row.state.sections!.map((s) => s.id))
         expect(shortcuts.get(`${row.project.id}:local`)).toBeDefined()
       })

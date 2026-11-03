@@ -3,8 +3,6 @@ export function wrap(index: number, delta: number, count: number): number {
   return (index + delta + count) % count
 }
 
-export function visible(index: number, count: number, size: number): number[] {
-  const shown = Math.min(size, count)
-  const start = Math.max(0, Math.min(index - 1, count - shown))
-  return Array.from({ length: shown }, (_, offset) => start + offset)
+export function start(index: number, count: number): number {
+  return Math.max(0, Math.min(index - 1, count - 3))
 }

@@ -510,6 +510,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Пропустить введение",
   "agentManager.intro.reopen": "Как работает Agent Manager",
   "agentManager.splash.preview.label": "Предпросмотр боковой панели Agent Manager",
+  "agentManager.splash.marker": "Функция {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Скрыть",
   "agentManager.splash.hideLabel": "Скрыть знакомство с Agent Manager",
@@ -517,7 +518,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "Решайте несколько задач параллельно, делегируйте работу, следите за прогрессом каждого агента и держите несколько рабочих потоков в движении из одного места.",
   "agentManager.splash.start": "Начать первую сессию",
-  "agentManager.splash.hint": "или опишите задачу в поле ниже",
+  "agentManager.splash.hint": "или опишите задачу ниже",
   "agentManager.splash.folded.title": "Запустите в работу флот агентов Kilo",
   "agentManager.splash.folded.note": "Кросстековые функции, оркестратор, команда эксплуатации и многое другое",
   "agentManager.splash.showExamples": "Показать примеры",

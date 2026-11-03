@@ -515,6 +515,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Tanıtımı atla",
   "agentManager.intro.reopen": "Agent Manager nasıl çalışır",
   "agentManager.splash.preview.label": "Agent Manager kenar çubuğu önizlemesi",
+  "agentManager.splash.marker": "Özellik {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Gizle",
   "agentManager.splash.hideLabel": "Agent Manager tanıtımını gizle",
@@ -522,7 +523,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "Birden çok görevi paralel olarak ele alın, işi devredin, her ajanın ilerlemesini izleyin ve birden çok iş akışını tek yerden sürdürün.",
   "agentManager.splash.start": "İlk oturumunuzu başlatın",
-  "agentManager.splash.hint": "veya aşağıdaki kutuya bir görev yazın",
+  "agentManager.splash.hint": "veya aşağıya bir görev yazın",
   "agentManager.splash.folded.title": "Bir Kilo ajanı filosunu işe koşun",
   "agentManager.splash.folded.note": "Stack'ler arası özellikler, bir orkestratör, bir operasyon ekibi ve daha fazlası",
   "agentManager.splash.showExamples": "Örnekleri göster",

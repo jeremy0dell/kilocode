@@ -154,6 +154,7 @@ for (const story of stories) {
       await ready(
         page,
         {
+          "agentmanager--splash-german-story": "de",
           "agentmanager--splash-french-story": "fr",
           "agentmanager--splash-arabic-story": "ar",
           "agentmanager--splash-persian-story": "fa",

@@ -499,6 +499,7 @@ export const dict = {
   "agentManager.intro.dismiss": "تخطي المقدمة",
   "agentManager.intro.reopen": "كيف يعمل Agent Manager",
   "agentManager.splash.preview.label": "معاينة الشريط الجانبي لـ Agent Manager",
+  "agentManager.splash.marker": "الميزة {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "إخفاء",
   "agentManager.splash.hideLabel": "إخفاء مقدمة Agent Manager",
@@ -506,7 +507,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "أنجز عدة مهام بالتوازي، وفوّض العمل، وتابع تقدّم كل وكيل، وأبقِ عدة مسارات عمل قائمة من مكان واحد.",
   "agentManager.splash.start": "ابدأ جلستك الأولى",
-  "agentManager.splash.hint": "أو صف مهمة في المربع أدناه",
+  "agentManager.splash.hint": "أو صف مهمة أدناه",
   "agentManager.splash.folded.title": "شغّل أسطولًا من وكلاء Kilo",
   "agentManager.splash.folded.note": "ميزات عبر التقنيات، ومنسّق، وفريق عمليات، والمزيد",
   "agentManager.splash.showExamples": "عرض الأمثلة",

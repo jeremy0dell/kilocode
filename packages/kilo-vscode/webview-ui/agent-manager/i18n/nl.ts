@@ -515,6 +515,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Introductie overslaan",
   "agentManager.intro.reopen": "Hoe Agent Manager werkt",
   "agentManager.splash.preview.label": "Voorbeeld van Agent Manager-zijbalk",
+  "agentManager.splash.marker": "Functie {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Verbergen",
   "agentManager.splash.hideLabel": "Introductie van Agent Manager verbergen",
@@ -522,7 +523,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "Pak meerdere taken parallel aan, delegeer werk, volg de voortgang van elke agent en houd meerdere werkstromen op één plek in beweging.",
   "agentManager.splash.start": "Start je eerste sessie",
-  "agentManager.splash.hint": "of beschrijf een taak in het vak hieronder",
+  "agentManager.splash.hint": "of beschrijf hieronder een taak",
   "agentManager.splash.folded.title": "Zet een vloot Kilo-agenten aan het werk",
   "agentManager.splash.folded.note": "Functies over stacks heen, een orkestrator, een ops-team en meer",
   "agentManager.splash.showExamples": "Voorbeelden bekijken",

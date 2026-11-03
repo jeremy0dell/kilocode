@@ -244,6 +244,16 @@ function SplashPreview(props: { example: number; width?: string; height?: string
   )
 }
 
+export const SplashCrossStackStory: Story = {
+  name: "Splash cross-stack",
+  render: () => <SplashPreview example={0} />,
+}
+
+export const SplashGermanStory: Story = {
+  name: "Splash German wrapping",
+  render: () => <SplashPreview example={1} locale="de" />,
+}
+
 export const SplashOrchestratorStory: Story = {
   name: "Splash orchestrator",
   render: () => <SplashPreview example={1} />,
@@ -301,6 +311,24 @@ export const SplashFoldedStory: StoryObj<{ locale: Locale }> = {
       </LanguageProvider>
     </StoryProviders>
   ),
+}
+
+export const SplashFoldedThin: Story = {
+  ...SplashFoldedStory,
+  name: "Splash folded thin",
+  decorators: [(Story: () => JSX.Element) => <div style={{ width: "440px", "max-width": "100%" }}>{Story()}</div>],
+}
+
+export const SplashFoldedNarrow: Story = {
+  ...SplashFoldedStory,
+  name: "Splash folded narrow",
+  decorators: [(Story: () => JSX.Element) => <div style={{ width: "720px", "max-width": "100%" }}>{Story()}</div>],
+}
+
+export const SplashFoldedWide: Story = {
+  ...SplashFoldedStory,
+  name: "Splash folded wide",
+  decorators: [(Story: () => JSX.Element) => <div style={{ width: "1010px", "max-width": "100%" }}>{Story()}</div>],
 }
 
 // ---------------------------------------------------------------------------

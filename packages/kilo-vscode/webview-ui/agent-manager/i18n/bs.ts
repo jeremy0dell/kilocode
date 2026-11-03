@@ -506,6 +506,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Preskoči uvod",
   "agentManager.intro.reopen": "Kako radi Agent Manager",
   "agentManager.splash.preview.label": "Pregled bočne trake Agent Manager",
+  "agentManager.splash.marker": "Funkcija {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Sakrij",
   "agentManager.splash.hideLabel": "Sakrij uvod u Agent Manager",
@@ -513,7 +514,7 @@ export const dict = {
   "agentManager.splash.subtitle":
     "Radi na više zadataka paralelno, delegiraj posao, prati napredak svakog agenta i održavaj više tokova rada na jednom mjestu.",
   "agentManager.splash.start": "Započni svoju prvu sesiju",
-  "agentManager.splash.hint": "ili opiši zadatak u polju ispod",
+  "agentManager.splash.hint": "ili opiši zadatak ispod",
   "agentManager.splash.folded.title": "Stavi flotu Kilo agenata na posao",
   "agentManager.splash.folded.note": "Funkcije kroz više stekova, orkestrator, ops tim i još mnogo toga",
   "agentManager.splash.showExamples": "Prikaži primjere",
