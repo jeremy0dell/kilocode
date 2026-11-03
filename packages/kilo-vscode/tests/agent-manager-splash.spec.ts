@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test"
 
 async function open(page: Page, theme = "dark-modern", locale = "en") {
   await page.goto(
-    `/iframe.html?id=agentmanager-splash-polish--english&viewMode=story&globals=theme:kilo-vscode;vscodeTheme:${theme}&args=locale:${locale}`,
+    `/iframe.html?id=agentmanager--splash-french-story&viewMode=story&globals=theme:kilo-vscode;vscodeTheme:${theme}&args=locale:${locale}`,
   )
   await expect(page.locator(".am-splash-hero")).toBeVisible()
   await page.evaluate(() => document.fonts.ready)
@@ -47,7 +47,7 @@ for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
   }
 }
 
-test("carousel exposes each selection through one polite status and keeps focus outside the inert sidebar", async ({
+test("carousel announces selections and excludes the preview from forward and reverse focus traversal", async ({
   page,
 }) => {
   await open(page)
@@ -62,24 +62,32 @@ test("carousel exposes each selection through one polite status and keeps focus 
   }
   expect(new Set(names).size).toBe(5)
   await page.keyboard.press("Tab")
-  await page.getByRole("button", { name: "Hide Agent Manager introduction", exact: true }).focus()
-  const order: string[] = []
-  for (let index = 0; index < 12; index++) {
-    order.push(
-      await page.evaluate(() => {
-        const node = document.activeElement!
-        const style = getComputedStyle(node)
-        if (node.closest(".am-splash")) {
-          if (!node.matches(":focus-visible") || style.outlineStyle === "none") throw new Error("Missing focus ring")
-          if (node.closest("[inert]")) throw new Error("Preview received focus")
-        }
-        return node.getAttribute("aria-label") ?? node.textContent ?? ""
-      }),
-    )
-    await page.keyboard.press("Tab")
+  const count = await page.locator(".am-splash-hero-main button").count()
+  for (const key of ["Tab", "Shift+Tab"]) {
+    await page.getByRole("button", { name: "Hide Agent Manager introduction", exact: true }).focus()
+    const order = []
+    for (let index = 0; index < count + 2; index++) {
+      order.push(
+        await page.evaluate(() => {
+          const node = document.activeElement!
+          if (node.closest(".am-splash-preview-card")) throw new Error("Preview received focus")
+          const style = getComputedStyle(node)
+          if (node.closest(".am-splash") && (!node.matches(":focus-visible") || style.outlineStyle === "none")) {
+            throw new Error("Missing focus ring")
+          }
+          return {
+            label: node.getAttribute("aria-label") ?? node.textContent ?? "",
+            splash: node.closest(".am-splash") !== null,
+          }
+        }),
+      )
+      await page.keyboard.press(key)
+    }
+    expect(order[0]?.label).toBe("Hide Agent Manager introduction")
+    expect(order.at(-1)?.label).toBe("Hide Agent Manager introduction")
+    expect(order.some((state) => !state.splash)).toBe(true)
+    expect(order.filter((state) => state.label === "Start your first session")).toHaveLength(1)
   }
-  expect(order[0]).toBe("Hide Agent Manager introduction")
-  expect(order.at(-1)).toBe("Start your first session")
   const result = await new AxeBuilder({ page })
     .include(".am-splash-hero-main")
     .withTags(["wcag2a", "wcag2aa"])
@@ -130,13 +138,33 @@ test("reduced motion disables only splash-owned control motion", async ({ page }
   expect(durations.every((duration) => duration === "0s")).toBe(true)
 })
 
-test("existing splash story harnesses keep selection height stable", async ({ page }) => {
+test("every splash story root contains its card and expanded selections keep height stable", async ({ page }) => {
   for (const width of [420, 520, 760, 1100]) {
     await page.setViewportSize({ width, height: 1400 })
-    for (const story of ["expanded", "orchestrator", "ops", "versions", "beyond-code", "narrow"]) {
+    for (const story of [
+      "expanded",
+      "orchestrator",
+      "ops",
+      "versions",
+      "beyond-code",
+      "narrow",
+      "french",
+      "arabic",
+      "persian",
+      "folded",
+    ]) {
       await page.goto(`/iframe.html?id=agentmanager--splash-${story}-story&viewMode=story`)
-      await expect(page.locator(".am-splash-hero")).toBeVisible()
+      const card = page.locator(".am-splash-hero, .am-splash-folded")
+      await expect(card).toBeVisible()
       await page.evaluate(() => document.fonts.ready)
+      const root = (await page.locator("#storybook-root").boundingBox())!
+      const hero = (await card.boundingBox())!
+      expect(root.height, `${story} at ${width}px root height`).toBeGreaterThanOrEqual(hero.height)
+      expect(hero.x).toBeGreaterThanOrEqual(root.x)
+      expect(hero.y).toBeGreaterThanOrEqual(root.y)
+      expect(hero.x + hero.width).toBeLessThanOrEqual(root.x + root.width)
+      expect(hero.y + hero.height).toBeLessThanOrEqual(root.y + root.height)
+      if (story === "folded") continue
       const heights: number[] = []
       for (const dot of await page.locator(".am-splash-dot").all()) {
         await dot.click()
