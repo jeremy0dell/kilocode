@@ -87,7 +87,9 @@ Every stored post includes the receipt text "Stored only. This does not confirm 
 
 The panel opens as an editor tab and stays active across focus changes.
 
-An empty session shows a splash with example fleets for working with agents in parallel. The examples adapt to narrow panes. Select **Hide** to fold the splash into a compact bar above your recent sessions, or **Show examples** to expand it again. Your fold preference is remembered.
+An empty session shows a splash with five example fleets for working with agents in parallel. Numbered feature markers connect each explanation to a real sidebar preview. Wide panes show a carousel and feature list; narrow panes use pill tabs with explanations beside the preview; thin panes show explanations in a popover when you select a numbered marker.
+
+The splash folds into a compact bar after your first session starts. Select **Hide** to fold it sooner, or **Show examples** to expand it again. Your explicit choice is remembered, so reopening the examples keeps them expanded across later sessions and reloads. If you previously dismissed the old introduction, the splash starts folded.
 
 ## Requirements
 

@@ -108,7 +108,6 @@ const HealthSection: Component<{
 }
 
 interface WorktreeItemProps {
-  preview?: boolean
   worktree: WorktreeState
   /** Stable composite ID used by multi-project sidebar bodies. */
   sidebarId?: string
@@ -443,7 +442,7 @@ export const WorktreeItem: Component<WorktreeItemProps> = (props) => {
                   "am-wt-grouped": props.grouped,
                   "am-wt-group-end": props.groupEnd,
                 }}
-                data-sidebar-id={props.preview || props.completed ? undefined : (props.sidebarId ?? props.worktree.id)}
+                data-sidebar-id={props.completed ? undefined : (props.sidebarId ?? props.worktree.id)}
                 data-pinned={pin()}
                 onMouseDown={(e) => {
                   // Shift+mousedown extends the text selection. Stop it so Shift+click only pins.

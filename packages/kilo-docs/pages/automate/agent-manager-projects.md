@@ -42,7 +42,7 @@ Sessions, worktrees, and sections are not shared between projects. Removing an a
 
 ## When the workspace folder is not a Git repository
 
-Agent Manager does not check that the first workspace folder is a Git repository before using it as the default project. It keeps that folder as the default project. Empty sessions show the splash with example fleets rather than a repository warning. Select **Hide** to fold it into a compact bar, or **Show examples** to expand it again.
+Agent Manager does not check that the first workspace folder is a Git repository before using it as the default project. It keeps that folder as the default project. Empty sessions show the responsive splash with example fleets and numbered feature markers rather than a repository warning. The splash folds after your first session starts. Select **Hide** to fold it sooner, or **Show examples** to expand it again; your explicit choice is remembered.
 
 Because the folder is not a repository, worktree actions on the default project fail with:
 
