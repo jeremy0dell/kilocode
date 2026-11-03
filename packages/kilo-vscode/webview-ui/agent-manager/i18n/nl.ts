@@ -536,7 +536,7 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature3.name": "PR-badges en diff-tellingen",
   "agentManager.splash.examples.crossStack.feature3.text": "Weet wat elke agent heeft gewijzigd voordat je het opent.",
   "agentManager.splash.examples.orchestrator.tag": "Orkestrator",
-  "agentManager.splash.examples.orchestrator.title": "Laat een orkestrator een grote klus opdelen",
+  "agentManager.splash.examples.orchestrator.title": "Orkestrator deelt een grote klus op",
   "agentManager.splash.examples.orchestrator.pitch":
     "Wijs elke sessie aan als orkestrator, geef hem taken en laat hem het team samenstellen dat de klus nodig heeft.",
   "agentManager.splash.examples.orchestrator.feature1.name": "Sessies die sessies starten",
@@ -553,8 +553,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.name": "Vaste instructies",
   "agentManager.splash.examples.ops.feature1.text": "Geef een sessie een rol die langer meegaat dan één taak.",
   "agentManager.splash.examples.ops.feature2.name": "Secties",
-  "agentManager.splash.examples.ops.feature2.text":
-    "Groepeer Implementatie en Operations zodat elke ploeg overzichtelijk blijft.",
+  "agentManager.splash.examples.ops.feature2.text": "Groepeer Implement en Ops zodat elke ploeg overzichtelijk blijft.",
   "agentManager.splash.examples.ops.feature3.name": "Meldingen dat je nodig bent",
   "agentManager.splash.examples.ops.feature3.text":
     "Agents stoppen en markeren riskante keuzes in plaats van door te duwen.",

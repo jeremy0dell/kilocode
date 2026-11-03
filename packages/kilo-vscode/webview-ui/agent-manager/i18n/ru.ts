@@ -519,7 +519,7 @@ export const dict = {
   "agentManager.splash.folded.title": "Запустите в работу флот агентов Kilo",
   "agentManager.splash.folded.note": "Кросстековые функции, оркестратор, команда эксплуатации и многое другое",
   "agentManager.splash.showExamples": "Показать примеры",
-  "agentManager.splash.examples.crossStack.tag": "Несколько репозиториев",
+  "agentManager.splash.examples.crossStack.tag": "Мультирепо",
   "agentManager.splash.examples.crossStack.title": "Выпустите функцию в трёх репозиториях",
   "agentManager.splash.examples.crossStack.pitch":
     "Один бриф, один агент на репозиторий и вся функция в одном представлении.",
@@ -531,7 +531,7 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature3.name": "Значки PR и счётчики изменений",
   "agentManager.splash.examples.crossStack.feature3.text": "Узнайте, что изменил каждый агент, прежде чем открыть.",
   "agentManager.splash.examples.orchestrator.tag": "Оркестратор",
-  "agentManager.splash.examples.orchestrator.title": "Пусть оркестратор разделит большую задачу",
+  "agentManager.splash.examples.orchestrator.title": "Оркестратор разделит большую задачу",
   "agentManager.splash.examples.orchestrator.pitch":
     "Назначьте любой сеанс оркестратором, передайте ему задачи, и пусть он соберёт нужную для работы команду.",
   "agentManager.splash.examples.orchestrator.feature1.name": "Сеансы, запускающие сеансы",
@@ -543,15 +543,15 @@ export const dict = {
   "agentManager.splash.examples.orchestrator.feature3.name": "Подключайтесь где угодно",
   "agentManager.splash.examples.orchestrator.feature3.text":
     "Зайдите в любой запущенный сеанс или следите за всей задачей сверху.",
-  "agentManager.splash.examples.ops.tag": "Эксплуатация",
-  "agentManager.splash.examples.ops.title": "Соберите постоянную команду эксплуатации",
+  "agentManager.splash.examples.ops.tag": "Операции",
+  "agentManager.splash.examples.ops.title": "Соберите команду эксплуатации",
   "agentManager.splash.examples.ops.pitch":
     "Держите долгоживущих агентов на дежурстве рядом с сеансами, которые создают код.",
   "agentManager.splash.examples.ops.feature1.name": "Постоянные инструкции",
   "agentManager.splash.examples.ops.feature1.text": "Дайте сеансу роль, которая переживёт любую отдельную задачу.",
   "agentManager.splash.examples.ops.feature2.name": "Разделы",
   "agentManager.splash.examples.ops.feature2.text":
-    "Сгруппируйте «Реализацию» и «Эксплуатацию», чтобы команды было легко просматривать.",
+    "Сгруппируйте Implement и Ops, чтобы команды было легко просматривать.",
   "agentManager.splash.examples.ops.feature3.name": "Сигналы «нужен ваш ответ»",
   "agentManager.splash.examples.ops.feature3.text":
     "Агенты останавливаются и отмечают рискованные решения, а не продавливают их.",
@@ -566,8 +566,8 @@ export const dict = {
   "agentManager.splash.examples.versions.feature3.name": "Сравните и оставьте",
   "agentManager.splash.examples.versions.feature3.text":
     "Просмотрите настоящие diff рядом, оставьте один и отбросьте остальные.",
-  "agentManager.splash.examples.beyondCode.tag": "Больше чем код",
-  "agentManager.splash.examples.beyondCode.title": "Подготовьте набор фирменных материалов",
+  "agentManager.splash.examples.beyondCode.tag": "Вне кода",
+  "agentManager.splash.examples.beyondCode.title": "Подготовьте фирменные материалы",
   "agentManager.splash.examples.beyondCode.pitch":
     "Agent Manager выполняет любую работу, доступную агенту, а не только изменения кода.",
   "agentManager.splash.examples.beyondCode.feature1.name": "Параллельные черновики",

@@ -517,7 +517,7 @@ export const dict = {
   "agentManager.splash.folded.title": "Postaw do pracy flotę agentów Kilo",
   "agentManager.splash.folded.note": "Funkcje między stosami, orkiestrator, zespół ops i więcej",
   "agentManager.splash.showExamples": "Pokaż przykłady",
-  "agentManager.splash.examples.crossStack.tag": "Wiele repozytoriów",
+  "agentManager.splash.examples.crossStack.tag": "Wielorepo",
   "agentManager.splash.examples.crossStack.title": "Wydaj funkcję w trzech repozytoriach",
   "agentManager.splash.examples.crossStack.pitch":
     "Jedno zlecenie, jeden agent na repozytorium i cała funkcja w jednym widoku.",
@@ -530,7 +530,7 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature3.name": "Odznaki PR i liczniki zmian",
   "agentManager.splash.examples.crossStack.feature3.text": "Wiedz, co zmienił każdy agent, zanim to otworzysz.",
   "agentManager.splash.examples.orchestrator.tag": "Orkiestrator",
-  "agentManager.splash.examples.orchestrator.title": "Pozwól orkiestratorowi podzielić duże zadanie",
+  "agentManager.splash.examples.orchestrator.title": "Orkiestrator dzieli duże zadanie",
   "agentManager.splash.examples.orchestrator.pitch":
     "Wyznacz dowolną sesję jako orkiestratora, przekaż jej zestaw zadań i pozwól zbudować zespół, którego potrzebuje.",
   "agentManager.splash.examples.orchestrator.feature1.name": "Sesje, które uruchamiają sesje",
@@ -547,12 +547,12 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.text": "Nadaj sesji rolę, która trwa dłużej niż pojedyncze zadanie.",
   "agentManager.splash.examples.ops.feature2.name": "Sekcje",
   "agentManager.splash.examples.ops.feature2.text":
-    "Pogrupuj Implementację i Operacje, aby każdy zespół był łatwy do przejrzenia.",
+    "Pogrupuj Implement i Ops, aby każdy zespół był łatwy do przejrzenia.",
   "agentManager.splash.examples.ops.feature3.name": "Alerty, że Cię potrzebują",
   "agentManager.splash.examples.ops.feature3.text":
     "Agenci zatrzymują się i oznaczają ryzykowne decyzje, zamiast parć naprzód.",
   "agentManager.splash.examples.versions.tag": "Wersje",
-  "agentManager.splash.examples.versions.title": "Wypróbuj trzy podejścia, zachowaj najlepsze",
+  "agentManager.splash.examples.versions.title": "Trzy podejścia, zachowaj najlepsze",
   "agentManager.splash.examples.versions.pitch":
     "Wyślij jeden prompt do kilku agentów lub modeli i zachowaj najlepszy wynik.",
   "agentManager.splash.examples.versions.feature1.name": "Uruchomienia wielu wersji",

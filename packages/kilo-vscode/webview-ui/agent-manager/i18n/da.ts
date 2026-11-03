@@ -547,8 +547,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.name": "Faste instruktioner",
   "agentManager.splash.examples.ops.feature1.text": "Giv en session en rolle, der varer længere end en enkelt opgave.",
   "agentManager.splash.examples.ops.feature2.name": "Sektioner",
-  "agentManager.splash.examples.ops.feature2.text":
-    "Gruppér Implementering og Drift, så hvert hold er nemt at overskue.",
+  "agentManager.splash.examples.ops.feature2.text": "Gruppér Implement og Ops, så hvert hold er nemt at overskue.",
   "agentManager.splash.examples.ops.feature3.name": "Varsler når du behøves",
   "agentManager.splash.examples.ops.feature3.text":
     "Agenter stopper og markerer risikable beslutninger i stedet for at presse igennem.",

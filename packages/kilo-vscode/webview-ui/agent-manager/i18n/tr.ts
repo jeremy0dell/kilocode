@@ -556,7 +556,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.text": "Bir oturuma tek bir görevden daha uzun süren bir rol verin.",
   "agentManager.splash.examples.ops.feature2.name": "Bölümler",
   "agentManager.splash.examples.ops.feature2.text":
-    "Uygulama ve Operasyon'u gruplayarak her ekibin kolayca taranmasını sağlayın.",
+    "Implement ve Ops'u gruplayarak her ekibin kolayca taranmasını sağlayın.",
   "agentManager.splash.examples.ops.feature3.name": "Sizi bekliyor uyarıları",
   "agentManager.splash.examples.ops.feature3.text":
     "Ajanlar riskli kararları zorla geçirmek yerine durur ve işaretler.",

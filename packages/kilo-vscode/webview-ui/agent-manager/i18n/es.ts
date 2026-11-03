@@ -537,7 +537,7 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature3.name": "Insignias de PR y recuentos de diff",
   "agentManager.splash.examples.crossStack.feature3.text": "Sabes qué cambió cada agente antes de abrirlo.",
   "agentManager.splash.examples.orchestrator.tag": "Orquestador",
-  "agentManager.splash.examples.orchestrator.title": "Deja que un orquestador divida un trabajo grande",
+  "agentManager.splash.examples.orchestrator.title": "Un orquestador divide un trabajo grande",
   "agentManager.splash.examples.orchestrator.pitch":
     "Designa cualquier sesión como orquestador, dale un conjunto de tareas y deja que construya el equipo que el trabajo necesita.",
   "agentManager.splash.examples.orchestrator.feature1.name": "Sesiones que inician sesiones",
@@ -555,13 +555,12 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.name": "Instrucciones permanentes",
   "agentManager.splash.examples.ops.feature1.text": "Dale a una sesión un rol que dure más que cualquier tarea.",
   "agentManager.splash.examples.ops.feature2.name": "Secciones",
-  "agentManager.splash.examples.ops.feature2.text":
-    "Agrupa Implementar y Operaciones para que cada equipo sea fácil de revisar.",
+  "agentManager.splash.examples.ops.feature2.text": "Agrupa Implement y Ops para que cada equipo sea fácil de revisar.",
   "agentManager.splash.examples.ops.feature3.name": "Avisos de que te necesitan",
   "agentManager.splash.examples.ops.feature3.text":
     "Los agentes se detienen y señalan decisiones arriesgadas en lugar de seguir adelante.",
   "agentManager.splash.examples.versions.tag": "Versiones",
-  "agentManager.splash.examples.versions.title": "Prueba tres enfoques y quédate con el mejor",
+  "agentManager.splash.examples.versions.title": "Tres enfoques, quédate con el mejor",
   "agentManager.splash.examples.versions.pitch":
     "Envía un prompt a varios agentes o modelos y conserva el mejor resultado.",
   "agentManager.splash.examples.versions.feature1.name": "Ejecuciones con varias versiones",
@@ -571,7 +570,7 @@ export const dict = {
   "agentManager.splash.examples.versions.feature3.name": "Compara y conserva",
   "agentManager.splash.examples.versions.feature3.text":
     "Revisa diffs reales lado a lado, conserva uno y descarta el resto.",
-  "agentManager.splash.examples.beyondCode.tag": "Más allá del código",
+  "agentManager.splash.examples.beyondCode.tag": "Más que código",
   "agentManager.splash.examples.beyondCode.title": "Redacta un conjunto de recursos de marca",
   "agentManager.splash.examples.beyondCode.pitch":
     "Agent Manager realiza cualquier trabajo que pueda hacer un agente, no solo cambios de código.",

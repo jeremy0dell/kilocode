@@ -19,8 +19,6 @@ interface EmptyProps {
 function ExamplePicker(props: { initial?: number }) {
   const { t } = useLanguage()
   const [selected, setSelected] = createSignal(Math.max(0, Math.min(props.initial ?? 0, examples.length - 1)))
-  const current = () => examples.at(selected()) ?? examples.at(0)!
-  const select = (index: number) => setSelected(index)
 
   return (
     <>
@@ -31,7 +29,7 @@ function ExamplePicker(props: { initial?: number }) {
             variant="ghost"
             class="am-splash-arrow"
             label={t("agentManager.splash.carousel.previous")}
-            onClick={() => select(wrap(selected(), -1, examples.length))}
+            onClick={() => setSelected(wrap(selected(), -1, examples.length))}
           />
           <div class="am-splash-cards">
             <For each={visible(selected(), examples.length, 3)}>
@@ -43,8 +41,8 @@ function ExamplePicker(props: { initial?: number }) {
                     class="am-splash-card"
                     classList={{ "am-splash-card-selected": index === selected() }}
                     data-tone={example.id}
-                    aria-pressed={index === selected()}
-                    onClick={() => select(index)}
+                    aria-current={index === selected() ? "true" : undefined}
+                    onClick={() => setSelected(index)}
                   >
                     <span class="am-splash-card-tag">{t(example.tag)}</span>
                     <span class="am-splash-card-title">{t(example.title)}</span>
@@ -58,7 +56,7 @@ function ExamplePicker(props: { initial?: number }) {
             variant="ghost"
             class="am-splash-arrow"
             label={t("agentManager.splash.carousel.next")}
-            onClick={() => select(wrap(selected(), 1, examples.length))}
+            onClick={() => setSelected(wrap(selected(), 1, examples.length))}
           />
         </div>
         <div class="am-splash-dots">
@@ -70,7 +68,7 @@ function ExamplePicker(props: { initial?: number }) {
                 classList={{ "am-splash-dot-selected": index() === selected() }}
                 aria-current={index() === selected() ? "true" : undefined}
                 aria-label={t("agentManager.splash.carousel.goTo", { title: t(example.title) })}
-                onClick={() => select(index())}
+                onClick={() => setSelected(index())}
               >
                 <span class="am-splash-dot-mark" />
               </button>
@@ -78,22 +76,33 @@ function ExamplePicker(props: { initial?: number }) {
           </For>
         </div>
       </div>
-      <div class="am-splash-example" data-tone={current().id}>
-        <p class="am-splash-pitch">{t(current().pitch)}</p>
-        <ul class="am-splash-features">
-          <For each={current().features}>
-            {(feature) => (
-              <li class="am-splash-feature">
-                <span class="am-splash-feature-dot" aria-hidden="true" />
-                <span>
-                  <strong>{t(feature.name)}</strong>
-                  <span aria-hidden="true"> · </span>
-                  {t(feature.text)}
-                </span>
-              </li>
-            )}
-          </For>
-        </ul>
+      <div class="am-splash-example" aria-live="polite">
+        <For each={examples}>
+          {(example, index) => (
+            <div
+              class="am-splash-example-panel"
+              classList={{ "am-splash-example-panel-active": index() === selected() }}
+              data-tone={example.id}
+              aria-hidden={index() === selected() ? undefined : "true"}
+            >
+              <p class="am-splash-pitch">{t(example.pitch)}</p>
+              <ul class="am-splash-features">
+                <For each={example.features}>
+                  {(feature) => (
+                    <li class="am-splash-feature">
+                      <span class="am-splash-feature-dot" aria-hidden="true" />
+                      <span>
+                        <strong>{t(feature.name)}</strong>
+                        <span aria-hidden="true"> · </span>
+                        {t(feature.text)}
+                      </span>
+                    </li>
+                  )}
+                </For>
+              </ul>
+            </div>
+          )}
+        </For>
       </div>
     </>
   )

@@ -538,7 +538,7 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature3.name": "Badges de PR et compteurs de diff",
   "agentManager.splash.examples.crossStack.feature3.text": "Sachez ce que chaque agent a modifié avant de l’ouvrir.",
   "agentManager.splash.examples.orchestrator.tag": "Orchestrateur",
-  "agentManager.splash.examples.orchestrator.title": "Laissez un orchestrateur découper un gros travail",
+  "agentManager.splash.examples.orchestrator.title": "Un orchestrateur divise le gros travail",
   "agentManager.splash.examples.orchestrator.pitch":
     "Désignez n’importe quelle session comme orchestrateur, confiez-lui des tâches et laissez-la constituer l’équipe nécessaire.",
   "agentManager.splash.examples.orchestrator.feature1.name": "Des sessions qui lancent des sessions",
@@ -559,12 +559,12 @@ export const dict = {
     "Donnez à une session un rôle qui dure plus longtemps que n’importe quelle tâche.",
   "agentManager.splash.examples.ops.feature2.name": "Sections",
   "agentManager.splash.examples.ops.feature2.text":
-    "Regroupez Implémentation et Ops pour que chaque équipe reste facile à parcourir.",
+    "Regroupez Implement et Ops pour que chaque équipe reste facile à parcourir.",
   "agentManager.splash.examples.ops.feature3.name": "Alertes « vous êtes attendu »",
   "agentManager.splash.examples.ops.feature3.text":
     "Les agents s’arrêtent et signalent les décisions risquées au lieu de forcer.",
   "agentManager.splash.examples.versions.tag": "Versions",
-  "agentManager.splash.examples.versions.title": "Essayez trois approches, gardez la meilleure",
+  "agentManager.splash.examples.versions.title": "Trois approches, gardez la meilleure",
   "agentManager.splash.examples.versions.pitch":
     "Envoyez un prompt à plusieurs agents ou modèles et gardez le meilleur résultat.",
   "agentManager.splash.examples.versions.feature1.name": "Exécutions multi-versions",
@@ -575,7 +575,7 @@ export const dict = {
   "agentManager.splash.examples.versions.feature3.text":
     "Examinez de vrais diffs côte à côte, gardez-en un et abandonnez le reste.",
   "agentManager.splash.examples.beyondCode.tag": "Au-delà du code",
-  "agentManager.splash.examples.beyondCode.title": "Rédigez un ensemble d’assets de marque",
+  "agentManager.splash.examples.beyondCode.title": "Rédigez vos assets de marque",
   "agentManager.splash.examples.beyondCode.pitch":
     "Agent Manager exécute tout travail qu’un agent peut faire, pas seulement les changements de code.",
   "agentManager.splash.examples.beyondCode.feature1.name": "Brouillons parallèles",

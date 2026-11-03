@@ -532,7 +532,7 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature3.name": "Distintivos de PR e contagens de diff",
   "agentManager.splash.examples.crossStack.feature3.text": "Saiba o que cada agente alterou antes de abrir.",
   "agentManager.splash.examples.orchestrator.tag": "Orquestrador",
-  "agentManager.splash.examples.orchestrator.title": "Deixe um orquestrador dividir um trabalho grande",
+  "agentManager.splash.examples.orchestrator.title": "Um orquestrador divide um trabalho grande",
   "agentManager.splash.examples.orchestrator.pitch":
     "Defina qualquer sessão como orquestrador, entregue um conjunto de tarefas e deixe que ela monte a equipe necessária.",
   "agentManager.splash.examples.orchestrator.feature1.name": "Sessões que iniciam sessões",
@@ -552,13 +552,12 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.text":
     "Dê a uma sessão um papel que dure mais que qualquer tarefa individual.",
   "agentManager.splash.examples.ops.feature2.name": "Seções",
-  "agentManager.splash.examples.ops.feature2.text":
-    "Agrupe Implementação e Operações para manter cada equipe fácil de ver.",
+  "agentManager.splash.examples.ops.feature2.text": "Agrupe Implement e Ops para manter cada equipe fácil de ver.",
   "agentManager.splash.examples.ops.feature3.name": "Alertas de que precisam de você",
   "agentManager.splash.examples.ops.feature3.text":
     "Agentes param e sinalizam decisões arriscadas em vez de seguir em frente.",
   "agentManager.splash.examples.versions.tag": "Versões",
-  "agentManager.splash.examples.versions.title": "Teste três abordagens e fique com a melhor",
+  "agentManager.splash.examples.versions.title": "Três abordagens, fique com a melhor",
   "agentManager.splash.examples.versions.pitch":
     "Envie um prompt para vários agentes ou modelos e mantenha o melhor resultado.",
   "agentManager.splash.examples.versions.feature1.name": "Execuções multi-versão",

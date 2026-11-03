@@ -534,7 +534,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.name": "คำแนะนำถาวร",
   "agentManager.splash.examples.ops.feature1.text": "มอบบทบาทให้เซสชันที่อยู่ได้นานกว่างานใดงานหนึ่ง",
   "agentManager.splash.examples.ops.feature2.name": "ส่วน",
-  "agentManager.splash.examples.ops.feature2.text": "จัดกลุ่มการพัฒนาและปฏิบัติการเพื่อให้แต่ละทีมดูง่าย",
+  "agentManager.splash.examples.ops.feature2.text": "จัดกลุ่ม Implement และ Ops เพื่อให้แต่ละทีมดูง่าย",
   "agentManager.splash.examples.ops.feature3.name": "แจ้งเตือนว่าต้องการคุณ",
   "agentManager.splash.examples.ops.feature3.text": "เอเจนต์จะหยุดและแจ้งการตัดสินใจที่มีความเสี่ยงแทนที่จะฝืนทำต่อ",
   "agentManager.splash.examples.versions.tag": "เวอร์ชัน",

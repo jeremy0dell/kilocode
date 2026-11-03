@@ -544,7 +544,7 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature3.name": "Badge PR e conteggi diff",
   "agentManager.splash.examples.crossStack.feature3.text": "Scopri cosa ha cambiato ogni agente prima di aprirlo.",
   "agentManager.splash.examples.orchestrator.tag": "Orchestratore",
-  "agentManager.splash.examples.orchestrator.title": "Lascia che un orchestratore divida un grande lavoro",
+  "agentManager.splash.examples.orchestrator.title": "Un orchestratore divide un grande lavoro",
   "agentManager.splash.examples.orchestrator.pitch":
     "Designa qualsiasi sessione come orchestratore, affidale un insieme di attività e lascia che costruisca la squadra necessaria.",
   "agentManager.splash.examples.orchestrator.feature1.name": "Sessioni che avviano sessioni",
@@ -564,7 +564,7 @@ export const dict = {
     "Assegna a una sessione un ruolo che dura più di qualsiasi singola attività.",
   "agentManager.splash.examples.ops.feature2.name": "Sezioni",
   "agentManager.splash.examples.ops.feature2.text":
-    "Raggruppa Implementazione e Operazioni per mantenere ogni squadra facile da scorrere.",
+    "Raggruppa Implement e Ops per mantenere ogni squadra facile da scorrere.",
   "agentManager.splash.examples.ops.feature3.name": "Avvisi quando serve il tuo intervento",
   "agentManager.splash.examples.ops.feature3.text":
     "Gli agenti si fermano e segnalano le scelte rischiose invece di andare avanti.",

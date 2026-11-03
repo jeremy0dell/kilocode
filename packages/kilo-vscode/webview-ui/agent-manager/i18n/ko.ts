@@ -539,7 +539,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.name": "상시 지침",
   "agentManager.splash.examples.ops.feature1.text": "단일 작업보다 오래 유지되는 역할을 세션에 부여합니다.",
   "agentManager.splash.examples.ops.feature2.name": "섹션",
-  "agentManager.splash.examples.ops.feature2.text": "구현과 운영을 묶어 각 팀을 쉽게 훑어볼 수 있습니다.",
+  "agentManager.splash.examples.ops.feature2.text": "Implement와 Ops를 묶어 각 팀을 쉽게 훑어볼 수 있습니다.",
   "agentManager.splash.examples.ops.feature3.name": "내 확인이 필요한 알림",
   "agentManager.splash.examples.ops.feature3.text": "에이전트는 위험한 결정을 밀어붙이지 않고 멈춰서 알립니다.",
   "agentManager.splash.examples.versions.tag": "버전",

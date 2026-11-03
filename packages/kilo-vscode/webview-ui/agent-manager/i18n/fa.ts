@@ -546,7 +546,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.name": "دستورالعمل‌های ثابت",
   "agentManager.splash.examples.ops.feature1.text": "به یک نشست نقشی بدهید که بیش از هر وظیفهٔ واحدی دوام بیاورد.",
   "agentManager.splash.examples.ops.feature2.name": "بخش‌ها",
-  "agentManager.splash.examples.ops.feature2.text": "پیاده‌سازی و عملیات را گروه‌بندی کنید تا هر تیم آسان مرور شود.",
+  "agentManager.splash.examples.ops.feature2.text": "Implement و Ops را گروه‌بندی کنید تا هر تیم آسان مرور شود.",
   "agentManager.splash.examples.ops.feature3.name": "هشدار نیاز به شما",
   "agentManager.splash.examples.ops.feature3.text":
     "عامل‌ها می‌ایستند و تصمیم‌های پرخطر را علامت می‌زنند به‌جای اینکه از آن عبور کنند.",

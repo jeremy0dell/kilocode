@@ -14,6 +14,7 @@ import { FullScreenDiffView } from "../../diff-viewer/FullScreenDiffView"
 import { WorktreeItem } from "../../agent-manager/WorktreeItem"
 import { createIntro } from "../../agent-manager/intro/AgentManagerIntro"
 import { createSplashState } from "../../agent-manager/splash/state"
+import { SplashExpanded } from "../../agent-manager/splash/Splash"
 import { SessionTab } from "../components/chat/SessionTab"
 import { ChatView } from "../components/chat/ChatView"
 import { registerVscodeToolOverrides } from "../components/chat/VscodeToolOverrides"
@@ -153,7 +154,6 @@ type Story = StoryObj
 function IntroductionPreview(props: {
   skipped?: boolean
   splash?: { enabled: boolean; folded: boolean }
-  initialExample?: number
   height?: string
 }) {
   const splash = createSplashState(() => {}, props.splash ?? { enabled: false, folded: false })
@@ -167,7 +167,6 @@ function IntroductionPreview(props: {
     focus: () => {},
     start: () => {},
     splash,
-    initialExample: props.initialExample,
   })
   if (props.skipped) intro.dismiss()
   const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
@@ -222,49 +221,36 @@ export const SplashExpandedStory: Story = {
   ),
 }
 
-export const SplashCrossStackStory: Story = {
-  name: "Splash cross-stack",
-  render: () => (
+function SplashPreview(props: { example: number }) {
+  return (
     <StoryProviders>
-      <IntroductionPreview splash={{ enabled: true, folded: false }} initialExample={0} height="640px" />
+      <div class="am-intro-layout" style={{ height: "640px" }}>
+        <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
+          <SplashExpanded onHide={() => {}} onStart={() => {}} initialExample={props.example} />
+        </div>
+      </div>
     </StoryProviders>
-  ),
+  )
 }
 
 export const SplashOrchestratorStory: Story = {
   name: "Splash orchestrator",
-  render: () => (
-    <StoryProviders>
-      <IntroductionPreview splash={{ enabled: true, folded: false }} initialExample={1} height="640px" />
-    </StoryProviders>
-  ),
+  render: () => <SplashPreview example={1} />,
 }
 
 export const SplashOpsStory: Story = {
   name: "Splash ops",
-  render: () => (
-    <StoryProviders>
-      <IntroductionPreview splash={{ enabled: true, folded: false }} initialExample={2} height="640px" />
-    </StoryProviders>
-  ),
+  render: () => <SplashPreview example={2} />,
 }
 
 export const SplashVersionsStory: Story = {
   name: "Splash versions",
-  render: () => (
-    <StoryProviders>
-      <IntroductionPreview splash={{ enabled: true, folded: false }} initialExample={3} height="640px" />
-    </StoryProviders>
-  ),
+  render: () => <SplashPreview example={3} />,
 }
 
 export const SplashBeyondCodeStory: Story = {
   name: "Splash beyond code",
-  render: () => (
-    <StoryProviders>
-      <IntroductionPreview splash={{ enabled: true, folded: false }} initialExample={4} height="640px" />
-    </StoryProviders>
-  ),
+  render: () => <SplashPreview example={4} />,
 }
 
 export const SplashFoldedStory: Story = {

@@ -543,7 +543,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.name": "Faste instruksjoner",
   "agentManager.splash.examples.ops.feature1.text": "Gi en økt en rolle som varer lenger enn en enkelt oppgave.",
   "agentManager.splash.examples.ops.feature2.name": "Seksjoner",
-  "agentManager.splash.examples.ops.feature2.text": "Grupper Implementering og Drift så hvert team er enkelt å skanne.",
+  "agentManager.splash.examples.ops.feature2.text": "Grupper Implement og Ops så hvert team er enkelt å skanne.",
   "agentManager.splash.examples.ops.feature3.name": "Varsler om at du trengs",
   "agentManager.splash.examples.ops.feature3.text":
     "Agenter stopper og flagger risikable valg i stedet for å presse gjennom.",

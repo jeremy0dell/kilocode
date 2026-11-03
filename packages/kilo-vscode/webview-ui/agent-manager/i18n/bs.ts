@@ -515,7 +515,7 @@ export const dict = {
   "agentManager.splash.folded.title": "Stavi flotu Kilo agenata na posao",
   "agentManager.splash.folded.note": "Funkcije kroz više stekova, orkestrator, ops tim i još mnogo toga",
   "agentManager.splash.showExamples": "Prikaži primjere",
-  "agentManager.splash.examples.crossStack.tag": "Više repozitorija",
+  "agentManager.splash.examples.crossStack.tag": "Više repoa",
   "agentManager.splash.examples.crossStack.title": "Isporučite funkciju kroz tri repozitorija",
   "agentManager.splash.examples.crossStack.pitch":
     "Jedan brief, jedan agent po repozitoriju i cijela funkcija u jednom pregledu.",
@@ -548,8 +548,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.text":
     "Dajte sesiji ulogu koja traje duže od bilo kojeg pojedinačnog zadatka.",
   "agentManager.splash.examples.ops.feature2.name": "Sekcije",
-  "agentManager.splash.examples.ops.feature2.text":
-    "Grupirajte Implementaciju i Operacije da svaka ekipa ostane pregledna.",
+  "agentManager.splash.examples.ops.feature2.text": "Grupirajte Implement i Ops da svaka ekipa ostane pregledna.",
   "agentManager.splash.examples.ops.feature3.name": "Obavještenja da ste potrebni",
   "agentManager.splash.examples.ops.feature3.text":
     "Agenti se zaustavljaju i označavaju rizične odluke umjesto da ih proguraju.",

@@ -20,14 +20,13 @@ interface Section {
 }
 
 type Row =
-  | { kind: "local"; branch: string; selected?: boolean }
+  | { kind: "local"; branch: string }
   | { kind: "session"; session: Session }
   | { kind: "section"; section: Section }
-  | { kind: "versions"; count: number; sessions: readonly Session[] }
+  | { kind: "versions"; sessions: readonly Session[] }
 
 interface Project {
   name: string
-  letter: string
   count: number
   rows: readonly Row[]
 }
@@ -50,7 +49,7 @@ interface Example {
   fixture: Fixture
 }
 
-export const examples = [
+export const examples: readonly Example[] = [
   {
     id: "crossStack",
     tag: "agentManager.splash.examples.crossStack.tag",
@@ -74,7 +73,6 @@ export const examples = [
       projects: [
         {
           name: "billing-api",
-          letter: "B",
           count: 3,
           rows: [
             {
@@ -91,7 +89,6 @@ export const examples = [
         },
         {
           name: "web-app",
-          letter: "W",
           count: 2,
           rows: [
             {
@@ -109,7 +106,6 @@ export const examples = [
         },
         {
           name: "infra",
-          letter: "I",
           count: 2,
           rows: [
             {
@@ -150,7 +146,6 @@ export const examples = [
       projects: [
         {
           name: "kernel-sched",
-          letter: "K",
           count: 5,
           rows: [
             { kind: "local", branch: "main" },
@@ -194,7 +189,6 @@ export const examples = [
                     branch: "kthread-pin",
                     status: "needs-you",
                     shortcut: 5,
-                    selected: true,
                   },
                 ],
               },
@@ -227,7 +221,6 @@ export const examples = [
       projects: [
         {
           name: "api",
-          letter: "A",
           count: 7,
           rows: [
             {
@@ -316,13 +309,11 @@ export const examples = [
       projects: [
         {
           name: "storefront",
-          letter: "S",
           count: 4,
           rows: [
             { kind: "local", branch: "main" },
             {
               kind: "versions",
-              count: 3,
               sessions: [
                 {
                   title: "Cut cold start time · Kilo Auto",
@@ -376,13 +367,11 @@ export const examples = [
       projects: [
         {
           name: "brand-kit",
-          letter: "B",
           count: 5,
           rows: [
             { kind: "local", branch: "main" },
             {
               kind: "versions",
-              count: 3,
               sessions: [
                 {
                   title: "Logo direction · geometric",
@@ -427,4 +416,4 @@ export const examples = [
       ],
     },
   },
-] as const satisfies readonly Example[]
+]

@@ -547,7 +547,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.name": "常設の指示",
   "agentManager.splash.examples.ops.feature1.text": "単発のタスクより長く続く役割をセッションに与えます。",
   "agentManager.splash.examples.ops.feature2.name": "セクション",
-  "agentManager.splash.examples.ops.feature2.text": "実装と運用をグループ化し、各チームを見通しやすくします。",
+  "agentManager.splash.examples.ops.feature2.text": "Implement と Ops をグループ化し、各チームを見通しやすくします。",
   "agentManager.splash.examples.ops.feature3.name": "あなた待ちの通知",
   "agentManager.splash.examples.ops.feature3.text": "エージェントは危険な判断を押し通さず、止まって知らせます。",
   "agentManager.splash.examples.versions.tag": "バージョン",

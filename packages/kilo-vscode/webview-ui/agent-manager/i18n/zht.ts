@@ -521,7 +521,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.name": "常駐指令",
   "agentManager.splash.examples.ops.feature1.text": "為工作階段賦予一個比任何單項任務都持久的角色。",
   "agentManager.splash.examples.ops.feature2.name": "區段",
-  "agentManager.splash.examples.ops.feature2.text": "將實作與維運分組，讓每個團隊都易於瀏覽。",
+  "agentManager.splash.examples.ops.feature2.text": "將 Implement 與 Ops 分組，讓每個團隊都易於瀏覽。",
   "agentManager.splash.examples.ops.feature3.name": "需要你處理的通知",
   "agentManager.splash.examples.ops.feature3.text": "代理會停下來標記有風險的決策，而不是強行推進。",
   "agentManager.splash.examples.versions.tag": "版本",

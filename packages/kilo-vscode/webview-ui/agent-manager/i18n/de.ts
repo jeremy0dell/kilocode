@@ -526,7 +526,7 @@ export const dict = {
   "agentManager.splash.folded.title": "Setze eine Flotte von Kilo-Agenten ein",
   "agentManager.splash.folded.note": "Stackübergreifende Features, ein Orchestrator, eine Ops-Crew und mehr",
   "agentManager.splash.showExamples": "Beispiele anzeigen",
-  "agentManager.splash.examples.crossStack.tag": "Projektübergreifend",
+  "agentManager.splash.examples.crossStack.tag": "Multi-Repo",
   "agentManager.splash.examples.crossStack.title": "Ein Feature über drei Repos ausliefern",
   "agentManager.splash.examples.crossStack.pitch":
     "Ein Briefing, ein Agent pro Repo und das ganze Feature in einer Ansicht.",
@@ -539,7 +539,7 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature3.name": "PR-Badges und Diff-Zahlen",
   "agentManager.splash.examples.crossStack.feature3.text": "Vor dem Öffnen wissen, was jeder Agent geändert hat.",
   "agentManager.splash.examples.orchestrator.tag": "Orchestrator",
-  "agentManager.splash.examples.orchestrator.title": "Einen Orchestrator eine große Aufgabe aufteilen lassen",
+  "agentManager.splash.examples.orchestrator.title": "Orchestrator teilt große Aufgaben auf",
   "agentManager.splash.examples.orchestrator.pitch":
     "Bestimme eine beliebige Sitzung zum Orchestrator, gib ihr Aufgaben und lass sie die nötige Flotte aufbauen.",
   "agentManager.splash.examples.orchestrator.feature1.name": "Sitzungen, die Sitzungen starten",
@@ -560,7 +560,7 @@ export const dict = {
     "Gib einer Sitzung eine Rolle, die länger als jede einzelne Aufgabe hält.",
   "agentManager.splash.examples.ops.feature2.name": "Abschnitte",
   "agentManager.splash.examples.ops.feature2.text":
-    "Gruppiere Implement und Betrieb, damit jedes Team leicht zu überblicken bleibt.",
+    "Gruppiere Implement und Ops, damit jedes Team leicht zu überblicken bleibt.",
   "agentManager.splash.examples.ops.feature3.name": "Hinweise, wenn du gebraucht wirst",
   "agentManager.splash.examples.ops.feature3.text":
     "Agenten halten an und melden riskante Entscheidungen, statt sie durchzudrücken.",

@@ -534,7 +534,7 @@ export const dict = {
   "agentManager.splash.examples.ops.feature1.name": "تعليمات دائمة",
   "agentManager.splash.examples.ops.feature1.text": "امنح الجلسة دورًا يدوم أطول من أي مهمة منفردة.",
   "agentManager.splash.examples.ops.feature2.name": "أقسام",
-  "agentManager.splash.examples.ops.feature2.text": "جمّع التنفيذ والعمليات ليبقى كل فريق سهل التصفح.",
+  "agentManager.splash.examples.ops.feature2.text": "جمّع Implement وOps ليبقى كل فريق سهل التصفح.",
   "agentManager.splash.examples.ops.feature3.name": "تنبيهات الحاجة إليك",
   "agentManager.splash.examples.ops.feature3.text": "يتوقف الوكلاء وينبّهون إلى القرارات الخطرة بدل المضي فيها.",
   "agentManager.splash.examples.versions.tag": "الإصدارات",
