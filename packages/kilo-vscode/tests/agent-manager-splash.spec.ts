@@ -14,6 +14,42 @@ const { fleet } =
 
 const globals = "colorScheme:dark;theme:kilo-vscode;vscodeTheme:dark-modern"
 
+for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
+  test(`marker numbers meet WCAG AA contrast in ${theme}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1010, height: 1400 })
+    const scheme = theme === "light-modern" || theme === "hc-light" ? "light" : "dark"
+    await page.goto(
+      `/iframe.html?id=agentmanager--splash-ops-story&viewMode=story&globals=colorScheme:${scheme};theme:kilo-vscode;vscodeTheme:${theme}`,
+    )
+    await expect(page.locator(".am-splash-marker").first()).toBeVisible()
+    for (const dot of await page.locator(".am-splash-dot").all()) {
+      await dot.click()
+      const ratios = await page.locator(".am-splash-marker").evaluateAll((markers) =>
+        markers.map((marker) => {
+          const luminance = (color: string) => {
+            const channels = color
+              .match(/[\d.]+/g)!
+              .slice(0, 3)
+              .map(Number)
+              .map((value) => {
+                const channel = value / 255
+                return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+              })
+            return channels.at(0)! * 0.2126 + channels.at(1)! * 0.7152 + channels.at(2)! * 0.0722
+          }
+          const style = getComputedStyle(marker)
+          const foreground = luminance(style.color)
+          const background = luminance(style.backgroundColor)
+          return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05)
+        }),
+      )
+      expect(Math.min(...ratios)).toBeGreaterThanOrEqual(4.5)
+      const result = await new AxeBuilder({ page }).include(".am-splash-marker").withRules(["color-contrast"]).analyze()
+      expect(result.violations).toEqual([])
+    }
+  })
+}
+
 async function open(page: Page, example = "ops") {
   await page.goto(
     `/iframe.html?id=agentmanager--splash-${example === "cross-stack" ? "ops" : example}-story&viewMode=story&globals=${globals}`,

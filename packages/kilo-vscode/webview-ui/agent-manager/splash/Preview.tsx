@@ -82,6 +82,23 @@ function Fleet(props: { example: Example }) {
   )
 }
 
+function ink(card: HTMLElement) {
+  const marker = card.querySelector<HTMLElement>(".am-splash-marker")
+  if (!marker) return
+  const channels = getComputedStyle(marker)
+    .backgroundColor.match(/[\d.]+/g)
+    ?.slice(0, 3)
+    .map(Number)
+  if (channels?.length !== 3) return
+  const linear = channels.map((value) => {
+    const channel = value / 255
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+  })
+  const luminance = linear.at(0)! * 0.2126 + linear.at(1)! * 0.7152 + linear.at(2)! * 0.0722
+  // Choosing the higher-contrast endpoint guarantees at least WCAG AA for any opaque accent.
+  card.style.setProperty("--splash-marker-ink", luminance > Math.sqrt(0.0525) - 0.05 ? "black" : "white")
+}
+
 export function SidebarPreview(props: {
   selected: Accessor<number>
   highlight: Accessor<number | undefined>
@@ -97,6 +114,7 @@ export function SidebarPreview(props: {
   const measure = (index?: number, fit = true) => {
     const root = panel()
     if (!root) return
+    ink(card)
     const rows = fleet(current())
     const targets = anchors[current().id].map((target) => anchor(root, rows, target))
     const list = root.querySelector<HTMLElement>(".am-projects-list")
@@ -163,6 +181,9 @@ export function SidebarPreview(props: {
   onMount(() => {
     const dispose = guard(stack)
     const observer = new ResizeObserver(() => measure(props.highlight()))
+    const theme = new MutationObserver(() => measure(props.highlight()))
+    theme.observe(document.documentElement, { attributes: true })
+    theme.observe(document.body, { attributes: true })
     observer.observe(card)
     for (const root of stack.querySelectorAll<HTMLElement>(".am-projects-list")) {
       observer.observe(root)
@@ -176,6 +197,7 @@ export function SidebarPreview(props: {
       alive = false
       dispose()
       observer.disconnect()
+      theme.disconnect()
       stack.removeEventListener("scroll", measureScroll, true)
     })
     measure(undefined, true)
