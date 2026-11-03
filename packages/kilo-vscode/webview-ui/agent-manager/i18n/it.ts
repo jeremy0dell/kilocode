@@ -522,6 +522,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Salta introduzione",
   "agentManager.intro.reopen": "Come funziona Agent Manager",
   "agentManager.splash.preview.label": "Anteprima della barra laterale di Agent Manager",
+  "agentManager.splash.marker": "Funzionalità {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Nascondi",
   "agentManager.splash.title": "Metti al lavoro una flotta di agenti Kilo.",

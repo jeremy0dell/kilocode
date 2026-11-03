@@ -509,6 +509,7 @@ export const dict = {
   "agentManager.intro.dismiss": "イントロダクションをスキップ",
   "agentManager.intro.reopen": "Agent Manager の仕組み",
   "agentManager.splash.preview.label": "Agent Manager サイドバーのプレビュー",
+  "agentManager.splash.marker": "機能 {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "非表示",
   "agentManager.splash.title": "Kilo エージェントの艦隊を働かせよう。",

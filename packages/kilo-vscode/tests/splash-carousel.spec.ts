@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test"
+import { contrast } from "./contrast"
 
 for (const width of [520, 1010]) {
   test(`splash carousel preserves RTL navigation at ${width}px`, async ({ page }) => {
@@ -121,24 +122,7 @@ for (const theme of [
       await dots.nth(index).click()
       const markers = page.locator(".am-splash-example-panel-active .am-splash-feature-marker")
       await expect(markers).toHaveText(["1", "2", "3"])
-      const ratios = await markers.evaluateAll((nodes) => {
-        const canvas = document.createElement("canvas").getContext("2d")!
-        const luminance = (color: string) => {
-          canvas.fillStyle = color
-          canvas.fillRect(0, 0, 1, 1)
-          const rgb = [...canvas.getImageData(0, 0, 1, 1).data].slice(0, 3).map((value) => {
-            const channel = value / 255
-            return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
-          })
-          return rgb.reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722].at(index)!, 0)
-        }
-        return nodes.map((node) => {
-          const style = getComputedStyle(node)
-          const background = luminance(style.backgroundColor)
-          const foreground = luminance(style.color)
-          return (Math.max(background, foreground) + 0.05) / (Math.min(background, foreground) + 0.05)
-        })
-      })
+      const ratios = await markers.evaluateAll(contrast)
       for (const ratio of ratios) expect(ratio, `${theme.id} example ${index}`).toBeGreaterThanOrEqual(4.5)
     }
     await dots.nth(1).click()

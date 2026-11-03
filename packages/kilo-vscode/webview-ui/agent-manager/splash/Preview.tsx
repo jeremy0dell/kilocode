@@ -13,7 +13,6 @@ import { examples, type Example } from "./examples"
 import { fleet } from "./fleet"
 import { guard } from "./guard"
 import { anchor } from "./anchor"
-import { anchors } from "./anchors"
 import { wrap } from "./selection"
 
 const noop = () => undefined
@@ -82,23 +81,6 @@ function Fleet(props: { example: Example }) {
   )
 }
 
-function ink(card: HTMLElement) {
-  const marker = card.querySelector<HTMLElement>(".am-splash-marker")
-  if (!marker) return
-  const channels = getComputedStyle(marker)
-    .backgroundColor.match(/[\d.]+/g)
-    ?.slice(0, 3)
-    .map(Number)
-  if (channels?.length !== 3) return
-  const linear = channels.map((value) => {
-    const channel = value / 255
-    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
-  })
-  const luminance = linear.at(0)! * 0.2126 + linear.at(1)! * 0.7152 + linear.at(2)! * 0.0722
-  // Choosing the higher-contrast endpoint guarantees at least WCAG AA for any opaque accent.
-  card.style.setProperty("--splash-marker-ink", luminance > Math.sqrt(0.0525) - 0.05 ? "black" : "white")
-}
-
 export function SidebarPreview(props: {
   selected: Accessor<number>
   highlight: Accessor<number | undefined>
@@ -114,9 +96,8 @@ export function SidebarPreview(props: {
   const measure = (index?: number, fit = true) => {
     const root = panel()
     if (!root) return
-    ink(card)
     const rows = fleet(current())
-    const targets = anchors[current().id].map((target) => anchor(root, rows, target))
+    const targets = current().features.map((feature) => anchor(root, rows, feature.anchor))
     const list = root.querySelector<HTMLElement>(".am-projects-list")
     if (!list) return
     const bounds = list.getBoundingClientRect()
@@ -144,6 +125,7 @@ export function SidebarPreview(props: {
     }
     const rect = card.getBoundingClientRect()
     const box = { left: rect.left + card.clientLeft, top: rect.top + card.clientTop }
+    const rtl = getComputedStyle(card).direction === "rtl"
     const ordered = targets
       .map((target, index) => ({ index, top: target?.getBoundingClientRect().top ?? 0 }))
       .sort((a, b) => a.top - b.top)
@@ -164,7 +146,7 @@ export function SidebarPreview(props: {
           rect.bottom <= bounds.bottom - 28 &&
           (target.matches(".am-project-item") || rect.top >= (chrome?.bottom ?? 0))
         return {
-          left: (meta?.left ?? rect.right - 8) - box.left - 24,
+          left: rtl ? (meta?.right ?? rect.left + 8) - box.left + 8 : (meta?.left ?? rect.right - 8) - box.left - 24,
           // Only offscreen markers move to the edge; activation scrolls their real row above the fade.
           top: visible
             ? top
@@ -181,9 +163,6 @@ export function SidebarPreview(props: {
   onMount(() => {
     const dispose = guard(stack)
     const observer = new ResizeObserver(() => measure(props.highlight()))
-    const theme = new MutationObserver(() => measure(props.highlight()))
-    theme.observe(document.documentElement, { attributes: true })
-    theme.observe(document.body, { attributes: true })
     observer.observe(card)
     for (const root of stack.querySelectorAll<HTMLElement>(".am-projects-list")) {
       observer.observe(root)
@@ -197,7 +176,6 @@ export function SidebarPreview(props: {
       alive = false
       dispose()
       observer.disconnect()
-      theme.disconnect()
       stack.removeEventListener("scroll", measureScroll, true)
     })
     measure(undefined, true)
@@ -238,8 +216,8 @@ export function SidebarPreview(props: {
                 top: `${positions().at(index())?.top ?? 0}px`,
                 visibility: positions().at(index())?.visible ? "visible" : "hidden",
               }}
-              aria-label={`Feature ${index() + 1}: ${t(feature.name)}`}
-              aria-expanded={props.highlight() === index()}
+              aria-label={t("agentManager.splash.marker", { number: index() + 1, name: t(feature.name) })}
+              aria-pressed={props.highlight() === index()}
               aria-controls={`${props.features}-${current().id}-${index()}`}
               onClick={() => select(props.highlight() === index() ? undefined : index())}
               onFocus={(event) => {

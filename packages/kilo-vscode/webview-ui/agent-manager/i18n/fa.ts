@@ -508,6 +508,7 @@ export const dict = {
   "agentManager.intro.dismiss": "رد کردن مقدمه",
   "agentManager.intro.reopen": "Agent Manager چگونه کار می‌کند",
   "agentManager.splash.preview.label": "پیش‌نمایش نوار کناری Agent Manager",
+  "agentManager.splash.marker": "قابلیت {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "پنهان کردن",
   "agentManager.splash.title": "یک ناوگان از عامل‌های Kilo را به کار بگیرید.",

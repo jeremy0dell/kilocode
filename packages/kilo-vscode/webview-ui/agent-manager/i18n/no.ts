@@ -506,6 +506,7 @@ export const dict = {
   "agentManager.intro.dismiss": "Hopp over introduksjonen",
   "agentManager.intro.reopen": "Slik fungerer Agent Manager",
   "agentManager.splash.preview.label": "Forhåndsvisning av Agent Manager-sidepanelet",
+  "agentManager.splash.marker": "Funksjon {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "Skjul",
   "agentManager.splash.title": "Sett en flåte med Kilo-agenter i arbeid.",

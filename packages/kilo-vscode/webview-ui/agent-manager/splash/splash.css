@@ -119,8 +119,8 @@
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: var(--am-splash-accent);
-  color: var(--splash-marker-ink, var(--surface-inset-base));
+  background: var(--am-splash-tone);
+  color: var(--background-base);
   font: inherit;
   font-size: var(--kilo-font-size-10);
   font-weight: 800;
@@ -130,7 +130,7 @@
 }
 
 .am-splash-marker-highlight,
-.am-splash-marker[aria-expanded="true"] {
+.am-splash-marker[aria-pressed="true"] {
   box-shadow:
     0 0 0 2px var(--surface-base),
     0 0 0 4px var(--am-splash-accent);

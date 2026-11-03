@@ -226,7 +226,10 @@ function SplashPreview(props: { example: number; width?: string; height?: string
   return (
     <StoryProviders>
       <LanguageProvider languageOverride={() => props.locale ?? "en"}>
-        <div class="am-intro-layout" style={{ height: props.height ?? "1000px", width: props.width, "max-width": "100%" }}>
+        <div
+          class="am-intro-layout"
+          style={{ height: props.height ?? "1000px", width: props.width, "max-width": "100%" }}
+        >
           <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
             <div data-slot="message-list-content">
               <SplashExpanded onHide={() => {}} onStart={() => {}} initialExample={props.example} />
@@ -251,6 +254,11 @@ export const SplashGermanStory: Story = {
 export const SplashArabicStory: Story = {
   name: "Splash Arabic navigation",
   render: () => <SplashPreview example={0} locale="ar" />,
+}
+
+export const SplashPersianStory: Story = {
+  name: "Splash Persian navigation",
+  render: () => <SplashPreview example={0} locale="fa" />,
 }
 
 export const SplashOrchestratorStory: Story = {

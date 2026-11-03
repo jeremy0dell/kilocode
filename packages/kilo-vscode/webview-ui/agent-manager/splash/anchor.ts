@@ -1,8 +1,12 @@
-import type { Anchor } from "./anchors"
+import type { Example } from "./examples"
 import type { fleet } from "./fleet"
 
 /** Resolve content identities to existing shared sidebar DOM, never translated text or row coordinates. */
-export function anchor(root: HTMLElement, rows: ReturnType<typeof fleet>, target: Anchor): HTMLElement | undefined {
+export function anchor(
+  root: HTMLElement,
+  rows: ReturnType<typeof fleet>,
+  target: Example["features"][number]["anchor"],
+): HTMLElement | undefined {
   const row = rows.find((row) => row.project.root === target.project)
   if (!row) return
   const project = [...root.querySelectorAll<HTMLElement>("[data-sidebar-id]")]

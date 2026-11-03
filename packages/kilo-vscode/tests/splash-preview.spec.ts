@@ -1,12 +1,11 @@
 import AxeBuilder from "@axe-core/playwright"
 import { expect, test, type Page } from "@playwright/test"
 import { createRequire } from "node:module"
+import { contrast } from "./contrast"
 
 const require = createRequire(import.meta.url)
 const { anchor } =
   require("../webview-ui/agent-manager/splash/anchor") as typeof import("../webview-ui/agent-manager/splash/anchor")
-const { anchors } =
-  require("../webview-ui/agent-manager/splash/anchors") as typeof import("../webview-ui/agent-manager/splash/anchors")
 const { examples } =
   require("../webview-ui/agent-manager/splash/examples") as typeof import("../webview-ui/agent-manager/splash/examples")
 const { fleet } =
@@ -22,27 +21,17 @@ for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
       `/iframe.html?id=agentmanager--splash-ops-story&viewMode=story&globals=colorScheme:${scheme};theme:kilo-vscode;vscodeTheme:${theme}`,
     )
     await expect(page.locator(".am-splash-marker").first()).toBeVisible()
+    const kind = {
+      "dark-modern": "vscode-dark",
+      "light-modern": "vscode-light",
+      "hc-black": "vscode-high-contrast",
+      "hc-light": "vscode-high-contrast-light",
+    }[theme]!
+    await expect(page.locator("body")).toHaveClass(new RegExp(kind))
+    await expect(page.locator("html")).toHaveAttribute("data-color-scheme", scheme)
     for (const dot of await page.locator(".am-splash-dot").all()) {
       await dot.click()
-      const ratios = await page.locator(".am-splash-marker").evaluateAll((markers) =>
-        markers.map((marker) => {
-          const luminance = (color: string) => {
-            const channels = color
-              .match(/[\d.]+/g)!
-              .slice(0, 3)
-              .map(Number)
-              .map((value) => {
-                const channel = value / 255
-                return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
-              })
-            return channels.at(0)! * 0.2126 + channels.at(1)! * 0.7152 + channels.at(2)! * 0.0722
-          }
-          const style = getComputedStyle(marker)
-          const foreground = luminance(style.color)
-          const background = luminance(style.backgroundColor)
-          return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05)
-        }),
-      )
+      const ratios = await page.locator(".am-splash-marker").evaluateAll(contrast)
       expect(Math.min(...ratios)).toBeGreaterThanOrEqual(4.5)
       const result = await new AxeBuilder({ page }).include(".am-splash-marker").withRules(["color-contrast"]).analyze()
       expect(result.violations).toEqual([])
@@ -115,7 +104,7 @@ async function alignment(page: Page) {
         }),
       }
     },
-    { resolver, entries: fleet(example), targets: anchors[example.id] },
+    { resolver, entries: fleet(example), targets: example.features.map((feature) => feature.anchor) },
   )
   await resolver.dispose()
   return result
@@ -147,13 +136,59 @@ for (const [width, height] of [
       await markers.first().click()
       await check()
       if ((width === 520 || width === 1010) && (example === "ops" || example === "cross-stack")) {
-        await expect(markers.first()).toHaveAttribute("aria-expanded", "true")
+        await expect(markers.first()).toHaveAttribute("aria-pressed", "true")
         await page
           .locator(".am-splash")
           .screenshot({ path: info.outputPath(`preview-${example}-${width}-highlighted.png`) })
       }
     })
   }
+}
+
+for (const locale of ["arabic", "persian"]) {
+  test(`${locale} preview markers remain fully inside the frame and pointer reachable after resize`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width: 520, height: 1400 })
+    await page.goto(`/iframe.html?id=agentmanager--splash-${locale}-story&viewMode=story&globals=${globals}`)
+    await expect(page.locator("html")).toHaveAttribute("dir", "rtl")
+    await page.evaluate(() => document.fonts.ready)
+    const markers = page.locator(".am-splash-marker")
+    await expect(markers.first()).toHaveAccessibleName(locale === "arabic" ? /^الميزة 1: / : /^قابلیت 1: /)
+    for (const width of [520, 1010, 720]) {
+      await page.setViewportSize({ width, height: 1400 })
+      for (const index of [0, 1, 2, 3, 4]) {
+        await page.locator(".am-splash-dot").nth(index).click()
+        for (const marker of await markers.all()) {
+          await marker.scrollIntoViewIfNeeded()
+          await expect
+            .poll(() =>
+              marker.evaluate((node) => {
+                const rect = node.getBoundingClientRect()
+                const frame = node.closest(".am-splash-preview-card")!.getBoundingClientRect()
+                return (
+                  rect.width === 16 &&
+                  rect.left >= frame.left + 1 &&
+                  rect.right <= frame.right - 1 &&
+                  document.elementFromPoint(rect.left + 8, rect.top + 8) === node
+                )
+              }),
+            )
+            .toBe(true)
+          const rect = (await marker.boundingBox())!
+          await page.mouse.click(rect.x + rect.width / 2, rect.y + rect.height / 2)
+          await expect(marker).toHaveAttribute("aria-pressed", "true")
+          await expect(marker).not.toHaveAttribute("aria-expanded")
+          await marker.click()
+          await expect(marker).toHaveAttribute("aria-pressed", "false")
+        }
+        if (locale === "arabic" && index === 2 && width !== 720) {
+          await markers.first().click()
+          await page.locator(".am-splash").screenshot({ path: info.outputPath(`preview-ar-${width}-highlighted.png`) })
+        }
+      }
+    }
+  })
 }
 
 for (const width of [520, 1010]) {
@@ -175,7 +210,7 @@ for (const width of [520, 1010]) {
     await expect(markers.first()).toBeFocused()
     await page.keyboard.press("ArrowUp")
     await expect(markers.nth(2)).toBeFocused()
-    await expect(markers.nth(2)).toHaveAttribute("aria-expanded", "true")
+    await expect(markers.nth(2)).toHaveAttribute("aria-pressed", "true")
     await expect(page.locator(".am-splash-example-panel-active .am-splash-feature-highlight")).toContainText(
       "Needs-you alerts",
     )
@@ -199,9 +234,9 @@ for (const width of [520, 1010]) {
     await page.keyboard.press("ArrowRight")
     await expect(markers.first()).toBeFocused()
     await page.keyboard.press("Enter")
-    await expect(markers.first()).toHaveAttribute("aria-expanded", "false")
+    await expect(markers.first()).toHaveAttribute("aria-pressed", "false")
     await page.keyboard.press("Space")
-    await expect(markers.first()).toHaveAttribute("aria-expanded", "true")
+    await expect(markers.first()).toHaveAttribute("aria-pressed", "true")
     const result = await new AxeBuilder({ page })
       .include(".am-splash-preview-card")
       .exclude(".am-splash-preview-stack")
@@ -252,7 +287,7 @@ test("markers remeasure against their real rows on resize and example changes", 
   }
   await page.getByRole("button", { name: /Show example: Staff a standing ops crew/ }).click()
   await expect(page.locator(".am-splash-marker").first()).toHaveAccessibleName("Feature 1: Standing instructions")
-  await expect(page.locator(".am-splash-marker[aria-expanded=true]")).toHaveCount(0)
+  await expect(page.locator(".am-splash-marker[aria-pressed=true]")).toHaveCount(0)
 })
 
 test("all five examples resolve three visible marker controls and support pointer toggles", async ({ page }) => {
@@ -264,9 +299,9 @@ test("all five examples resolve three visible marker controls and support pointe
       await expect(marker).toBeVisible()
       expect(await marker.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)")
       await marker.click()
-      await expect(marker).toHaveAttribute("aria-expanded", "true")
+      await expect(marker).toHaveAttribute("aria-pressed", "true")
       await marker.click()
-      await expect(marker).toHaveAttribute("aria-expanded", "false")
+      await expect(marker).toHaveAttribute("aria-pressed", "false")
     }
   }
 })

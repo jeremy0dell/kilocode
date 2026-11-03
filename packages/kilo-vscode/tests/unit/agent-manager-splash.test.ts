@@ -4,6 +4,7 @@ import { createSplashState } from "../../webview-ui/agent-manager/splash/state"
 import { splashView } from "../../webview-ui/agent-manager/splash/view"
 import { start, wrap } from "../../webview-ui/agent-manager/splash/selection"
 import { examples, type Anchor } from "../../webview-ui/agent-manager/splash/examples"
+import { fleet } from "../../webview-ui/agent-manager/splash/fleet"
 import { isKnownRootSession, LOCAL } from "../../webview-ui/agent-manager/navigate"
 import { backgroundCreated } from "../../webview-ui/agent-manager/project/local-tabs"
 import { createProjectStore } from "../../webview-ui/agent-manager/project/store"
@@ -265,29 +266,12 @@ describe("Agent Manager splash feature anchors", () => {
         "Social card templates",
       ],
     ])
-    expect(
-      examples.map((example) => ({
-        counts: example.fixture.projects.map((project) => project.count),
-        shortcuts: example.fixture.projects.flatMap((project) =>
-          project.rows.flatMap((row) => {
-            const sessions =
-              row.kind === "session"
-                ? [row.session]
-                : row.kind === "section"
-                  ? row.section.sessions
-                  : row.kind === "versions"
-                    ? row.sessions
-                    : []
-            return sessions.map((session) => session.shortcut)
-          }),
-        ),
-      })),
-    ).toEqual([
-      { counts: [3, 2, 2], shortcuts: [2, 3, 4] },
-      { counts: [5], shortcuts: [2, 3, 4, 5] },
-      { counts: [6], shortcuts: [2, 3, 4, 5, 6] },
-      { counts: [4], shortcuts: [2, 3, 4] },
-      { counts: [5], shortcuts: [2, 3, 4, 5, 6] },
+    expect(examples.map((example) => fleet(example).map((row) => row.state.worktrees.length))).toEqual([
+      [1, 1, 1],
+      [4],
+      [5],
+      [3],
+      [5],
     ])
   })
 

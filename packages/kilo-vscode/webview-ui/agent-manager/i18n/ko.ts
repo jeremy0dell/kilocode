@@ -501,6 +501,7 @@ export const dict = {
   "agentManager.intro.dismiss": "소개 건너뛰기",
   "agentManager.intro.reopen": "Agent Manager 작동 방식",
   "agentManager.splash.preview.label": "Agent Manager 사이드바 미리보기",
+  "agentManager.splash.marker": "기능 {{number}}: {{name}}",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
   "agentManager.splash.hide": "숨기기",
   "agentManager.splash.title": "Kilo 에이전트 함대를 일하게 하세요.",
