@@ -161,7 +161,8 @@ test("carousel announces selections and only preview markers enter forward and r
     expect(order[0]?.label).toBe("Hide Agent Manager introduction")
     expect(order.at(-1)?.label).toBe("Hide Agent Manager introduction")
     expect(order.some((state) => !state.splash)).toBe(true)
-    expect(order.filter((state) => state.label === "Start your first session")).toHaveLength(1)
+    expect(order.filter((state) => state.label === "Create Worktree")).toHaveLength(1)
+    expect(order.filter((state) => state.label === "proceed locally in the message box below")).toHaveLength(1)
     expect(order.filter((state) => state.label.startsWith("Feature "))).toHaveLength(3)
   }
   const result = await new AxeBuilder({ page })

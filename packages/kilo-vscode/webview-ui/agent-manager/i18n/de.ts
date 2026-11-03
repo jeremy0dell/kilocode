@@ -523,9 +523,9 @@ export const dict = {
   "agentManager.splash.hideLabel": "Einführung zu Agent Manager ausblenden",
   "agentManager.splash.title": "Setze eine Flotte von Kilo-Agenten ein.",
   "agentManager.splash.subtitle":
-    "Erledige mehrere Aufgaben parallel, delegiere Arbeit, verfolge den Fortschritt jedes Agenten und halte mehrere Arbeitsströme von einem Ort aus in Bewegung.",
-  "agentManager.splash.start": "Erste Sitzung starten",
-  "agentManager.splash.hint": "oder beschreibe unten eine Aufgabe",
+    "Erledige mehrere Aufgaben parallel mit Worktrees, delegiere Arbeit, verfolge den Fortschritt jedes Agenten und halte mehrere Arbeitsströme von einem Ort aus in Bewegung.",
+  "agentManager.splash.hint": "oder",
+  "agentManager.splash.proceed": "fahre lokal im Nachrichtenfeld unten fort",
   "agentManager.splash.folded.title": "Setze eine Flotte von Kilo-Agenten ein",
   "agentManager.splash.folded.note": "Stackübergreifende Features, ein Orchestrator, eine Ops-Crew und mehr",
   "agentManager.splash.showExamples": "Beispiele anzeigen",

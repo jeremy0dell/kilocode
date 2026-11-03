@@ -514,9 +514,9 @@ export const dict = {
   "agentManager.splash.hideLabel": "Ukryj wprowadzenie do Agent Manager",
   "agentManager.splash.title": "Postaw do pracy flotę agentów Kilo.",
   "agentManager.splash.subtitle":
-    "Realizuj wiele zadań równolegle, deleguj pracę, śledź postępy każdego agenta i utrzymuj wiele strumieni pracy w jednym miejscu.",
-  "agentManager.splash.start": "Rozpocznij pierwszą sesję",
-  "agentManager.splash.hint": "lub opisz zadanie poniżej",
+    "Realizuj wiele zadań równolegle za pomocą worktree, deleguj pracę, śledź postępy każdego agenta i utrzymuj wiele strumieni pracy w ruchu z jednego miejsca.",
+  "agentManager.splash.hint": "lub",
+  "agentManager.splash.proceed": "kontynuuj lokalnie w polu wiadomości poniżej",
   "agentManager.splash.folded.title": "Postaw do pracy flotę agentów Kilo",
   "agentManager.splash.folded.note": "Funkcje między stosami, orkiestrator, zespół ops i więcej",
   "agentManager.splash.showExamples": "Pokaż przykłady",

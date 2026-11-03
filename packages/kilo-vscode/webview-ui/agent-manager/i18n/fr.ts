@@ -522,9 +522,9 @@ export const dict = {
   "agentManager.splash.hideLabel": "Masquer la présentation d'Agent Manager",
   "agentManager.splash.title": "Mettez une flotte d'agents Kilo au travail.",
   "agentManager.splash.subtitle":
-    "Traitez plusieurs tâches en parallèle, déléguez le travail, suivez la progression de chaque agent et faites avancer plusieurs flux de travail depuis un seul endroit.",
-  "agentManager.splash.start": "Démarrer votre première session",
-  "agentManager.splash.hint": "ou décrivez une tâche ci-dessous",
+    "Traitez plusieurs tâches en parallèle avec des worktrees, déléguez le travail, suivez la progression de chaque agent et faites avancer plusieurs flux de travail depuis un seul endroit.",
+  "agentManager.splash.hint": "ou",
+  "agentManager.splash.proceed": "continuez localement dans le champ de message ci-dessous",
   "agentManager.splash.folded.title": "Mettez une flotte d'agents Kilo au travail",
   "agentManager.splash.folded.note": "Fonctionnalités multi-stacks, un orchestrateur, une équipe ops et plus",
   "agentManager.splash.showExamples": "Voir des exemples",
