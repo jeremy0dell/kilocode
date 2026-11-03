@@ -1,12 +1,25 @@
 import AxeBuilder from "@axe-core/playwright"
 import { expect, test, type Page } from "@playwright/test"
+import { createRequire } from "node:module"
+
+const require = createRequire(import.meta.url)
+const language: typeof import("../webview-ui/src/context/language-utils") = require("../webview-ui/src/context/language-utils")
+const french: typeof import("../webview-ui/src/context/language-dictionaries/fr") = require("../webview-ui/src/context/language-dictionaries/fr")
+const arabic: typeof import("../webview-ui/src/context/language-dictionaries/ar") = require("../webview-ui/src/context/language-dictionaries/ar")
+
+async function ready(page: Page, locale: string) {
+  const normalized = language.normalizeLocale(locale)
+  await expect(page.locator("html")).toHaveAttribute("lang", language.localeToBcp47(normalized))
+  await expect(page.locator("html")).toHaveAttribute("dir", language.RTL_LOCALES.has(normalized) ? "rtl" : "ltr")
+  await page.evaluate(() => document.fonts.ready)
+}
 
 async function open(page: Page, theme = "dark-modern", locale = "en") {
   await page.goto(
     `/iframe.html?id=agentmanager--splash-french-story&viewMode=story&globals=theme:kilo-vscode;vscodeTheme:${theme}&args=locale:${locale}`,
   )
   await expect(page.locator(".am-splash-hero")).toBeVisible()
-  await page.evaluate(() => document.fonts.ready)
+  await ready(page, locale)
 }
 
 for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
@@ -207,8 +220,25 @@ for (const locale of ["en", "ar", "fa"]) {
     expect(await scales(page, ".am-splash-arrow")).toEqual([scale, scale])
     await page.goto(`/iframe.html?id=agentmanager--splash-folded-story&viewMode=story&args=locale:${locale}`)
     await expect(page.locator(".am-splash-show")).toBeVisible()
+    await ready(page, locale)
     await expect(page.locator('.am-splash-show [data-component="icon"][data-directional]')).toHaveCount(1)
     expect(await scales(page, ".am-splash-show")).toEqual([scale])
+  })
+}
+
+for (const [locale, dictionary] of [
+  ["fr", french.default],
+  ["ar", arabic.default],
+] as const) {
+  test(`${locale} folded story uses merged welcome and splash translations`, async ({ page }) => {
+    await page.goto(`/iframe.html?id=agentmanager--splash-folded-story&viewMode=story&args=locale:${locale}`)
+    await ready(page, locale)
+    const dict = dictionary({})
+    await expect(page.locator(".kilo-about-text")).toHaveText(dict["session.messages.welcome"]!)
+    await expect(page.locator(".recent-sessions-label")).toHaveText(dict["session.recent"]!)
+    await expect(page.locator(".show-history-btn")).toHaveText(dict["session.showHistory"]!)
+    await expect(page.locator(".feedback-button")).toHaveText(dict["feedback.button"]!)
+    await expect(page.locator(".am-splash-show")).toHaveText(dict["agentManager.splash.showExamples"]!)
   })
 }
 
@@ -239,7 +269,7 @@ test("every splash story root contains its card and expanded selections keep hei
       await page.goto(`/iframe.html?id=agentmanager--splash-${story}-story&viewMode=story`)
       const card = page.locator(".am-splash-hero, .am-splash-folded")
       await expect(card).toBeVisible()
-      await page.evaluate(() => document.fonts.ready)
+      await ready(page, { french: "fr", arabic: "ar", persian: "fa" }[story] ?? "en")
       const root = (await page.locator("#storybook-root").boundingBox())!
       const hero = (await card.boundingBox())!
       expect(root.height, `${story} at ${width}px root height`).toBeGreaterThanOrEqual(hero.height)
