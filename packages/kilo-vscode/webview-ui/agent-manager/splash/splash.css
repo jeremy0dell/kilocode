@@ -499,7 +499,7 @@
 
 .am-splash-proceed:hover,
 .am-splash-proceed:focus-visible {
-  color: var(--text-interactive-hover);
+  color: var(--vscode-textLink-activeForeground, var(--text-interactive-base));
   text-decoration: underline;
 }
 
