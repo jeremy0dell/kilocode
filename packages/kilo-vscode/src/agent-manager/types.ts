@@ -175,7 +175,6 @@ interface StateMessage {
   terminalDestination?: TerminalDestination
   terminalFont?: TerminalFont
   browserAutomation?: boolean
-  splash?: boolean
   restricted?: boolean
 }
 
