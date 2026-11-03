@@ -511,9 +511,9 @@ export const dict = {
   "agentManager.splash.hide": "Skjul",
   "agentManager.splash.title": "Sett en flåte med Kilo-agenter i arbeid.",
   "agentManager.splash.subtitle":
-    "Ta tak i flere oppgaver parallelt, deleger arbeid, følg fremdriften til hver agent og hold flere arbeidsstrømmer i gang fra ett sted.",
-  "agentManager.splash.start": "Start din første økt",
-  "agentManager.splash.hint": "eller beskriv en oppgave under",
+    "Ta tak i flere oppgaver parallelt med worktrees, deleger arbeid, følg fremdriften til hver agent og hold flere arbeidsstrømmer i gang fra ett sted.",
+  "agentManager.splash.hint": "eller",
+  "agentManager.splash.proceed": "fortsett lokalt i meldingsfeltet nedenfor",
   "agentManager.splash.folded.title": "Sett en flåte med Kilo-agenter i arbeid",
   "agentManager.splash.folded.note": "Funksjoner på tvers av stakker, en orkestrator, et driftsteam og mer",
   "agentManager.splash.showExamples": "Vis eksempler",

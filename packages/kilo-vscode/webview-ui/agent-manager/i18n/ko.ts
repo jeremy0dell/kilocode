@@ -506,9 +506,9 @@ export const dict = {
   "agentManager.splash.hide": "숨기기",
   "agentManager.splash.title": "Kilo 에이전트 함대를 일하게 하세요.",
   "agentManager.splash.subtitle":
-    "여러 작업을 병렬로 처리하고, 작업을 위임하고, 모든 에이전트의 진행 상황을 추적하며, 여러 작업 흐름을 한곳에서 계속 움직이세요.",
-  "agentManager.splash.start": "첫 세션 시작",
-  "agentManager.splash.hint": "또는 아래에 작업을 설명하세요",
+    "worktree를 사용해 여러 작업을 병렬로 처리하고, 작업을 위임하고, 모든 에이전트의 진행 상황을 추적하며, 여러 작업 흐름을 한곳에서 계속 진행하세요.",
+  "agentManager.splash.hint": "또는",
+  "agentManager.splash.proceed": "아래 메시지 입력란에서 로컬로 진행하세요",
   "agentManager.splash.folded.title": "Kilo 에이전트 함대를 일하게 하세요",
   "agentManager.splash.folded.note": "크로스 스택 기능, 오케스트레이터, 운영 팀 등",
   "agentManager.splash.showExamples": "예시 보기",

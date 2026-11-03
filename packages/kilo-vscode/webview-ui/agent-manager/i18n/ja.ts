@@ -514,9 +514,9 @@ export const dict = {
   "agentManager.splash.hide": "非表示",
   "agentManager.splash.title": "Kilo エージェントの艦隊を働かせよう。",
   "agentManager.splash.subtitle":
-    "複数のタスクを並行して進め、作業を委任し、各エージェントの進捗を追い、複数の作業を一か所から動かし続けられます。",
-  "agentManager.splash.start": "最初のセッションを開始",
-  "agentManager.splash.hint": "または下にタスクを記述",
+    "worktree を使って複数のタスクを並行して進め、作業を委任し、各エージェントの進捗を追い、複数の作業の流れを一か所から継続的に前進させましょう。",
+  "agentManager.splash.hint": "または",
+  "agentManager.splash.proceed": "下のメッセージ欄でローカルに作業を進める",
   "agentManager.splash.folded.title": "Kilo エージェントの艦隊を働かせよう",
   "agentManager.splash.folded.note": "クロススタック機能、オーケストレーター、運用チームなど",
   "agentManager.splash.showExamples": "例を表示",

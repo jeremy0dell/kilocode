@@ -158,7 +158,12 @@ function ExamplePicker(props: {
   )
 }
 
-export function SplashExpanded(props: { onHide: () => void; onStart: () => void; initialExample?: number }) {
+export function SplashExpanded(props: {
+  onHide: () => void
+  onStart: () => void
+  onCreateWorktree: () => void
+  initialExample?: number
+}) {
   const { t } = useLanguage()
   const titleId = createUniqueId()
   const features = createUniqueId()
@@ -190,10 +195,15 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void;
               features={features}
             />
             <div class="am-splash-actions">
-              <Button variant="primary" onClick={props.onStart}>
-                {t("agentManager.splash.start")}
+              <Button variant="primary" onClick={props.onCreateWorktree}>
+                {t("agentManager.dialog.createWorktree")}
               </Button>
-              <span class="am-splash-hint">{t("agentManager.splash.hint")}</span>
+              <span class="am-splash-hint">
+                {t("agentManager.splash.hint")}{" "}
+                <button type="button" class="am-splash-proceed" onClick={props.onStart}>
+                  {t("agentManager.splash.proceed")}
+                </button>
+              </span>
             </div>
           </div>
           <div class="am-splash-hero-side">

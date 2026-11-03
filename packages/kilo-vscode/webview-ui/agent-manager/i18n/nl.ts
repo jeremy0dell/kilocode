@@ -520,9 +520,9 @@ export const dict = {
   "agentManager.splash.hide": "Verbergen",
   "agentManager.splash.title": "Zet een vloot Kilo-agenten aan het werk.",
   "agentManager.splash.subtitle":
-    "Pak meerdere taken parallel aan, delegeer werk, volg de voortgang van elke agent en houd meerdere werkstromen op één plek in beweging.",
-  "agentManager.splash.start": "Start je eerste sessie",
-  "agentManager.splash.hint": "of beschrijf hieronder een taak",
+    "Pak meerdere taken parallel aan met worktrees, delegeer werk, volg de voortgang van elke agent en houd meerdere werkstromen vanuit één plek in beweging.",
+  "agentManager.splash.hint": "of",
+  "agentManager.splash.proceed": "ga lokaal verder in het berichtvak hieronder",
   "agentManager.splash.folded.title": "Zet een vloot Kilo-agenten aan het werk",
   "agentManager.splash.folded.note": "Functies over stacks heen, een orkestrator, een ops-team en meer",
   "agentManager.splash.showExamples": "Voorbeelden bekijken",

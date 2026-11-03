@@ -111,7 +111,7 @@ function AgentManagerEmptyState(props: EmptyProps) {
           />
         }
       >
-        <SplashExpanded onHide={props.onHide} onStart={props.onStart} />
+        <SplashExpanded onHide={props.onHide} onStart={props.onStart} onCreateWorktree={props.onCreateWorktree} />
       </Show>
     </Show>
   )

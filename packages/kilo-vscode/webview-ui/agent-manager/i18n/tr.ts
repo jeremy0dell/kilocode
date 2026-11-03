@@ -520,9 +520,9 @@ export const dict = {
   "agentManager.splash.hide": "Gizle",
   "agentManager.splash.title": "Bir Kilo ajanı filosunu işe koşun.",
   "agentManager.splash.subtitle":
-    "Birden çok görevi paralel olarak ele alın, işi devredin, her ajanın ilerlemesini izleyin ve birden çok iş akışını tek yerden sürdürün.",
-  "agentManager.splash.start": "İlk oturumunuzu başlatın",
-  "agentManager.splash.hint": "veya aşağıya bir görev yazın",
+    "Worktree'lerle birden çok görevi paralel olarak ele alın, işi devredin, her ajanın ilerlemesini izleyin ve birden çok iş akışını tek yerden sürdürün.",
+  "agentManager.splash.hint": "veya",
+  "agentManager.splash.proceed": "aşağıdaki mesaj kutusunda yerel olarak devam edin",
   "agentManager.splash.folded.title": "Bir Kilo ajanı filosunu işe koşun",
   "agentManager.splash.folded.note": "Stack'ler arası özellikler, bir orkestratör, bir operasyon ekibi ve daha fazlası",
   "agentManager.splash.showExamples": "Örnekleri göster",

@@ -1,5 +1,31 @@
 import { expect, test } from "@playwright/test"
 
+test("splash primary CTA requests a worktree", async ({ page }) => {
+  await page.goto("/iframe.html?id=agentmanager--splash-expanded-story&viewMode=story")
+  await page.locator(".am-splash-actions").getByRole("button", { name: "Create Worktree", exact: true }).click()
+  await expect(page.getByTestId("splash-created")).toHaveText("Worktree requested")
+})
+
+test("local helper supports pointer and keyboard composer focus", async ({ page }) => {
+  await page.goto("/iframe.html?id=agentmanager--splash-actions-story&viewMode=story")
+  const link = page.getByRole("button", { name: "proceed locally in the message box below", exact: true })
+  const composer = page.getByRole("textbox", { name: "Local prompt" })
+  await expect(page.locator(".am-splash-hint")).toHaveText("or proceed locally in the message box below")
+  await expect(link).toHaveCSS("cursor", "pointer")
+  await link.hover()
+  await expect(link).toHaveCSS("text-decoration-line", "underline")
+  await link.click()
+  await expect(composer).toBeFocused()
+  for (const key of ["Enter", "Space"]) {
+    await page.keyboard.press("Tab")
+    await link.focus()
+    await expect(link).toHaveCSS("text-decoration-line", "underline")
+    await link.press(key)
+    await expect(composer).toBeFocused()
+  }
+  await expect(page.getByTestId("splash-created")).toBeHidden()
+})
+
 for (const width of [300, 440, 599, 600, 720, 1010, 1400]) {
   test(`folded bar stays in one row at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width: width + 64, height: 800 })
