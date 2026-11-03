@@ -41,7 +41,7 @@ import { PRConversation } from "../../agent-manager/pr/PRConversation"
 import { PRPanel } from "../../agent-manager/pr/PRPanel"
 import { PRReviewers } from "../../agent-manager/pr/PRReviewers"
 import type { PRComment, PRReviewer, PRTimelineItem } from "../../agent-manager/pr/pr-types"
-import { For, createSignal, onCleanup, onMount, type JSX } from "solid-js"
+import { For, Show, createSignal, onCleanup, onMount, type JSX } from "solid-js"
 import type {
   AgentProjectSnapshot,
   WorktreeFileDiff,
@@ -157,17 +157,20 @@ function IntroductionPreview(props: {
   skipped?: boolean
   splash?: { enabled: boolean; folded: boolean }
   height?: string
+  composer?: boolean
 }) {
   const splash = createSplashState(() => {}, props.splash ?? { enabled: false, folded: false })
+  const [created, setCreated] = createSignal(false)
+  let composer: HTMLTextAreaElement | undefined
   const intro = createIntro({
     base: () => "main",
     git: () => true,
-    onCreateWorktree: () => {},
+    onCreateWorktree: () => setCreated(true),
     onSelectSession: () => {},
     onShowHistory: () => {},
     reveal: () => {},
     focus: () => {},
-    start: () => {},
+    start: () => composer?.focus(),
     splash,
   })
   if (props.skipped) intro.dismiss()
@@ -191,7 +194,15 @@ function IntroductionPreview(props: {
   }
   return (
     <SessionContext.Provider value={session}>
-      <div style={{ height: props.height ?? "auto" }}>{intro.render()}</div>
+      <div style={{ height: props.height ?? "auto" }}>
+        {intro.render()}
+        <output data-testid="splash-created" hidden={!created()}>
+          {created() ? "Worktree requested" : ""}
+        </output>
+        <Show when={props.composer}>
+          <textarea ref={composer} aria-label="Local prompt" />
+        </Show>
+      </div>
     </SessionContext.Provider>
   )
 }
@@ -210,6 +221,15 @@ export const IntroductionSkipped: Story = {
   render: () => (
     <StoryProviders>
       <IntroductionPreview skipped />
+    </StoryProviders>
+  ),
+}
+
+export const SplashActionsStory: Story = {
+  name: "Splash actions",
+  render: () => (
+    <StoryProviders>
+      <IntroductionPreview splash={{ enabled: true, folded: false }} composer />
     </StoryProviders>
   ),
 }
@@ -235,7 +255,12 @@ function SplashPreview(props: { example: number; width?: string; height?: string
         >
           <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
             <div data-slot="message-list-content">
-              <SplashExpanded onHide={() => {}} onStart={() => {}} initialExample={props.example} />
+              <SplashExpanded
+                onHide={() => {}}
+                onStart={() => {}}
+                onCreateWorktree={() => {}}
+                initialExample={props.example}
+              />
             </div>
           </div>
         </div>

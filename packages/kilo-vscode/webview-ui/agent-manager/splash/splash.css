@@ -521,6 +521,29 @@
   overflow-wrap: break-word;
 }
 
+.am-splash-proceed {
+  appearance: none;
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-interactive-base);
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.am-splash-proceed:hover,
+.am-splash-proceed:focus-visible {
+  color: var(--vscode-textLink-activeForeground, var(--text-interactive-base));
+  text-decoration: underline;
+}
+
+.am-splash-proceed:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
 .am-splash-folded-layout {
   align-self: stretch;
   display: flex;
