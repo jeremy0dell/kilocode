@@ -45,6 +45,7 @@
 }
 
 .am-splash-preview {
+  position: relative;
   min-width: 0;
 }
 

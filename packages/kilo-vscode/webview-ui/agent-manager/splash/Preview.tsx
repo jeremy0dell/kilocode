@@ -1,4 +1,4 @@
-import { For, Show, createEffect, createSignal, on, onCleanup, onMount, type Accessor } from "solid-js"
+import { For, Show, createEffect, createSignal, createUniqueId, on, onCleanup, onMount, type Accessor } from "solid-js"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { ActivityIcon } from "../../src/components/shared/ActivityIcon"
 import { label } from "../../src/utils/session-activity"
@@ -14,6 +14,7 @@ import { fleet } from "./fleet"
 import { guard } from "./guard"
 import { anchor } from "./anchor"
 import { wrap } from "./selection"
+import { SplashPopover } from "./Popover"
 
 const noop = () => undefined
 const deletion: WorktreeDelete = { pending: noop, cancel: noop, confirm: noop, select: noop }
@@ -85,14 +86,22 @@ export function SidebarPreview(props: {
   selected: Accessor<number>
   highlight: Accessor<number | undefined>
   onHighlight: (index: number | undefined) => void
-  features: string
 }) {
   const { t } = useLanguage()
+  const id = createUniqueId()
   const current = () => examples.at(props.selected()) ?? examples.at(0)!
   const [positions, setPositions] = createSignal<{ left: number; top: number; visible: boolean }[]>([])
+  const [thin, setThin] = createSignal(false)
+  const [open, setOpen] = createSignal<number>()
+  let container!: HTMLDivElement
   let card!: HTMLDivElement
   let stack!: HTMLDivElement
   const panel = () => stack.querySelector<HTMLElement>(".am-splash-preview-panel-active")
+  const target = (index: number) => {
+    const root = panel()
+    const feature = current().features.at(index)
+    return root && feature ? anchor(root, fleet(current()), feature.anchor) : undefined
+  }
   const measure = (index?: number, fit = true) => {
     const root = panel()
     if (!root) return
@@ -157,12 +166,16 @@ export function SidebarPreview(props: {
     )
   }
   const select = (index: number | undefined) => {
-    props.onHighlight(index)
+    if (thin()) setOpen(index)
+    if (!thin()) props.onHighlight(index)
     measure(index)
   }
   onMount(() => {
     const dispose = guard(stack)
-    const observer = new ResizeObserver(() => measure(props.highlight()))
+    const observer = new ResizeObserver(() => {
+      setThin(getComputedStyle(card).getPropertyValue("--am-splash-mode").trim() === "thin")
+      measure(thin() ? open() : props.highlight())
+    })
     observer.observe(card)
     for (const root of stack.querySelectorAll<HTMLElement>(".am-projects-list")) {
       observer.observe(root)
@@ -189,8 +202,15 @@ export function SidebarPreview(props: {
     }),
   )
   createEffect(on(props.highlight, (index) => measure(index)))
+  createEffect(
+    on([props.selected, thin], () => {
+      setOpen(thin() ? 0 : undefined)
+      props.onHighlight(undefined)
+      measure(thin() ? 0 : undefined)
+    }),
+  )
   return (
-    <div class="am-splash-preview" data-tone={current().id}>
+    <div ref={container} class="am-splash-preview" data-tone={current().id}>
       <div ref={card} class="am-splash-preview-card" role="figure" aria-label={t("agentManager.splash.preview.label")}>
         <div aria-hidden="true" class="am-splash-preview-stack" ref={stack}>
           <For each={examples}>
@@ -212,20 +232,22 @@ export function SidebarPreview(props: {
             <button
               type="button"
               class="am-splash-marker"
-              classList={{ "am-splash-marker-highlight": props.highlight() === index() }}
+              classList={{ "am-splash-marker-highlight": (thin() ? open() : props.highlight()) === index() }}
               style={{
                 left: `${positions().at(index())?.left ?? 0}px`,
                 top: `${positions().at(index())?.top ?? 0}px`,
                 visibility: positions().at(index())?.visible ? "visible" : "hidden",
               }}
               aria-label={t("agentManager.splash.marker", { number: index() + 1, name: t(feature.name) })}
-              aria-pressed={props.highlight() === index()}
-              aria-controls={`${props.features}-${current().id}-${index()}`}
-              onClick={() => select(props.highlight() === index() ? undefined : index())}
+              aria-pressed={thin() ? undefined : props.highlight() === index()}
+              aria-expanded={thin() ? open() === index() : undefined}
+              aria-controls={thin() ? id : undefined}
+              onClick={() => select((thin() ? open() : props.highlight()) === index() ? undefined : index())}
               onFocus={(event) => {
                 if (event.currentTarget.matches(":focus-visible")) measure(index())
               }}
               onKeyDown={(event) => {
+                if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
                 const delta = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key]
                 if (!delta) return
                 event.preventDefault()
@@ -239,6 +261,27 @@ export function SidebarPreview(props: {
           )}
         </For>
       </div>
+      <SplashPopover
+        id={id}
+        features={current().features.map((feature) => ({ name: t(feature.name), text: t(feature.text) }))}
+        selected={open() ?? 0}
+        open={thin() && open() !== undefined}
+        onSelect={(index) => {
+          select(index)
+          card.querySelectorAll<HTMLButtonElement>(".am-splash-marker").item(index)?.focus({ preventScroll: true })
+        }}
+        onClose={() => setOpen(undefined)}
+        anchor={(index) => target(index)?.getBoundingClientRect()}
+        markers={() => {
+          measure(undefined, false)
+          return [...card.querySelectorAll(".am-splash-marker")].map((marker) => marker.getBoundingClientRect())
+        }}
+        frame={() => card}
+        rows={() => panel()?.querySelector<HTMLElement>(".am-projects-list") ?? undefined}
+        container={() => container}
+        previousLabel={t("agentManager.splash.carousel.previous")}
+        nextLabel={t("agentManager.splash.carousel.next")}
+      />
       <div class="am-splash-legend" aria-hidden="true">
         <For each={["busy", "done", "waiting"] as const}>
           {(state) => (

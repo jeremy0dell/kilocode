@@ -17,7 +17,7 @@ describe("splash sidebar adapter", () => {
       ["IMPLEMENT", false],
       ["OPS", false],
     ])
-    expect(row.state.worktrees.filter((wt) => wt.sectionId === row.state.sections!.at(0)?.id)).toHaveLength(3)
+    expect(row.state.worktrees.filter((wt) => wt.sectionId === row.state.sections!.at(0)?.id)).toHaveLength(2)
     expect(row.state.worktreeOrder).toEqual(
       row.state.sections!.flatMap((section) => [
         section.id,

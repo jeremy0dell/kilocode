@@ -4,6 +4,12 @@ import { createRequire } from "node:module"
 import { ready } from "./story-locale"
 
 const require = createRequire(import.meta.url)
+const { anchor } =
+  require("../webview-ui/agent-manager/splash/anchor") as typeof import("../webview-ui/agent-manager/splash/anchor")
+const { examples } =
+  require("../webview-ui/agent-manager/splash/examples") as typeof import("../webview-ui/agent-manager/splash/examples")
+const { fleet } =
+  require("../webview-ui/agent-manager/splash/fleet") as typeof import("../webview-ui/agent-manager/splash/fleet")
 const french: typeof import("../webview-ui/src/context/language-dictionaries/fr") = require("../webview-ui/src/context/language-dictionaries/fr")
 const arabic: typeof import("../webview-ui/src/context/language-dictionaries/ar") = require("../webview-ui/src/context/language-dictionaries/ar")
 
@@ -86,6 +92,12 @@ for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
       await expect(controls).toHaveCount(5)
       for (const control of await controls.all()) {
         await control.click()
+        if (width < 560) {
+          const marker = page.locator(".am-splash-marker").first()
+          if ((await marker.getAttribute("aria-expanded")) !== "true") await marker.click()
+          await expect(page.locator('.am-splash-popover[data-open="true"]')).toBeVisible()
+          await expect(page.locator(".am-splash-popover")).toHaveCSS("opacity", "1")
+        }
         const result = await new AxeBuilder({ page })
           .include(".am-splash-hero")
           .include(".am-splash-preview-card")
@@ -113,7 +125,7 @@ for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
             nodes: rule.nodes.map((node) => ({ target: node.target })),
           })),
         )
-        expect(violations).toEqual([])
+        expect(violations, JSON.stringify(result.violations)).toEqual([])
       }
     })
   }
@@ -243,6 +255,8 @@ test("visible compact preview rows retain native hover inside the cropped previe
   await open(page)
   for (const tab of await page.locator(".am-splash-tab").all()) {
     await tab.click()
+    await page.keyboard.press("Escape")
+    await expect(page.locator(".am-splash-popover")).toBeHidden()
     const row = page.locator(".am-splash-hero-side .am-splash-preview-panel-active .am-worktree-item").first()
     await page.mouse.move(0, 0)
     await expect
@@ -256,6 +270,146 @@ test("visible compact preview rows retain native hover inside the cropped previe
     expect(await page.evaluate(() => document.activeElement?.closest(".am-splash-preview-card") != null)).toBe(false)
   }
 })
+
+for (const locale of ["en", "ar"]) {
+  for (const width of [1280, 1010, 900, 880, 879, 800, 720, 600, 560, 559, 500, 440, 380, 340, 320, 300]) {
+    test(`${locale} prototype sweep at ${width}px preserves copy, height, anchors, and popover clearance`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1500, height: 1600 })
+      await open(page, "dark-modern", locale)
+      await resize(page, width)
+      const thin = width < 560
+      const controls = page.locator(width < 880 ? ".am-splash-tab" : ".am-splash-dot")
+      const card = page.locator(".am-splash-preview-card")
+      await expect
+        .poll(() => card.evaluate((node) => node.getBoundingClientRect().height))
+        .toBe(thin ? 340 : width < 880 ? 360 : 428)
+      const resolver = await page.evaluateHandle<typeof anchor>(`(${anchor.toString()})`)
+      const heights: number[] = []
+      if (thin) {
+        await expect(card.locator(".am-splash-marker").first()).toHaveAttribute("aria-expanded", "true")
+        await expect(page.locator(".am-splash-popover")).toBeVisible()
+      }
+      // Start elsewhere so every iteration exercises an actual example change and its automatic feature-1 opening.
+      await controls.last().click()
+      for (const [index, example] of examples.entries()) {
+        await controls.nth(index).click()
+        const markers = card.locator(".am-splash-marker")
+        await expect(markers).toHaveCount(3)
+        if (thin) {
+          await expect(markers.first()).toHaveAttribute("aria-expanded", "true")
+          await expect(page.locator(".am-splash-popover")).toBeVisible()
+        }
+        for (const [position, marker] of (await markers.all()).entries()) {
+          const attribute = thin ? "aria-expanded" : "aria-pressed"
+          await expect(marker).not.toHaveAttribute(thin ? "aria-pressed" : "aria-expanded")
+          if (!thin) await expect(marker).not.toHaveAttribute("aria-controls")
+          if ((await marker.getAttribute(attribute)) !== "true") {
+            // Below 380px the full-width popover may cover another marker.
+            if (thin && width < 380) await page.keyboard.press("Escape")
+            await marker.click()
+          }
+          await expect(marker).toHaveAttribute(attribute, "true")
+          if (thin) {
+            const popover = page.locator(".am-splash-popover")
+            await expect(popover).toBeVisible()
+            await expect(marker).toHaveAttribute("aria-controls", (await popover.getAttribute("id"))!)
+          }
+          await expect
+            .poll(() =>
+              card.evaluate(
+                (card, { resolver, entries, target, position, thin, width }) => {
+                  const root = card.closest<HTMLElement>(".am-splash")!
+                  const panel = card.querySelector<HTMLElement>(".am-splash-preview-panel-active")!
+                  const anchor = resolver(panel, entries, target)!
+                  const row = anchor.getBoundingClientRect()
+                  const chrome = anchor
+                    .closest(".am-project")!
+                    .querySelector(".am-project-item")!
+                    .getBoundingClientRect()
+                  const list = panel.querySelector(".am-projects-list")!.getBoundingClientRect()
+                  const frame = card.getBoundingClientRect()
+                  const markers = [...card.querySelectorAll<HTMLElement>(".am-splash-marker")]
+                  const rects = markers.map((node) => node.getBoundingClientRect())
+                  const marker = rects.at(position)!
+                  const overlap = (a: DOMRect, b: DOMRect) =>
+                    Math.min(a.right, b.right) > Math.max(a.left, b.left) &&
+                    Math.min(a.bottom, b.bottom) > Math.max(a.top, b.top)
+                  const popover = root.querySelector<HTMLElement>(".am-splash-popover")
+                  const pop = popover?.getBoundingClientRect()
+                  const issues: string[] = []
+                  for (const node of [root, root.querySelector<HTMLElement>(".am-splash-hero")!]) {
+                    if (node.scrollWidth > node.clientWidth + 1) issues.push("horizontal overflow")
+                  }
+                  for (const node of root.querySelectorAll<HTMLElement>(
+                    ".am-splash-eyebrow,.am-splash-hide,.am-splash-title,.am-splash-subtitle,.am-splash-card-title,.am-splash-card-tag,.am-splash-pitch,.am-splash-feature strong,.am-splash-feature-description,.am-splash-tab,.am-splash-hint,.am-splash-thin-hint,.am-splash-actions [data-component=button],.am-splash-popover__name,.am-splash-popover__text",
+                  )) {
+                    const style = getComputedStyle(node)
+                    if (style.visibility === "hidden" || !node.checkVisibility()) continue
+                    if (
+                      !["none", "", "0"].includes(style.webkitLineClamp) ||
+                      node.scrollHeight > node.clientHeight + 1 ||
+                      node.scrollWidth > node.clientWidth + 1
+                    )
+                      issues.push(`truncated (${node.className}): ${node.textContent?.trim()}`)
+                  }
+                  if (row.top < list.top - 1 || row.bottom > list.bottom - 27)
+                    issues.push("anchor under chrome or fade")
+                  if (!anchor.matches(".am-project-item") && row.top < chrome.bottom - 1)
+                    issues.push("anchor under sticky project header")
+                  if (marker.top + marker.height / 2 < row.top || marker.top + marker.height / 2 > row.bottom)
+                    issues.push("marker detached from anchor")
+                  if (
+                    rects.some(
+                      (rect) =>
+                        rect.left < frame.left + 1 ||
+                        rect.right > frame.right - 1 ||
+                        rect.top < frame.top + 1 ||
+                        rect.bottom > frame.bottom - 27,
+                    )
+                  )
+                    issues.push("marker outside frame or under fade")
+                  if (!thin) return issues
+                  if (!pop || popover?.dataset.open !== "true") return [...issues, "popover not positioned"]
+                  if (
+                    pop.left < frame.left + 7 ||
+                    pop.right > frame.right - 7 ||
+                    pop.top < frame.top + 7 ||
+                    pop.bottom > frame.bottom - 7
+                  )
+                    issues.push("popover outside frame")
+                  if (overlap(pop, marker)) issues.push("popover overlaps own marker")
+                  if (overlap(pop, row)) issues.push("popover overlaps own anchor row")
+                  if (width >= 380 && rects.some((rect, index) => index !== position && overlap(pop, rect)))
+                    issues.push("popover overlaps other marker")
+                  if (
+                    width >= 380 &&
+                    rects.some((rect, index) => rects.some((other, next) => next > index && overlap(rect, other)))
+                  )
+                    issues.push("markers overlap")
+                  return issues
+                },
+                {
+                  resolver,
+                  entries: fleet(example),
+                  target: example.features.at(position)!.anchor,
+                  position,
+                  thin,
+                  width,
+                },
+              ),
+            )
+            .toEqual([])
+          heights.push(await page.locator(".am-splash-hero").evaluate((node) => node.getBoundingClientRect().height))
+        }
+      }
+      await resolver.dispose()
+      expect(heights).toHaveLength(15)
+      expect(Math.max(...heights) - Math.min(...heights)).toBe(0)
+    })
+  }
+}
 
 for (const locale of ["en", "ar"]) {
   for (const width of [1280, 1010, 900, 880, 879, 800, 720, 600, 560, 559, 500, 440, 380, 340, 320, 300]) {
@@ -735,6 +889,9 @@ for (const story of [
   "narrow-beyond-code",
   "narrow-arabic",
   "narrow-french",
+  "thin",
+  "thin-arabic",
+  "thin-french",
   "french",
   "arabic",
   "persian",
@@ -755,6 +912,8 @@ for (const story of [
           german: "de",
           "narrow-arabic": "ar",
           "narrow-french": "fr",
+          "thin-arabic": "ar",
+          "thin-french": "fr",
         }[story] ?? "en",
       )
       const root = (await page.locator("#storybook-root").boundingBox())!
@@ -776,6 +935,111 @@ for (const story of [
       expect(Math.max(...heights) - Math.min(...heights), `${story} at ${width}px`).toBe(0)
     })
   }
+}
+
+for (const locale of ["en", "ar"]) {
+  test(`${locale} integrated thin popover follows marker toggles, dismissal, and keyboard navigation`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1500, height: 1600 })
+    await open(page, "dark-modern", locale)
+    await resize(page, 500)
+    const popover = page.locator(".am-splash-popover")
+    const markers = page.locator(".am-splash-marker")
+    const marker = markers.first()
+    await expect(popover).toHaveAttribute("data-open", "true")
+    await expect(popover).toBeVisible()
+    await expect(popover).toHaveAttribute("aria-live", "polite")
+    await expect(marker).toHaveAttribute("aria-controls", (await popover.getAttribute("id"))!)
+    await expect(marker).toHaveAttribute("aria-expanded", "true")
+    await marker.click()
+    await expect(popover).toBeHidden()
+    await expect(marker).toHaveAttribute("aria-expanded", "false")
+    await marker.click()
+    await expect(popover).toBeVisible()
+    await expect(marker).toBeFocused()
+    await page.keyboard.press("Escape")
+    await expect(popover).toBeHidden()
+    await expect(marker).toHaveAttribute("aria-expanded", "false")
+    await expect(marker).toBeFocused()
+    await marker.click()
+    await expect(popover).toBeVisible()
+    await page.locator(".am-splash-title").click()
+    await expect(popover).toBeHidden()
+    await expect(marker).toHaveAttribute("aria-expanded", "false")
+    await marker.click()
+    for (const [key, index] of [
+      ["ArrowDown", 1],
+      ["ArrowDown", 2],
+      ["ArrowRight", 0],
+      ["ArrowUp", 2],
+      ["ArrowLeft", 1],
+      ["ArrowUp", 0],
+    ] as const) {
+      await page.keyboard.press(key)
+      await expect(markers.nth(index)).toBeFocused()
+      await expect(markers.nth(index)).toHaveAttribute("aria-expanded", "true")
+      await expect(page.locator('.am-splash-marker[aria-expanded="true"]')).toHaveCount(1)
+      await expect(popover).toHaveAttribute("data-open", "true")
+      await expect(popover).toBeVisible()
+      await expect(popover.locator(".am-splash-popover__number")).toHaveText(String(index + 1))
+      await expect(popover.locator(".am-splash-popover__steps")).toContainText(`${index + 1}/3`)
+    }
+    for (const [step, index] of [
+      [0, 2],
+      [1, 0],
+      [1, 1],
+      [1, 2],
+      [1, 0],
+    ] as const) {
+      await popover.locator(".am-splash-popover__steps button").nth(step).click()
+      await expect(markers.nth(index)).toBeFocused()
+      await expect(markers.nth(index)).toHaveAttribute("aria-expanded", "true")
+      await expect(popover.locator(".am-splash-popover__number")).toHaveText(String(index + 1))
+      await expect(popover.locator(".am-splash-popover__steps")).toContainText(`${index + 1}/3`)
+      await expect(popover).toHaveAttribute("data-open", "true")
+      await expect(popover).toBeVisible()
+    }
+  })
+
+  test(`${locale} integrated popover resets on thin entry and example changes and drops disclosure ARIA outside thin`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1500, height: 1600 })
+    await open(page, "dark-modern", locale)
+    const popover = page.locator(".am-splash-popover")
+    const markers = page.locator(".am-splash-marker")
+    for (const width of [500, 720, 500, 880, 500]) {
+      await resize(page, width)
+      if (width >= 560) {
+        await expect(popover).toBeHidden()
+        for (const marker of await markers.all()) {
+          await expect(marker).not.toHaveAttribute("aria-expanded")
+          await expect(marker).not.toHaveAttribute("aria-controls")
+          await expect(marker).toHaveAttribute("aria-pressed", "false")
+        }
+        continue
+      }
+      await expect(markers.first()).toHaveAttribute("aria-expanded", "true")
+      await expect(popover).toHaveAttribute("data-open", "true")
+      await expect(popover).toBeVisible()
+      await expect(popover.locator(".am-splash-popover__number")).toHaveText("1")
+      for (const marker of await markers.all()) await expect(marker).not.toHaveAttribute("aria-pressed")
+      await markers.nth(2).click()
+      await expect(markers.nth(2)).toHaveAttribute("aria-expanded", "true")
+      await expect(popover.locator(".am-splash-popover__number")).toHaveText("3")
+    }
+    for (const index of [1, 2, 3, 4, 0]) {
+      await page.locator(".am-splash-tab").nth(index).click()
+      await expect(markers.first()).toHaveAttribute("aria-expanded", "true")
+      await expect(page.locator('.am-splash-marker[aria-expanded="true"]')).toHaveCount(1)
+      await expect(popover).toHaveAttribute("data-open", "true")
+      await expect(popover).toBeVisible()
+      await expect(popover.locator(".am-splash-popover__number")).toHaveText("1")
+      await markers.nth(2).click()
+      await expect(markers.nth(2)).toHaveAttribute("aria-expanded", "true")
+    }
+  })
 }
 
 test.describe("standalone thin splash popover", () => {

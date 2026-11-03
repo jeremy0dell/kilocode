@@ -10,7 +10,7 @@ for (const width of [300, 440, 599, 600, 720, 1010, 1400]) {
       el.style.width = `${width}px`
     }, width)
     await page.evaluate(() => document.fonts.ready)
-    await bar.locator("img").evaluate((el) => el.decode())
+    await bar.locator("img").evaluate((el: HTMLImageElement) => el.decode())
 
     const title = bar.locator(".am-splash-folded-title")
     const note = bar.locator(".am-splash-folded-note")

@@ -160,6 +160,8 @@ for (const story of stories) {
           "agentmanager--splash-persian-story": "fa",
           "agentmanager--splash-narrow-arabic-story": "ar",
           "agentmanager--splash-narrow-french-story": "fr",
+          "agentmanager--splash-thin-arabic-story": "ar",
+          "agentmanager--splash-thin-french-story": "fr",
         }[story.id] ?? "en",
       )
     }

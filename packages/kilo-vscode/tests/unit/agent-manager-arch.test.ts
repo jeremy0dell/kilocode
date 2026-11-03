@@ -181,7 +181,7 @@ describe("Agent Manager CSS/TSX Consistency", () => {
     const defined = new Set(cssMatches.map((m) => m[1]))
 
     // Extract am- classes referenced in TSX (class="am-..." or `am-...`)
-    const tsxMatches = [...tsx.matchAll(/\bam-[a-z0-9-]+/g)]
+    const tsxMatches = [...tsx.matchAll(/(?<![\w-])am-[a-z0-9-]+/g)]
     const used = [...new Set(tsxMatches.map((m) => m[0]))]
 
     const missing = used.filter((c) => !defined.has(c))

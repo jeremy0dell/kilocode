@@ -309,6 +309,21 @@ export const SplashNarrowFrenchStory: Story = {
   render: () => <SplashPreview example={4} width="560px" locale="fr" />,
 }
 
+export const SplashThinStory: Story = {
+  name: "Splash thin",
+  render: () => <SplashPreview example={0} width="340px" />,
+}
+
+export const SplashThinArabicStory: Story = {
+  name: "Splash thin Arabic",
+  render: () => <SplashPreview example={1} width="440px" locale="ar" />,
+}
+
+export const SplashThinFrenchStory: Story = {
+  name: "Splash thin French",
+  render: () => <SplashPreview example={4} width="440px" locale="fr" />,
+}
+
 export const SplashFrenchStory: StoryObj<{ locale: Locale }> = {
   name: "Splash French",
   args: { locale: "fr" },

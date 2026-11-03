@@ -230,7 +230,7 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void;
             </div>
           </div>
           <div class="am-splash-hero-side">
-            <SidebarPreview selected={selected} highlight={highlight} onHighlight={setHighlight} features={features} />
+            <SidebarPreview selected={selected} highlight={highlight} onHighlight={setHighlight} />
           </div>
           <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
             {t(current().title)} — {t(current().pitch)}
