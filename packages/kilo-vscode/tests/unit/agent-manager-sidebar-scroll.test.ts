@@ -47,9 +47,9 @@ function flush() {
 }
 
 describe("Agent Manager sidebar scroll preservation", () => {
-  it("never captures inert splash previews outside the live sidebar", () => {
+  it("never captures decorative splash previews outside the live sidebar", () => {
     const preview = window.document.createElement("div")
-    preview.setAttribute("inert", "")
+    preview.setAttribute("aria-hidden", "true")
     const projects = window.document.createElement("div")
     projects.className = "am-projects-list"
     const worktrees = window.document.createElement("div")
