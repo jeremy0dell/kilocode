@@ -248,6 +248,11 @@ export const SplashGermanStory: Story = {
   render: () => <SplashPreview example={1} locale="de" />,
 }
 
+export const SplashArabicStory: Story = {
+  name: "Splash Arabic navigation",
+  render: () => <SplashPreview example={0} locale="ar" />,
+}
+
 export const SplashOrchestratorStory: Story = {
   name: "Splash orchestrator",
   render: () => <SplashPreview example={1} />,

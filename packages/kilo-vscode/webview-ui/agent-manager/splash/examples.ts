@@ -1,6 +1,8 @@
+import type { SECTION_COLORS } from "../section-colors"
+
 type Status = "working" | "finished" | "needs-you"
 
-type SectionColor = "Red" | "Orange" | "Yellow" | "Green" | "Cyan" | "Blue" | "Purple" | "Magenta"
+type SectionColor = (typeof SECTION_COLORS)[number]["label"]
 
 interface Session {
   id: string

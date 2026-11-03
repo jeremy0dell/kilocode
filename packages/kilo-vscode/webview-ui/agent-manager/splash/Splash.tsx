@@ -67,19 +67,19 @@ function ExamplePicker(props: { initial?: number }) {
             <For each={examples}>
               {(example, index) => {
                 return (
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
                     class="am-splash-card"
                     classList={{ "am-splash-card-selected": index() === selected() }}
                     data-tone={example.id}
                     aria-current={index() === selected() ? "true" : undefined}
                     tabIndex={index() === selected() ? 0 : -1}
                     onClick={() => setSelected(index())}
-                    onKeyDown={(event) => navigate(event, index())}
+                    onKeyDown={(event: KeyboardEvent) => navigate(event, index())}
                   >
                     <span class="am-splash-card-tag">{t(example.tag)}</span>
                     <span class="am-splash-card-title">{t(example.title)}</span>
-                  </button>
+                  </Button>
                 )
               }}
             </For>
@@ -95,8 +95,8 @@ function ExamplePicker(props: { initial?: number }) {
         <div class="am-splash-dots">
           <For each={examples}>
             {(example, index) => (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 class="am-splash-dot"
                 classList={{ "am-splash-dot-selected": index() === selected() }}
                 aria-current={index() === selected() ? "true" : undefined}
@@ -104,7 +104,7 @@ function ExamplePicker(props: { initial?: number }) {
                 onClick={() => setSelected(index())}
               >
                 <span class="am-splash-dot-mark" />
-              </button>
+              </Button>
             )}
           </For>
         </div>
