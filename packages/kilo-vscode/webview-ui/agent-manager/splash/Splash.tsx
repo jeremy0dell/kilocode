@@ -19,6 +19,7 @@ interface EmptyProps {
 function ExamplePicker(props: { initial?: number }) {
   const { t } = useLanguage()
   const [selected, setSelected] = createSignal(Math.max(0, Math.min(props.initial ?? 0, examples.length - 1)))
+  const current = () => examples.at(selected()) ?? examples.at(0)!
 
   return (
     <>
@@ -76,7 +77,7 @@ function ExamplePicker(props: { initial?: number }) {
           </For>
         </div>
       </div>
-      <div class="am-splash-example" aria-live="polite">
+      <div class="am-splash-example">
         <For each={examples}>
           {(example, index) => (
             <div
@@ -103,6 +104,9 @@ function ExamplePicker(props: { initial?: number }) {
             </div>
           )}
         </For>
+      </div>
+      <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {t(current().title)} — {t(current().pitch)}
       </div>
     </>
   )

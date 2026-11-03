@@ -226,7 +226,9 @@ function SplashPreview(props: { example: number }) {
     <StoryProviders>
       <div class="am-intro-layout" style={{ height: "640px" }}>
         <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
-          <SplashExpanded onHide={() => {}} onStart={() => {}} initialExample={props.example} />
+          <div data-slot="message-list-content">
+            <SplashExpanded onHide={() => {}} onStart={() => {}} initialExample={props.example} />
+          </div>
         </div>
       </div>
     </StoryProviders>
