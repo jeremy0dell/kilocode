@@ -40,7 +40,7 @@ import { PRConversation } from "../../agent-manager/pr/PRConversation"
 import { PRPanel } from "../../agent-manager/pr/PRPanel"
 import { PRReviewers } from "../../agent-manager/pr/PRReviewers"
 import type { PRComment, PRReviewer, PRTimelineItem } from "../../agent-manager/pr/pr-types"
-import { For, createSignal, onCleanup, onMount, type JSX } from "solid-js"
+import { For, Show, createSignal, onCleanup, onMount, type JSX } from "solid-js"
 import type {
   AgentProjectSnapshot,
   WorktreeFileDiff,
