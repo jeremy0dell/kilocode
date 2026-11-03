@@ -75,17 +75,17 @@ function Fleet(props: { example: Example }) {
   )
 }
 
-export function SidebarPreview(props: { selected: Accessor<number> }) {
+export function SidebarPreview(props: { selected: Accessor<number>; example?: number }) {
   const { t } = useLanguage()
   return (
     <div class="am-splash-preview-card" role="figure" aria-label={t("agentManager.splash.preview.label")}>
       <div aria-hidden="true" class="am-splash-preview-stack" ref={(el) => onMount(() => onCleanup(guard(el)))}>
-        <For each={examples}>
+        <For each={props.example == null ? examples : examples.filter((_, index) => index === props.example)}>
           {(example, index) => (
             <div
               class="am-splash-preview-panel"
-              classList={{ "am-splash-preview-panel-active": index() === props.selected() }}
-              aria-hidden={index() !== props.selected() ? "true" : undefined}
+              classList={{ "am-splash-preview-panel-active": (props.example ?? index()) === props.selected() }}
+              aria-hidden={(props.example ?? index()) !== props.selected() ? "true" : undefined}
             >
               <Fleet example={example} />
             </div>

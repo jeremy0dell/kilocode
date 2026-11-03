@@ -510,6 +510,9 @@ export const dict = {
   "agentManager.intro.reopen": "Agent Manager の仕組み",
   "agentManager.splash.preview.label": "Agent Manager サイドバーのプレビュー",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
+  "agentManager.splash.compact.subtitle":
+    "タスクを並行して実行し、作業を委任し、すべてのエージェントの状況を1か所で確認できます。",
+  "agentManager.splash.compact.hint": "または下にタスクを入力",
   "agentManager.splash.hide": "非表示",
   "agentManager.splash.hideLabel": "Agent Manager の紹介を非表示にする",
   "agentManager.splash.title": "Kilo エージェントの艦隊を働かせよう。",

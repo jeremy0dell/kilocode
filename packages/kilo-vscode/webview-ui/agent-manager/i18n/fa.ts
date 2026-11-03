@@ -509,6 +509,9 @@ export const dict = {
   "agentManager.intro.reopen": "Agent Manager چگونه کار می‌کند",
   "agentManager.splash.preview.label": "پیش‌نمایش نوار کناری Agent Manager",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
+  "agentManager.splash.compact.subtitle":
+    "کارها را به‌صورت موازی اجرا کنید، کار را واگذار کنید و همهٔ عامل‌ها را از یک‌جا دنبال کنید.",
+  "agentManager.splash.compact.hint": "یا یک کار را در زیر توصیف کنید",
   "agentManager.splash.hide": "پنهان کردن",
   "agentManager.splash.hideLabel": "پنهان کردن معرفی Agent Manager",
   "agentManager.splash.title": "یک ناوگان از عامل‌های Kilo را به کار بگیرید.",

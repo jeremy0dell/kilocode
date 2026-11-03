@@ -287,6 +287,36 @@ export const SplashNarrowStory: Story = {
   render: () => <SplashPreview example={0} width="560px" />,
 }
 
+export const SplashNarrowOrchestratorStory: Story = {
+  name: "Splash narrow orchestrator",
+  render: () => <SplashPreview example={1} width="560px" />,
+}
+
+export const SplashNarrowOpsStory: Story = {
+  name: "Splash narrow ops",
+  render: () => <SplashPreview example={2} width="560px" />,
+}
+
+export const SplashNarrowVersionsStory: Story = {
+  name: "Splash narrow versions",
+  render: () => <SplashPreview example={3} width="560px" />,
+}
+
+export const SplashNarrowBeyondCodeStory: Story = {
+  name: "Splash narrow beyond code",
+  render: () => <SplashPreview example={4} width="560px" />,
+}
+
+export const SplashNarrowArabicStory: Story = {
+  name: "Splash narrow Arabic",
+  render: () => <SplashPreview example={1} width="560px" locale="ar" />,
+}
+
+export const SplashNarrowFrenchStory: Story = {
+  name: "Splash narrow French",
+  render: () => <SplashPreview example={4} width="560px" locale="fr" />,
+}
+
 export const SplashFrenchStory: StoryObj<{ locale: Locale }> = {
   name: "Splash French",
   args: { locale: "fr" },

@@ -10,37 +10,44 @@ async function open(page: Page, theme = "dark-modern", locale = "en") {
 }
 
 for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
-  test(`${theme} hero and preview pass axe, including nested-interactive and aria-hidden-focus`, async ({ page }) => {
-    await open(page, theme)
-    for (const dot of await page.locator(".am-splash-dot").all()) {
-      await dot.click()
-      const result = await new AxeBuilder({ page })
-        .include(".am-splash-hero")
-        .include(".am-splash-preview-card")
-        .analyze()
-      expect([...result.passes, ...result.inapplicable].map((rule) => rule.id)).toEqual(
-        expect.arrayContaining(["nested-interactive", "aria-hidden-focus"]),
-      )
-      const violations = await page.evaluate(
-        (violations) =>
-          violations.filter((rule) => {
-            if (rule.id !== "color-contrast") return true
-            // Only the reused real sidebar's colors are out of scope, inside its aria-hidden stack.
-            return !rule.nodes.every((node) =>
-              node.target.every(
-                (selector) =>
-                  typeof selector === "string" &&
-                  document
-                    .querySelector(selector)
-                    ?.closest('.am-splash-preview-card .am-splash-preview-stack[aria-hidden="true"]') != null,
-              ),
-            )
-          }),
-        result.violations,
-      )
-      expect(violations).toEqual([])
-    }
-  })
+  for (const width of [420, 1100]) {
+    test(`${theme} at ${width}px hero and preview pass axe, including nested-interactive and aria-hidden-focus`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 1400 })
+      await open(page, theme)
+      const controls = page.locator(width < 880 ? ".am-splash-tab" : ".am-splash-dot")
+      await expect(controls).toHaveCount(5)
+      for (const control of await controls.all()) {
+        await control.click()
+        const result = await new AxeBuilder({ page })
+          .include(".am-splash-hero")
+          .include(".am-splash-preview-card")
+          .analyze()
+        expect([...result.passes, ...result.inapplicable].map((rule) => rule.id)).toEqual(
+          expect.arrayContaining(["nested-interactive", "aria-hidden-focus"]),
+        )
+        const violations = await page.evaluate(
+          (violations) =>
+            violations.filter((rule) => {
+              if (rule.id !== "color-contrast") return true
+              // Only the reused real sidebar's colors are out of scope, inside its aria-hidden stack.
+              return !rule.nodes.every((node) =>
+                node.target.every(
+                  (selector) =>
+                    typeof selector === "string" &&
+                    document
+                      .querySelector(selector)
+                      ?.closest('.am-splash-preview-card .am-splash-preview-stack[aria-hidden="true"]') != null,
+                ),
+              )
+            }),
+          result.violations,
+        )
+        expect(violations).toEqual([])
+      }
+    })
+  }
 
   for (const width of [420, 520, 760, 1100]) {
     test(`${theme} at ${width}px keeps all five hero heights stable and tags readable`, async ({ page }) => {
@@ -48,9 +55,20 @@ for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
       await open(page, theme)
       const heights: number[] = []
       const ratios: number[] = []
-      for (const dot of await page.locator(".am-splash-dot").all()) {
-        await dot.click()
+      const controls = page.locator(width < 880 ? ".am-splash-tab" : ".am-splash-dot")
+      await expect(controls).toHaveCount(5)
+      for (const control of await controls.all()) {
+        await control.click()
         heights.push(await page.locator(".am-splash-hero").evaluate((node) => node.getBoundingClientRect().height))
+        if (width < 880) {
+          await expect(page.locator(".am-splash-compact-panel-active")).toBeVisible()
+          expect(
+            await page
+              .locator(".am-splash-compact-panel-active .am-splash-preview-card")
+              .evaluate((node) => node.getBoundingClientRect().height),
+          ).toBe(236)
+          continue
+        }
         ratios.push(
           await page.locator(".am-splash-card-selected").evaluate((node) => {
             const canvas = document.createElement("canvas")
@@ -73,13 +91,15 @@ for (const theme of ["dark-modern", "light-modern", "hc-black", "hc-light"]) {
       }
       console.log(JSON.stringify({ theme, width, heights, ratios }))
       expect(Math.max(...heights) - Math.min(...heights)).toBe(0)
-      expect(Math.min(...ratios)).toBeGreaterThanOrEqual(4.5)
+      expect(heights).toHaveLength(5)
+      if (width >= 880) expect(Math.min(...ratios)).toBeGreaterThanOrEqual(4.5)
       expect(await page.locator(".am-splash").evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true)
     })
   }
 }
 
 test("preview rows retain native hover without accepting focus", async ({ page }) => {
+  await page.setViewportSize({ width: 1100, height: 1400 })
   await open(page)
   await expect(page.locator(".am-splash-preview-card")).toHaveAttribute("role", "figure")
   for (const dot of await page.locator(".am-splash-dot").all()) {
@@ -99,6 +119,7 @@ test("preview rows retain native hover without accepting focus", async ({ page }
 test("carousel announces selections and excludes the preview from forward and reverse focus traversal", async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 1100, height: 1400 })
   await open(page)
   const status = page.getByRole("status")
   await expect(status).toHaveCount(1)
@@ -144,29 +165,48 @@ test("carousel announces selections and excludes the preview from forward and re
   expect(result.violations).toEqual([])
 })
 
+test("visible compact preview rows retain native hover inside the faded frame", async ({ page }) => {
+  await page.setViewportSize({ width: 520, height: 1400 })
+  await open(page)
+  for (const tab of await page.locator(".am-splash-tab").all()) {
+    await tab.click()
+    const row = page.locator(".am-splash-compact-panel-active .am-local-item").first()
+    await page.mouse.move(0, 0)
+    const background = await row.evaluate((node) => getComputedStyle(node).backgroundColor)
+    await row.hover()
+    await expect.poll(() => row.evaluate((node) => getComputedStyle(node).backgroundColor)).not.toBe(background)
+    await row.click()
+    expect(await page.evaluate(() => document.activeElement?.closest(".am-splash-preview-card") != null)).toBe(false)
+  }
+})
+
 for (const locale of ["br", "da", "es", "fa", "fr", "it", "nl", "no", "pl", "ru", "uk"]) {
   test(`${locale} cards fit at 480px`, async ({ page }) => {
     await page.setViewportSize({ width: 480, height: 1600 })
     await open(page, "light-modern", locale)
     const heights: number[] = []
-    for (const dot of await page.locator(".am-splash-dot").all()) {
-      await dot.click()
+    const tabs = page.locator(".am-splash-tab")
+    await expect(tabs).toHaveCount(5)
+    for (const tab of await tabs.all()) {
+      await tab.click()
       heights.push(await page.locator(".am-splash-hero").evaluate((node) => node.getBoundingClientRect().height))
-      const clipped = await page
-        .locator(".am-splash-card-selected")
-        .evaluate((node) =>
-          [...node.children]
-            .filter((child) => child.scrollHeight > child.clientHeight + 1 || child.scrollWidth > child.clientWidth + 1)
-            .map((child) => child.textContent),
-        )
+      const clipped = await page.locator(".am-splash-compact-panel-active").evaluate((node) =>
+        [...node.children]
+          // The pitch clamps to two lines and the real preview intentionally crops at 236px.
+          .filter((child) => child.matches(".am-splash-compact-features"))
+          .filter((child) => child.scrollHeight > child.clientHeight + 1 || child.scrollWidth > child.clientWidth + 1)
+          .map((child) => child.textContent),
+      )
       expect(clipped).toEqual([])
     }
+    expect(heights).toHaveLength(5)
     expect(Math.max(...heights) - Math.min(...heights)).toBe(0)
   })
 }
 
 for (const locale of ["ar", "fa"]) {
   test(`${locale} mirrors the selection bar and chevrons`, async ({ page }) => {
+    await page.setViewportSize({ width: 1100, height: 1400 })
     await open(page, "dark-modern", locale)
     const shadow = await page.locator(".am-splash-card-selected").evaluate((node) => getComputedStyle(node).boxShadow)
     expect(shadow).toContain("-3px")
@@ -182,9 +222,155 @@ test("reduced motion disables only splash-owned control motion", async ({ page }
   await page.emulateMedia({ reducedMotion: "reduce" })
   await open(page)
   const durations = await page
-    .locator(".am-splash-hero-main button")
+    .locator(".am-splash-hero-main button:not(.am-splash-preview-card button)")
     .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).transitionDuration))
   expect(durations.every((duration) => duration === "0s")).toBe(true)
+})
+
+for (const locale of ["en", "ar", "fa", "fr"]) {
+  test(`${locale} compact tabs support roving focus, linked panels, and visible keyboard selections`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 420, height: 1400 })
+    await open(page, "dark-modern", locale)
+    const tabs = page.locator(".am-splash-tab")
+    const panels = page.locator(".am-splash-compact-panel")
+    await expect(tabs).toHaveCount(5)
+    await expect(panels).toHaveCount(5)
+    await expect(page.getByRole("tablist")).toHaveCount(1)
+    await expect(page.locator(".am-splash-dot")).toHaveCount(0)
+    if (locale === "fr") {
+      expect(await page.getByRole("tablist").evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true)
+    }
+    const rtl = locale === "ar" || locale === "fa"
+    await tabs.first().focus()
+    for (const [key, index] of [
+      ["ArrowRight", rtl ? 4 : 1],
+      ["ArrowLeft", 0],
+      ["End", 4],
+      ["ArrowRight", rtl ? 3 : 0],
+      ["Home", 0],
+      ["ArrowLeft", rtl ? 1 : 4],
+    ] as const) {
+      await page.keyboard.press(key)
+      await expect(tabs.nth(index)).toBeFocused()
+      await expect(page.getByRole("tab", { selected: true })).toHaveCount(1)
+      await expect(page.getByRole("tabpanel")).toHaveCount(1)
+      for (let position = 0; position < 5; position++) {
+        const tab = tabs.nth(position)
+        const panel = panels.nth(position)
+        await expect(tab).toHaveAttribute("role", "tab")
+        await expect(tab).toHaveAttribute("aria-selected", String(position === index))
+        await expect(tab).toHaveAttribute("tabindex", position === index ? "0" : "-1")
+        await expect(tab).toHaveAttribute("aria-controls", (await panel.getAttribute("id"))!)
+        await expect(panel).toHaveAttribute("role", "tabpanel")
+        await expect(panel).toHaveAttribute("aria-labelledby", (await tab.getAttribute("id"))!)
+        await expect(panel).toHaveAttribute("tabindex", position === index ? "0" : "-1")
+        await expect(panel.locator(".am-splash-preview-card")).toHaveAttribute("role", "figure")
+        if (position !== index) {
+          await expect(panel).toBeHidden()
+          continue
+        }
+        await expect(panel).toHaveClass(/am-splash-compact-panel-active/)
+        await expect(panel).toBeVisible()
+      }
+      await expect
+        .poll(() =>
+          tabs.nth(index).evaluate((node) => {
+            const tab = node.getBoundingClientRect()
+            const list = node.closest('[role="tablist"]')!.getBoundingClientRect()
+            return tab.left >= list.left - 1 && tab.right <= list.right + 1
+          }),
+        )
+        .toBe(true)
+    }
+  })
+}
+
+test("compact forward and reverse focus traversal includes the panel but excludes every preview", async ({ page }) => {
+  await page.setViewportSize({ width: 420, height: 1400 })
+  await open(page)
+  const hide = page.getByRole("button", { name: "Hide Agent Manager introduction", exact: true })
+  const start = page.getByRole("button", { name: "Start your first session", exact: true })
+  for (const tab of await page.locator(".am-splash-tab").all()) {
+    await tab.click()
+    const panel = page.locator(".am-splash-compact-panel-active")
+    await hide.focus()
+    for (const [key, target] of [
+      ["Tab", tab],
+      ["Tab", panel],
+      ["Tab", start],
+      ["Shift+Tab", panel],
+      ["Shift+Tab", tab],
+      ["Shift+Tab", hide],
+    ] as const) {
+      await page.keyboard.press(key)
+      await expect(target).toBeFocused()
+      expect(await target.evaluate((node) => node.closest(".am-splash-preview-card") != null)).toBe(false)
+      expect(
+        await target.evaluate(
+          (node) => node.matches(":focus-visible") && getComputedStyle(node).outlineStyle !== "none",
+        ),
+      ).toBe(true)
+    }
+  }
+})
+
+test("the 880px container breakpoint fits the wide carousel and preserves selection across remounts", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1100, height: 1400 })
+  await open(page)
+  const pane = page.locator('.am-intro-layout > [data-slot="message-list"]')
+  for (const width of [879, 880, 760, 1100]) {
+    await pane.evaluate((node, width) => {
+      const pane = node as HTMLElement
+      pane.style.flex = "none"
+      pane.style.width = `${width}px`
+    }, width)
+    await expect.poll(() => pane.evaluate((node) => node.getBoundingClientRect().width)).toBe(width)
+    if (width < 880) {
+      const tabs = page.locator(".am-splash-tab")
+      await expect(tabs).toHaveCount(5)
+      await expect(page.locator(".am-splash-dot")).toHaveCount(0)
+      if (width === 879) await tabs.nth(3).click()
+      await expect(tabs.nth(width === 879 ? 3 : 2)).toHaveAttribute("aria-selected", "true")
+      continue
+    }
+    await expect(page.locator(".am-splash-tab")).toHaveCount(0)
+    await expect(page.locator(".am-splash-dot")).toHaveCount(5)
+    await expect(page.locator(".am-splash-dot").nth(width === 880 ? 3 : 2)).toHaveAttribute("aria-current", "true")
+    await expect(page.locator(".am-splash-card-selected")).toHaveAttribute(
+      "data-tone",
+      width === 880 ? "versions" : "ops",
+    )
+    expect(await page.locator(".am-splash-hero").evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true)
+    const bounds = (await pane.boundingBox())!
+    for (const card of await page.locator(".am-splash-card, .am-splash-preview-card").all()) {
+      const box = (await card.boundingBox())!
+      expect(box.x).toBeGreaterThanOrEqual(bounds.x)
+      expect(box.x + box.width).toBeLessThanOrEqual(bounds.x + bounds.width)
+    }
+    if (width === 880) await page.locator(".am-splash-dot").nth(2).click()
+  }
+})
+
+test("folded note is hidden below a 600px container, independently of the viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 1100, height: 1400 })
+  await page.goto("/iframe.html?id=agentmanager--splash-folded-story&viewMode=story")
+  await expect(page.locator(".am-splash-folded")).toBeVisible()
+  for (const width of [599, 600, 520, 760]) {
+    await page.locator(".am-splash-folded-layout").evaluate((node, width) => {
+      const layout = node as HTMLElement
+      layout.style.width = `${width}px`
+    }, width)
+    const note = page.locator(".am-splash-folded-note")
+    if (width < 600) {
+      await expect(note).toBeHidden()
+      continue
+    }
+    await expect(note).toBeVisible()
+  }
 })
 
 test("every splash story root contains its card and expanded selections keep height stable", async ({ page }) => {
@@ -197,6 +383,12 @@ test("every splash story root contains its card and expanded selections keep hei
       "versions",
       "beyond-code",
       "narrow",
+      "narrow-orchestrator",
+      "narrow-ops",
+      "narrow-versions",
+      "narrow-beyond-code",
+      "narrow-arabic",
+      "narrow-french",
       "french",
       "arabic",
       "persian",
@@ -215,10 +407,13 @@ test("every splash story root contains its card and expanded selections keep hei
       expect(hero.y + hero.height).toBeLessThanOrEqual(root.y + root.height)
       if (story === "folded") continue
       const heights: number[] = []
-      for (const dot of await page.locator(".am-splash-dot").all()) {
-        await dot.click()
+      const controls = page.locator(".am-splash-tab, .am-splash-dot")
+      await expect(controls).toHaveCount(5)
+      for (const control of await controls.all()) {
+        await control.click()
         heights.push(await page.locator(".am-splash-hero").evaluate((node) => node.getBoundingClientRect().height))
       }
+      expect(heights).toHaveLength(5)
       expect(Math.max(...heights) - Math.min(...heights), `${story} at ${width}px`).toBe(0)
     }
   }

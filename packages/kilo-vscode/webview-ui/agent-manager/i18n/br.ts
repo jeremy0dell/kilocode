@@ -511,6 +511,9 @@ export const dict = {
   "agentManager.intro.reopen": "Como o Agent Manager funciona",
   "agentManager.splash.preview.label": "Prévia da barra lateral do Agent Manager",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
+  "agentManager.splash.compact.subtitle":
+    "Execute tarefas em paralelo, delegue trabalho e acompanhe cada agente em um só lugar.",
+  "agentManager.splash.compact.hint": "ou descreva uma tarefa abaixo",
   "agentManager.splash.hide": "Ocultar",
   "agentManager.splash.hideLabel": "Ocultar a apresentação do Agent Manager",
   "agentManager.splash.title": "Coloque uma frota de agentes do Kilo para trabalhar.",

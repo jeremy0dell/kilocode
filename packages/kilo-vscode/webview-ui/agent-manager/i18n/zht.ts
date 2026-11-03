@@ -488,6 +488,8 @@ export const dict = {
   "agentManager.intro.reopen": "Agent Manager 的運作方式",
   "agentManager.splash.preview.label": "Agent Manager 側邊欄預覽",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
+  "agentManager.splash.compact.subtitle": "平行執行任務、委派工作，並在同一處追蹤每個智慧體的進度。",
+  "agentManager.splash.compact.hint": "或在下方描述任務",
   "agentManager.splash.hide": "隱藏",
   "agentManager.splash.hideLabel": "隱藏 Agent Manager 簡介",
   "agentManager.splash.title": "讓一隊 Kilo 代理程式為你工作。",

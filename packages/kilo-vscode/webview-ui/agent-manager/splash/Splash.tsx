@@ -1,4 +1,4 @@
-import { For, createSignal, createUniqueId, type Accessor, type JSX } from "solid-js"
+import { For, Show, createSignal, createUniqueId, onMount, onCleanup, type Accessor, type JSX } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
@@ -7,6 +7,7 @@ import { useLanguage } from "../../src/context/language"
 import type { SessionInfo } from "../../src/types/messages"
 import { examples } from "./examples"
 import { SidebarPreview } from "./Preview"
+import { Compact } from "./Compact"
 import { visible, wrap } from "./selection"
 import "./splash.css"
 
@@ -116,8 +117,17 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void;
   const { t } = useLanguage()
   const titleId = createUniqueId()
   const [selected, setSelected] = createSignal(Math.max(0, Math.min(props.initialExample ?? 0, examples.length - 1)))
+  const [wide, setWide] = createSignal(false)
+  let root!: HTMLElement
+  onMount(() => {
+    const pane = root.closest('.am-intro-layout > [data-slot="message-list"]')
+    if (!pane) return
+    const observer = new ResizeObserver(([entry]) => setWide((entry?.contentRect.width ?? 0) >= 880))
+    observer.observe(pane)
+    onCleanup(() => observer.disconnect())
+  })
   return (
-    <section class="am-splash" aria-labelledby={titleId}>
+    <section ref={root} class="am-splash" classList={{ "am-splash-wide": wide() }} aria-labelledby={titleId}>
       <div class="am-splash-frame">
         <article class="am-splash-hero">
           <div class="am-splash-hero-main">
@@ -139,18 +149,26 @@ export function SplashExpanded(props: { onHide: () => void; onStart: () => void;
             <h2 class="am-splash-title" id={titleId}>
               {t("agentManager.splash.title")}
             </h2>
-            <p class="am-splash-subtitle">{t("agentManager.splash.subtitle")}</p>
-            <ExamplePicker selected={selected} onSelect={setSelected} />
+            <p class="am-splash-subtitle">
+              {t(wide() ? "agentManager.splash.subtitle" : "agentManager.splash.compact.subtitle")}
+            </p>
+            <Show when={wide()} fallback={<Compact selected={selected} onSelect={setSelected} />}>
+              <ExamplePicker selected={selected} onSelect={setSelected} />
+            </Show>
             <div class="am-splash-actions">
               <Button variant="primary" onClick={props.onStart}>
                 {t("agentManager.splash.start")}
               </Button>
-              <span class="am-splash-hint">{t("agentManager.splash.hint")}</span>
+              <span class="am-splash-hint">
+                {t(wide() ? "agentManager.splash.hint" : "agentManager.splash.compact.hint")}
+              </span>
             </div>
           </div>
-          <div class="am-splash-hero-side">
-            <SidebarPreview selected={selected} />
-          </div>
+          <Show when={wide()}>
+            <div class="am-splash-hero-side">
+              <SidebarPreview selected={selected} />
+            </div>
+          </Show>
         </article>
       </div>
     </section>

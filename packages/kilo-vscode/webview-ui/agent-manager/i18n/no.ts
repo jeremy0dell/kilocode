@@ -507,6 +507,8 @@ export const dict = {
   "agentManager.intro.reopen": "Slik fungerer Agent Manager",
   "agentManager.splash.preview.label": "Forhåndsvisning av Agent Manager-sidepanelet",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
+  "agentManager.splash.compact.subtitle": "Kjør oppgaver parallelt, deleger arbeid og følg hver agent fra ett sted.",
+  "agentManager.splash.compact.hint": "eller beskriv en oppgave under",
   "agentManager.splash.hide": "Skjul",
   "agentManager.splash.hideLabel": "Skjul introduksjonen til Agent Manager",
   "agentManager.splash.title": "Sett en flåte med Kilo-agenter i arbeid.",

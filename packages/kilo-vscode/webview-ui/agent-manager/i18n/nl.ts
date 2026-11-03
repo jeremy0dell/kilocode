@@ -516,6 +516,8 @@ export const dict = {
   "agentManager.intro.reopen": "Hoe Agent Manager werkt",
   "agentManager.splash.preview.label": "Voorbeeld van Agent Manager-zijbalk",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
+  "agentManager.splash.compact.subtitle": "Voer taken parallel uit, delegeer werk en volg elke agent vanuit één plek.",
+  "agentManager.splash.compact.hint": "of beschrijf hieronder een taak",
   "agentManager.splash.hide": "Verbergen",
   "agentManager.splash.hideLabel": "Introductie van Agent Manager verbergen",
   "agentManager.splash.title": "Zet een vloot Kilo-agenten aan het werk.",

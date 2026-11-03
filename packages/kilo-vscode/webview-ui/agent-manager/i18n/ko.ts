@@ -502,6 +502,9 @@ export const dict = {
   "agentManager.intro.reopen": "Agent Manager 작동 방식",
   "agentManager.splash.preview.label": "Agent Manager 사이드바 미리보기",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
+  "agentManager.splash.compact.subtitle":
+    "작업을 병렬로 실행하고, 업무를 위임하고, 모든 에이전트의 진행 상황을 한곳에서 확인하세요.",
+  "agentManager.splash.compact.hint": "또는 아래에 작업을 설명하세요",
   "agentManager.splash.hide": "숨기기",
   "agentManager.splash.hideLabel": "Agent Manager 소개 숨기기",
   "agentManager.splash.title": "Kilo 에이전트 함대를 일하게 하세요.",
