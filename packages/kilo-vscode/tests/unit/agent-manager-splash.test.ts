@@ -46,4 +46,51 @@ describe("Agent Manager splash persistence", () => {
       dispose()
     })
   })
+
+  it("persists auto-fold on the first session and permits reopening after it", () => {
+    const posted: WebviewMessage[] = []
+    createRoot((dispose) => {
+      const splash = createSplashState((message) => posted.push(message), { enabled: true, folded: false })
+      splash.start()
+      expect(splash.folded()).toBe(true)
+      splash.start()
+      expect(posted).toEqual([{ type: "agentManager.setSplashFolded", folded: true }])
+
+      splash.unfold()
+      splash.start()
+      expect(splash.folded()).toBe(false)
+      expect(posted).toEqual([
+        { type: "agentManager.setSplashFolded", folded: true },
+        { type: "agentManager.setSplashFolded", folded: false },
+      ])
+      dispose()
+    })
+  })
+
+  it("does not auto-fold or persist anything while the flag is off", () => {
+    const posted: WebviewMessage[] = []
+    createRoot((dispose) => {
+      const splash = createSplashState((message) => posted.push(message), { enabled: false, folded: false })
+      splash.start()
+      expect(splash.folded()).toBe(false)
+      expect(posted).toEqual([])
+
+      splash.setEnabled(true)
+      splash.start()
+      expect(splash.folded()).toBe(true)
+      expect(posted).toEqual([{ type: "agentManager.setSplashFolded", folded: true }])
+      dispose()
+    })
+  })
+
+  it("does not rewrite an already folded preference on session start", () => {
+    const posted: WebviewMessage[] = []
+    createRoot((dispose) => {
+      const splash = createSplashState((message) => posted.push(message), { enabled: true, folded: true })
+      splash.start()
+      expect(splash.folded()).toBe(true)
+      expect(posted).toEqual([])
+      dispose()
+    })
+  })
 })

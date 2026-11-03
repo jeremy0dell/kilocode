@@ -1288,6 +1288,7 @@ const AgentManagerContent: Component = () => {
       if (msg.type !== "sessionCreated") return
       const created = msg as SessionCreatedMessage
       if (!isKnownRootSession(created.session)) return
+      splash.start()
       if (!created.draftID && createdSessions.delete(created.session.id)) return
       if (created.draftID) createdSessions.add(created.session.id)
       if (created.draftID && closedDrafts.delete(created.draftID)) return

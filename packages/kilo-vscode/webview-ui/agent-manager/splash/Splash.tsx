@@ -53,10 +53,10 @@ export function SplashFolded(props: EmptyProps & { onShowExamples: () => void })
         <div class="am-splash-folded-logo" aria-hidden="true">
           <KiloLogo />
         </div>
-        <div class="am-splash-folded-text">
-          <span class="am-splash-folded-title">{t("agentManager.splash.folded.title")}</span>
-          <span class="am-splash-folded-note">{t("agentManager.splash.folded.note")}</span>
-        </div>
+        <span class="am-splash-folded-title">{t("agentManager.splash.folded.title")}</span>
+        <span class="am-splash-folded-note" title={t("agentManager.splash.folded.note")}>
+          {t("agentManager.splash.folded.note")}
+        </span>
         <Button variant="ghost" size="small" class="am-splash-show" onClick={props.onShowExamples}>
           {t("agentManager.splash.showExamples")}
           <Icon name="chevron-right" size="small" />
