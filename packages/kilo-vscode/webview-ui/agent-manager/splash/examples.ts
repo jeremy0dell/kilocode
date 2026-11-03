@@ -228,12 +228,6 @@ export const examples: readonly Example[] = [
                     status: "working",
                     diff: { additions: 88, deletions: 12 },
                   },
-                  {
-                    title: "Retry failed webhooks",
-                    branch: "webhook-retries",
-                    status: "finished",
-                    pr: 414,
-                  },
                 ],
               },
             },

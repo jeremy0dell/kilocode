@@ -94,48 +94,63 @@ export function SidebarPreview(props: {
   let card!: HTMLDivElement
   let stack!: HTMLDivElement
   const panel = () => stack.querySelector<HTMLElement>(".am-splash-preview-panel-active")
-  const measure = (index?: number, fit = false) => {
+  const measure = (index?: number, fit = true) => {
     const root = panel()
     if (!root) return
-    const targets = anchors[current().id].map((target) => anchor(root, current(), target))
+    const rows = fleet(current())
+    const targets = anchors[current().id].map((target) => anchor(root, rows, target))
     const list = root.querySelector<HTMLElement>(".am-projects-list")
-    if (fit && list) {
-      const rects = targets.flatMap((target) => (target ? [target.getBoundingClientRect()] : []))
-      const top = Math.min(...rects.map((rect) => rect.top))
-      const bottom = Math.max(...rects.map((rect) => rect.bottom))
-      const bounds = list.getBoundingClientRect()
-      if (bottom - top <= bounds.height - 28) {
-        if (bottom > bounds.bottom - 28) list.scrollTop += bottom - bounds.bottom + 28
-        if (top < bounds.top) list.scrollTop -= bounds.top - top
-      }
+    if (!list) return
+    const bounds = list.getBoundingClientRect()
+    const first = targets
+      .filter((target) => target !== undefined)
+      .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)
+      .at(0)
+    const inset = first?.matches(".am-project-item")
+      ? 0
+      : (first?.closest(".am-project")?.querySelector(".am-project-item")?.getBoundingClientRect().height ?? 0)
+    const rects = targets.flatMap((target) => (target ? [target.getBoundingClientRect()] : []))
+    const top = Math.min(...rects.map((rect) => rect.top))
+    const bottom = Math.max(...rects.map((rect) => rect.bottom))
+    const fits = bottom - top <= bounds.height - 28 - inset
+    if (fit && fits) {
+      // Account for the real sticky project header, including when a section/group is the first anchor.
+      list.scrollTop += Math.max(bottom - bounds.bottom + 28, Math.min(0, top - bounds.top - inset))
     }
     const target = index === undefined ? undefined : targets.at(index)
-    if (target && list) {
-      const bounds = list.getBoundingClientRect()
+    if (target && !fits) {
+      const chrome = target.closest(".am-project")?.querySelector(".am-project-item")?.getBoundingClientRect()
+      const min = target.matches(".am-project-item") ? bounds.top : Math.max(bounds.top, chrome?.bottom ?? 0)
       const rect = target.getBoundingClientRect()
-      if (rect.bottom > bounds.bottom - 28) list.scrollTop += rect.bottom - bounds.bottom + 28
-      if (rect.top < bounds.top) list.scrollTop -= bounds.top - rect.top
+      list.scrollTop += Math.max(rect.bottom - bounds.bottom + 28, Math.min(0, rect.top - min))
     }
-    const box = card.getBoundingClientRect()
-    const bounds = list?.getBoundingClientRect()
+    const rect = card.getBoundingClientRect()
+    const box = { left: rect.left + card.clientLeft, top: rect.top + card.clientTop }
     const ordered = targets
       .map((target, index) => ({ index, top: target?.getBoundingClientRect().top ?? 0 }))
       .sort((a, b) => a.top - b.top)
     setPositions(
       targets.map((target, index) => {
-        if (!target || !bounds) return { left: 0, top: 0, visible: false }
+        if (!target) return { left: 0, top: 0, visible: false }
         const rect = target.getBoundingClientRect()
         const meta = target
           .querySelector<HTMLElement>(".am-wt-actions-cell, .am-sidebar-header-actions, .am-sidebar-header-count")
           ?.getBoundingClientRect()
         const top = rect.top - box.top + (rect.height - 16) / 2
         const rank = ordered.findIndex((item) => item.index === index)
-        const min = bounds.top - box.top
+        const chrome = target.closest(".am-project")?.querySelector(".am-project-item")?.getBoundingClientRect()
+        const min = Math.max(bounds.top, chrome?.bottom ?? 0) - box.top + 4
         const max = bounds.bottom - box.top - 44
+        const visible =
+          rect.top >= bounds.top &&
+          rect.bottom <= bounds.bottom - 28 &&
+          (target.matches(".am-project-item") || rect.top >= (chrome?.bottom ?? 0))
         return {
           left: (meta?.left ?? rect.right - 8) - box.left - 24,
           // Only offscreen markers move to the edge; activation scrolls their real row above the fade.
-          top: top < min ? min + rank * 24 : top > max ? max - (targets.length - 1 - rank) * 24 : top,
+          top: visible
+            ? top
+            : Math.max(min, Math.min(max, top < min ? min + rank * 24 : max - (targets.length - 1 - rank) * 24)),
           visible: true,
         }
       }),
@@ -147,7 +162,7 @@ export function SidebarPreview(props: {
   }
   onMount(() => {
     const dispose = guard(stack)
-    const observer = new ResizeObserver(() => measure(props.highlight(), props.highlight() === undefined))
+    const observer = new ResizeObserver(() => measure(props.highlight()))
     observer.observe(card)
     for (const root of stack.querySelectorAll<HTMLElement>(".am-projects-list")) {
       observer.observe(root)
@@ -155,7 +170,7 @@ export function SidebarPreview(props: {
     stack.addEventListener("scroll", measureScroll, true)
     let alive = true
     void document.fonts.ready.then(() => {
-      if (alive) measure(props.highlight(), props.highlight() === undefined)
+      if (alive) measure(props.highlight())
     })
     onCleanup(() => {
       alive = false
@@ -165,7 +180,7 @@ export function SidebarPreview(props: {
     })
     measure(undefined, true)
   })
-  const measureScroll = () => measure()
+  const measureScroll = () => measure(undefined, false)
   createEffect(
     on(props.selected, () => {
       props.onHighlight(undefined)

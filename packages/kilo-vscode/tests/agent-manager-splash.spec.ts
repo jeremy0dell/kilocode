@@ -1,12 +1,123 @@
 import AxeBuilder from "@axe-core/playwright"
 import { expect, test, type Page } from "@playwright/test"
+import { createRequire } from "node:module"
+
+const require = createRequire(import.meta.url)
+const { anchor } =
+  require("../webview-ui/agent-manager/splash/anchor") as typeof import("../webview-ui/agent-manager/splash/anchor")
+const { anchors } =
+  require("../webview-ui/agent-manager/splash/anchors") as typeof import("../webview-ui/agent-manager/splash/anchors")
+const { examples } =
+  require("../webview-ui/agent-manager/splash/examples") as typeof import("../webview-ui/agent-manager/splash/examples")
+const { fleet } =
+  require("../webview-ui/agent-manager/splash/fleet") as typeof import("../webview-ui/agent-manager/splash/fleet")
 
 const globals = "colorScheme:dark;theme:kilo-vscode;vscodeTheme:dark-modern"
 
 async function open(page: Page, example = "ops") {
-  await page.goto(`/iframe.html?id=agentmanager--splash-${example}-story&viewMode=story&globals=${globals}`)
+  await page.goto(
+    `/iframe.html?id=agentmanager--splash-${example === "cross-stack" ? "ops" : example}-story&viewMode=story&globals=${globals}`,
+  )
   await expect(page.locator(".am-splash-marker").first()).toBeVisible()
+  if (example === "cross-stack") await page.locator(".am-splash-dot").first().click()
   await page.evaluate(() => document.fonts.ready)
+}
+
+async function alignment(page: Page) {
+  const card = page.locator(".am-splash-preview-card")
+  const id = await card.locator("..").getAttribute("data-tone")
+  const example = examples.find((example) => example.id === id)!
+  // Serialize the real, closure-free resolver so this also works with CI's static Storybook build.
+  const resolver = await page.evaluateHandle<typeof anchor>(`(${anchor.toString()})`)
+  const result = await card.evaluate(
+    (card, { resolver, entries, targets }) => {
+      const panel = card.querySelector<HTMLElement>(".am-splash-preview-panel-active")!
+      const list = panel.querySelector(".am-projects-list")!.getBoundingClientRect()
+      const rows = targets.map((target) => resolver(panel, entries, target)!)
+      const rects = rows.map((row) => row.getBoundingClientRect())
+      const first = rows.toSorted((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top).at(0)!
+      const inset = first.matches(".am-project-item")
+        ? 0
+        : first.closest(".am-project")!.querySelector(".am-project-item")!.getBoundingClientRect().height
+      const fits =
+        Math.max(...rects.map((rect) => rect.bottom)) - Math.min(...rects.map((rect) => rect.top)) <=
+        list.height - 28 - inset
+      const markers = [...card.querySelectorAll(".am-splash-marker")].map((marker) => marker.getBoundingClientRect())
+      return {
+        height: card.getBoundingClientRect().height,
+        fits,
+        attached: markers.every((marker, index) => {
+          const row = rects.at(index)!
+          const center = marker.top + marker.height / 2
+          return center >= row.top && center <= row.bottom
+        }),
+        visible: rects.every((row, index) => {
+          const chrome = rows
+            .at(index)!
+            .closest(".am-project")!
+            .querySelector(".am-project-item")!
+            .getBoundingClientRect()
+          return (
+            row.top >= list.top &&
+            row.bottom <= list.bottom - 27 &&
+            (rows.at(index)!.matches(".am-project-item") || row.top >= chrome.bottom)
+          )
+        }),
+        safe: markers.every((marker, index) => {
+          const row = rects.at(index)!
+          const center = marker.top + marker.height / 2
+          if (center >= row.top && center <= row.bottom && row.top >= list.top && row.bottom <= list.bottom - 27)
+            return true
+          return (
+            marker.top >= list.top + 34 &&
+            marker.bottom <= list.bottom - 28 &&
+            [...panel.querySelectorAll(".am-project-item")].every((header) => {
+              const rect = header.getBoundingClientRect()
+              return marker.bottom <= rect.top || marker.top >= rect.bottom
+            })
+          )
+        }),
+      }
+    },
+    { resolver, entries: fleet(example), targets: anchors[example.id] },
+  )
+  await resolver.dispose()
+  return result
+}
+
+for (const [width, height] of [
+  [520, 340],
+  [720, 360],
+  [1010, 428],
+] as const) {
+  for (const example of ["cross-stack", "orchestrator", "ops", "versions", "beyond-code"]) {
+    test(`${example} anchors stay attached when their span fits the ${height}px frame`, async ({ page }, info) => {
+      await page.setViewportSize({ width, height: 1400 })
+      await open(page, example)
+      const check = async () => {
+        await expect
+          .poll(async () => {
+            const result = await alignment(page)
+            return result.height === height && result.safe && (!result.fits || (result.attached && result.visible))
+          })
+          .toBe(true)
+      }
+      await check()
+      const markers = page.locator(".am-splash-marker")
+      for (const marker of await markers.all()) {
+        await marker.click()
+        await check()
+      }
+      await markers.first().click()
+      await check()
+      if ((width === 520 || width === 1010) && (example === "ops" || example === "cross-stack")) {
+        await expect(markers.first()).toHaveAttribute("aria-expanded", "true")
+        await page
+          .locator(".am-splash")
+          .screenshot({ path: info.outputPath(`preview-${example}-${width}-highlighted.png`) })
+      }
+    })
+  }
 }
 
 for (const width of [520, 1010]) {
