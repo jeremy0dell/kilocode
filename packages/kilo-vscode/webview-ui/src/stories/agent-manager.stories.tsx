@@ -230,21 +230,36 @@ export const SplashFoldedStory: Story = {
 }
 
 export const SplashFoldedThin: Story = {
-  ...SplashFoldedStory,
   name: "Splash folded thin",
-  decorators: [(Story: () => JSX.Element) => <div style={{ width: "440px" }}>{Story()}</div>],
+  render: () => (
+    <div style={{ width: "440px" }}>
+      <StoryProviders>
+        <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+      </StoryProviders>
+    </div>
+  ),
 }
 
 export const SplashFoldedNarrow: Story = {
-  ...SplashFoldedStory,
   name: "Splash folded narrow",
-  decorators: [(Story: () => JSX.Element) => <div style={{ width: "720px" }}>{Story()}</div>],
+  render: () => (
+    <div style={{ width: "720px" }}>
+      <StoryProviders>
+        <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+      </StoryProviders>
+    </div>
+  ),
 }
 
 export const SplashFoldedWide: Story = {
-  ...SplashFoldedStory,
   name: "Splash folded wide",
-  decorators: [(Story: () => JSX.Element) => <div style={{ width: "1010px" }}>{Story()}</div>],
+  render: () => (
+    <div style={{ width: "1010px" }}>
+      <StoryProviders>
+        <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+      </StoryProviders>
+    </div>
+  ),
 }
 
 // ---------------------------------------------------------------------------
