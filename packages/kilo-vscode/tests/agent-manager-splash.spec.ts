@@ -185,7 +185,7 @@ test("visible compact preview rows retain native hover inside the faded frame", 
   await open(page)
   for (const tab of await page.locator(".am-splash-tab").all()) {
     await tab.click()
-    const row = page.locator(".am-splash-compact-panel-active .am-local-item").first()
+    const row = page.locator(".am-splash-compact-panel-active .am-splash-preview-panel-active .am-local-item").first()
     await page.mouse.move(0, 0)
     const background = await row.evaluate((node) => getComputedStyle(node).backgroundColor)
     await row.hover()
@@ -249,6 +249,22 @@ for (const locale of ["en", "ar", "fa"]) {
     await expect(page.locator(".am-splash-show")).toBeVisible()
     await expect(page.locator('.am-splash-show [data-component="icon"][data-directional]')).toHaveCount(1)
     expect(await scales(page, ".am-splash-show")).toEqual([scale])
+    await page.locator(".am-splash-show").click()
+    await expect(page.locator(".am-splash-wide")).toBeVisible()
+    expect(await scales(page, ".am-splash-arrow")).toEqual([scale, scale])
+    await page.locator(".am-splash-hide").click()
+    await expect(page.locator(".am-splash-show")).toBeVisible()
+    expect(await scales(page, ".am-splash-show")).toEqual([scale])
+    await page.locator(".am-splash-show").click()
+    await expect(page.locator(".am-splash-wide")).toBeVisible()
+    expect(await scales(page, ".am-splash-arrow")).toEqual([scale, scale])
+    await page.setViewportSize({ width: 760, height: 1400 })
+    await expect(page.getByRole("tab")).toHaveCount(5)
+    // Compact tabs have no chevrons or splash-owned directional icons to mirror.
+    await expect(page.locator('.am-splash-tab [data-slot="icon-svg"]')).toHaveCount(0)
+    await page.setViewportSize({ width: 1100, height: 1400 })
+    await expect(page.locator(".am-splash-wide")).toBeVisible()
+    expect(await scales(page, ".am-splash-arrow")).toEqual([scale, scale])
   })
 }
 
@@ -300,11 +316,12 @@ for (const locale of ["en", "ar", "fa", "fr"]) {
         await expect(panel).toHaveAttribute("role", "tabpanel")
         await expect(panel).toHaveAttribute("aria-labelledby", (await tab.getAttribute("id"))!)
         await expect(panel).toHaveAttribute("tabindex", position === index ? "0" : "-1")
-        await expect(panel.locator(".am-splash-preview-card")).toHaveAttribute("role", "figure")
         if (position !== index) {
           await expect(panel).toBeHidden()
+          await expect(panel.locator(".am-splash-preview-card")).toHaveCount(0)
           continue
         }
+        await expect(panel.locator(".am-splash-preview-card")).toHaveAttribute("role", "figure")
         await expect(panel).toHaveClass(/am-splash-compact-panel-active/)
         await expect(panel).toBeVisible()
       }

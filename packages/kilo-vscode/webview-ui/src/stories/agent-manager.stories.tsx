@@ -345,8 +345,16 @@ export const SplashFoldedStory: StoryObj<{ locale: Locale }> = {
   render: (args) => (
     <StoryProviders>
       <SplashLanguage locale={args.locale}>
-        <div dir={args.locale === "ar" || args.locale === "fa" ? "rtl" : "ltr"}>
-          <IntroductionPreview splash={{ enabled: true, folded: true }} height="640px" />
+        <div
+          class="am-intro-layout"
+          dir={args.locale === "ar" || args.locale === "fa" ? "rtl" : "ltr"}
+          style={{ height: "640px" }}
+        >
+          <div data-slot="message-list" style={{ flex: "1", "min-height": "0" }}>
+            <div data-slot="message-list-content">
+              <IntroductionPreview splash={{ enabled: true, folded: true }} height="100%" />
+            </div>
+          </div>
         </div>
       </SplashLanguage>
     </StoryProviders>

@@ -1,4 +1,4 @@
-import { For, createEffect, createUniqueId, type Accessor, type JSX } from "solid-js"
+import { For, Show, createEffect, createUniqueId, type Accessor, type JSX } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { useLanguage } from "../../src/context/language"
 import { examples } from "./examples"
@@ -72,7 +72,9 @@ export function Compact(props: { selected: Accessor<number>; onSelect: (index: n
               tabIndex={index() === props.selected() ? 0 : -1}
             >
               <p class="am-splash-compact-pitch">{t(example.pitch)}</p>
-              <SidebarPreview selected={props.selected} example={index()} />
+              <Show when={index() === props.selected()}>
+                <SidebarPreview selected={props.selected} />
+              </Show>
               <ul class="am-splash-compact-features">
                 <For each={example.features}>
                   {(feature) => (
