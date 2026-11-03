@@ -210,12 +210,21 @@ for (const locale of ["en", "ar"]) {
         // Query the real fixtures by their story content, independently of the framing implementation.
         const targets = [panel.locator(".am-worktree-item-active")]
         if (index === 0) {
-          targets.push(rows.filter({ hasText: "#889" }), rows.filter({ hasText: "queue and alarms" }))
+          targets.push(
+            rows.filter({ hasText: "#889" }),
+            rows.filter({ hasText: "queue and alarms" }),
+            panel.locator(".am-project-item").filter({ hasText: "web-app" }),
+          )
           await expect(rows.filter({ hasText: "queue and alarms" }).locator('[data-activity="waiting"]')).toHaveCount(1)
         }
         if (index === 1) targets.push(panel.locator(".am-section-group-header").filter({ hasText: "ORCHESTRATE" }))
         if (index === 2) {
+          const implementation = panel.locator(".am-section-group-header").filter({ hasText: "IMPLEMENT" })
+          await expect(implementation).toContainText("3")
+          await expect(implementation.locator(".am-sidebar-header-toggle")).toHaveAttribute("aria-expanded", "false")
+          await expect(rows.filter({ hasText: "Rate-limit the login endpoint" })).toHaveCount(0)
           targets.push(
+            implementation,
             panel.locator(".am-section-group-header").filter({ hasText: /^OPS/ }),
             rows.filter({ hasText: "Merge Captain" }),
             rows.filter({ hasText: "Issue Delegator" }),
@@ -253,13 +262,80 @@ for (const locale of ["en", "ar"]) {
         .poll(() =>
           page.locator(".am-splash-compact-preview").evaluate((node) => {
             const frame = node.getBoundingClientRect()
-            const row = node.querySelector(".am-worktree-item-active")!.getBoundingClientRect()
+            const row = node
+              .querySelector(".am-splash-preview-panel-active .am-worktree-item-active")!
+              .getBoundingClientRect()
             return row.top >= frame.top - 0.5 && row.bottom <= frame.top + frame.height * 0.78
           }),
         )
         .toBe(true)
     })
   }
+}
+
+for (const locale of ["en", "ar"]) {
+  test(`${locale} wide-to-compact examples are anchored on their first animation frame`, async ({ page }) => {
+    await page.setViewportSize({ width: 1100, height: 1400 })
+    await open(page, "dark-modern", locale)
+    const labels = [
+      ["pricing page", "queue and alarms", "web-app"],
+      ["Orchestrator · scheduler latency pass", "ORCHESTRATE"],
+      ["IMPLEMENT", "OPS", "Merge Captain", "Issue Delegator", "Adversarial Reviewer"],
+      ["Kilo Auto", "Claude", "GPT"],
+      ["wordmark", "monogram", "Color and type tokens", "Social card templates"],
+    ]
+    for (let index = 0; index < 5; index++) {
+      await page.locator(".am-splash-dot").nth(index).click()
+      const first = await page.evaluate((labels) => {
+        const pane = document.querySelector<HTMLElement>('.am-intro-layout > [data-slot="message-list"]')!
+        const result = Promise.withResolvers<{
+          height: number
+          scroll: number
+          rows: ({ label: string; top: number; bottom: number } | null)[]
+        }>()
+        // Queue sampling before the resize observer mounts Compact, so a deferred initial anchor loses this race.
+        const sample = () => {
+          const frame = pane.querySelector<HTMLElement>(".am-splash-compact-preview")
+          if (!frame) {
+            requestAnimationFrame(sample)
+            return
+          }
+          const bounds = frame.getBoundingClientRect()
+          const nodes = [
+            ...frame.querySelectorAll(
+              ".am-splash-preview-panel-active .am-worktree-item,.am-splash-preview-panel-active .am-section-group-header,.am-splash-preview-panel-active .am-project-item",
+            ),
+          ]
+          result.resolve({
+            height: bounds.height,
+            scroll: frame.scrollTop,
+            rows: labels.map((label) => {
+              const node = nodes.find((node) => node.textContent?.includes(label))
+              if (!node) return null
+              const row = node.getBoundingClientRect()
+              return { label, top: row.top - bounds.top, bottom: row.bottom - bounds.top }
+            }),
+          })
+        }
+        requestAnimationFrame(sample)
+        pane.style.flex = "none"
+        pane.style.width = "520px"
+        return result.promise
+      }, labels.at(index)!)
+      expect(first.height).toBe(276)
+      expect(first.scroll).toBeGreaterThan(0)
+      for (const row of first.rows) {
+        expect(row).not.toBeNull()
+        if (!row) continue
+        expect(row.top, row.label).toBeGreaterThanOrEqual(-0.5)
+        expect(row.bottom, row.label).toBeLessThanOrEqual(first.height * 0.78)
+      }
+      await page.locator('.am-intro-layout > [data-slot="message-list"]').evaluate((node) => {
+        ;(node as HTMLElement).style.width = "1100px"
+      })
+      await expect(page.locator(".am-splash-wide")).toBeVisible()
+    }
+  })
 }
 
 test("Show, Hide, and resize cycles emit no window errors", async ({ page }) => {

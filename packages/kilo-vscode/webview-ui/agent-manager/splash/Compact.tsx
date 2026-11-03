@@ -2,6 +2,7 @@ import { For, Show, createEffect, createUniqueId, onMount, onCleanup, type Acces
 import { Button } from "@kilocode/kilo-ui/button"
 import { useLanguage } from "../../src/context/language"
 import { examples } from "./examples"
+import { Framing } from "./fleet"
 import { SidebarPreview } from "./Preview"
 import { wrap } from "./selection"
 
@@ -13,26 +14,34 @@ export function Compact(props: { selected: Accessor<number>; onSelect: (index: n
   const frame = (root: HTMLDivElement, example: (typeof examples)[number]) => {
     onMount(() => {
       let pending = 0
+      const anchor = () => {
+        const panel = root.querySelector(".am-splash-preview-panel-active")
+        const selected = panel?.querySelector(".am-worktree-item-active")
+        if (!selected) return
+        const group =
+          selected.closest(".am-section-group")?.querySelector(".am-section-group-header") ??
+          panel?.querySelector(".am-wt-group-header") ??
+          selected.closest(".am-project")?.querySelector(".am-project-item")
+        const target =
+          example.id === "crossStack"
+            ? panel?.querySelector('[data-activity="waiting"]')?.closest(".am-worktree-item")
+            : example.id === "ops"
+              ? panel?.querySelector(".am-section-group-header")
+              : example.id === "beyondCode"
+                ? selected
+                : group
+        root.scrollTop += (target ?? selected).getBoundingClientRect().top - root.getBoundingClientRect().top - 1
+      }
       const schedule = () => {
         cancelAnimationFrame(pending)
-        pending = requestAnimationFrame(() => {
-          const panel = root.querySelector(".am-splash-preview-panel-active")
-          const selected = panel?.querySelector(".am-worktree-item-active")
-          if (!selected) return
-          const group =
-            selected.closest(".am-section-group")?.querySelector(".am-section-group-header") ??
-            panel?.querySelector(".am-wt-group-header") ??
-            selected.closest(".am-project")?.querySelector(".am-project-item")
-          // These two examples need later rows more than a header above their selection.
-          const anchor = example.id === "crossStack" || example.id === "beyondCode" ? selected : (group ?? selected)
-          root.scrollTop += anchor.getBoundingClientRect().top - root.getBoundingClientRect().top - 1
-        })
+        pending = requestAnimationFrame(anchor)
       }
       const observer = new ResizeObserver(schedule)
       observer.observe(root)
       const panel = root.querySelector(".am-splash-preview-panel-active")
       if (panel) observer.observe(panel)
-      schedule()
+      // Force the initial layout and anchor before the new subtree's first paint.
+      anchor()
       onCleanup(() => {
         observer.disconnect()
         cancelAnimationFrame(pending)
@@ -103,7 +112,9 @@ export function Compact(props: { selected: Accessor<number>; onSelect: (index: n
               <p class="am-splash-compact-pitch">{t(example.pitch)}</p>
               <Show when={index() === props.selected()}>
                 <div class="am-splash-compact-preview" ref={(root) => frame(root, example)}>
-                  <SidebarPreview selected={props.selected} />
+                  <Framing.Provider value={true}>
+                    <SidebarPreview selected={props.selected} />
+                  </Framing.Provider>
                 </div>
               </Show>
               <ul class="am-splash-compact-features">
