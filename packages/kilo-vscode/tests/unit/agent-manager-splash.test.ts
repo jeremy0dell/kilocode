@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test"
 import { createRoot } from "solid-js"
 import { createSplashState } from "../../webview-ui/agent-manager/splash/state"
 import { splashView } from "../../webview-ui/agent-manager/splash/view"
+import { visible, wrap } from "../../webview-ui/agent-manager/splash/selection"
 import type { WebviewMessage } from "../../webview-ui/src/types/messages"
 
 describe("Agent Manager splash gating", () => {
@@ -45,5 +46,21 @@ describe("Agent Manager splash persistence", () => {
       expect(splash.folded()).toBe(true)
       dispose()
     })
+  })
+})
+
+describe("Agent Manager splash example carousel", () => {
+  it("wraps arrow navigation around both ends", () => {
+    expect(wrap(0, -1, 5)).toBe(4)
+    expect(wrap(4, 1, 5)).toBe(0)
+    expect(wrap(2, -1, 5)).toBe(1)
+    expect(wrap(2, 1, 5)).toBe(3)
+  })
+
+  it("keeps three cards visible with the selected example in the window", () => {
+    expect(visible(0, 5, 3)).toEqual([0, 1, 2])
+    expect(visible(1, 5, 3)).toEqual([0, 1, 2])
+    expect(visible(2, 5, 3)).toEqual([1, 2, 3])
+    expect(visible(4, 5, 3)).toEqual([2, 3, 4])
   })
 })

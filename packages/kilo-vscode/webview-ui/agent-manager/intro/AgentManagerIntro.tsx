@@ -30,6 +30,7 @@ export function createIntro(opts: {
   start: () => void
   hints?: () => JSX.Element
   splash: SplashState
+  initialExample?: number
 }) {
   const vscode = useVSCode()
   const [dismissed, setDismissed] = createSignal(
@@ -78,6 +79,7 @@ export function createIntro(opts: {
         onSelectSession={opts.onSelectSession}
         onShowHistory={opts.onShowHistory}
         hints={opts.hints}
+        initialExample={opts.initialExample}
       />
     ),
   }
@@ -93,6 +95,7 @@ interface EmptyProps extends Omit<IntroProps, "onDismiss"> {
   onSelectSession?: (id: string) => void
   onShowHistory?: () => void
   hints?: () => JSX.Element
+  initialExample?: number
 }
 
 function AgentManagerEmptyState(props: EmptyProps) {
@@ -111,7 +114,7 @@ function AgentManagerEmptyState(props: EmptyProps) {
           />
         }
       >
-        <SplashExpanded onHide={props.onHide} onStart={props.onStart} />
+        <SplashExpanded onHide={props.onHide} onStart={props.onStart} initialExample={props.initialExample} />
       </Show>
     </Show>
   )

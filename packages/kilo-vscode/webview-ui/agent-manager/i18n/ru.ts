@@ -519,6 +519,67 @@ export const dict = {
   "agentManager.splash.folded.title": "Запустите в работу флот агентов Kilo",
   "agentManager.splash.folded.note": "Кросстековые функции, оркестратор, команда эксплуатации и многое другое",
   "agentManager.splash.showExamples": "Показать примеры",
+  "agentManager.splash.examples.crossStack.tag": "Несколько репозиториев",
+  "agentManager.splash.examples.crossStack.title": "Выпустите функцию в трёх репозиториях",
+  "agentManager.splash.examples.crossStack.pitch":
+    "Один бриф, один агент на репозиторий и вся функция в одном представлении.",
+  "agentManager.splash.examples.crossStack.feature1.name": "Мультирепозиторные проекты",
+  "agentManager.splash.examples.crossStack.feature1.text":
+    "Бэкенд, фронтенд и инфраструктура рядом в одной боковой панели.",
+  "agentManager.splash.examples.crossStack.feature2.name": "Статус сеансов в реальном времени",
+  "agentManager.splash.examples.crossStack.feature2.text": "Сразу видно, что работает, что завершено и что ждёт вас.",
+  "agentManager.splash.examples.crossStack.feature3.name": "Значки PR и счётчики изменений",
+  "agentManager.splash.examples.crossStack.feature3.text": "Узнайте, что изменил каждый агент, прежде чем открыть.",
+  "agentManager.splash.examples.orchestrator.tag": "Оркестратор",
+  "agentManager.splash.examples.orchestrator.title": "Пусть оркестратор разделит большую задачу",
+  "agentManager.splash.examples.orchestrator.pitch":
+    "Назначьте любой сеанс оркестратором, передайте ему задачи, и пусть он соберёт нужную для работы команду.",
+  "agentManager.splash.examples.orchestrator.feature1.name": "Сеансы, запускающие сеансы",
+  "agentManager.splash.examples.orchestrator.feature1.text":
+    "Оркестратор может создавать разделы, worktree и новые сеансы.",
+  "agentManager.splash.examples.orchestrator.feature2.name": "Изолированные worktree",
+  "agentManager.splash.examples.orchestrator.feature2.text":
+    "Каждая работа получает собственную копию, поэтому ничего не пересекается.",
+  "agentManager.splash.examples.orchestrator.feature3.name": "Подключайтесь где угодно",
+  "agentManager.splash.examples.orchestrator.feature3.text":
+    "Зайдите в любой запущенный сеанс или следите за всей задачей сверху.",
+  "agentManager.splash.examples.ops.tag": "Эксплуатация",
+  "agentManager.splash.examples.ops.title": "Соберите постоянную команду эксплуатации",
+  "agentManager.splash.examples.ops.pitch":
+    "Держите долгоживущих агентов на дежурстве рядом с сеансами, которые создают код.",
+  "agentManager.splash.examples.ops.feature1.name": "Постоянные инструкции",
+  "agentManager.splash.examples.ops.feature1.text": "Дайте сеансу роль, которая переживёт любую отдельную задачу.",
+  "agentManager.splash.examples.ops.feature2.name": "Разделы",
+  "agentManager.splash.examples.ops.feature2.text":
+    "Сгруппируйте «Реализацию» и «Эксплуатацию», чтобы команды было легко просматривать.",
+  "agentManager.splash.examples.ops.feature3.name": "Сигналы «нужен ваш ответ»",
+  "agentManager.splash.examples.ops.feature3.text":
+    "Агенты останавливаются и отмечают рискованные решения, а не продавливают их.",
+  "agentManager.splash.examples.versions.tag": "Версии",
+  "agentManager.splash.examples.versions.title": "Попробуйте три подхода и оставьте лучший",
+  "agentManager.splash.examples.versions.pitch":
+    "Отправьте один запрос нескольким агентам или моделям и сохраните лучший результат.",
+  "agentManager.splash.examples.versions.feature1.name": "Запуски нескольких версий",
+  "agentManager.splash.examples.versions.feature1.text": "Запустите одну задачу сразу как несколько версий.",
+  "agentManager.splash.examples.versions.feature2.name": "Смешивайте модели",
+  "agentManager.splash.examples.versions.feature2.text": "Сравните Kilo Auto, Claude и GPT на одинаковой работе.",
+  "agentManager.splash.examples.versions.feature3.name": "Сравните и оставьте",
+  "agentManager.splash.examples.versions.feature3.text":
+    "Просмотрите настоящие diff рядом, оставьте один и отбросьте остальные.",
+  "agentManager.splash.examples.beyondCode.tag": "Больше чем код",
+  "agentManager.splash.examples.beyondCode.title": "Подготовьте набор фирменных материалов",
+  "agentManager.splash.examples.beyondCode.pitch":
+    "Agent Manager выполняет любую работу, доступную агенту, а не только изменения кода.",
+  "agentManager.splash.examples.beyondCode.feature1.name": "Параллельные черновики",
+  "agentManager.splash.examples.beyondCode.feature1.text": "Исследуйте несколько направлений логотипа одновременно.",
+  "agentManager.splash.examples.beyondCode.feature2.name": "Любые файлы",
+  "agentManager.splash.examples.beyondCode.feature2.text": "SVG, дизайн-токены и шаблоны, а не только исходный код.",
+  "agentManager.splash.examples.beyondCode.feature3.name": "Последующие сеансы",
+  "agentManager.splash.examples.beyondCode.feature3.text":
+    "Направляйте новые сеансы на версию, которую решите оставить.",
+  "agentManager.splash.carousel.previous": "Предыдущий пример",
+  "agentManager.splash.carousel.next": "Следующий пример",
+  "agentManager.splash.carousel.goTo": "Показать пример: {{title}}",
   "agentManager.worktree.health.absent-restorable": "Папка удалена",
   "agentManager.worktree.health.absent-restorableNote":
     "Папки нет, но ветка {{branch}} сохранилась. Восстановите её, чтобы продолжить работу здесь.",

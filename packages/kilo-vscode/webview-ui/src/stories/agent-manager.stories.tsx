@@ -153,6 +153,7 @@ type Story = StoryObj
 function IntroductionPreview(props: {
   skipped?: boolean
   splash?: { enabled: boolean; folded: boolean }
+  initialExample?: number
   height?: string
 }) {
   const splash = createSplashState(() => {}, props.splash ?? { enabled: false, folded: false })
@@ -166,6 +167,7 @@ function IntroductionPreview(props: {
     focus: () => {},
     start: () => {},
     splash,
+    initialExample: props.initialExample,
   })
   if (props.skipped) intro.dismiss()
   const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
@@ -216,6 +218,51 @@ export const SplashExpandedStory: Story = {
   render: () => (
     <StoryProviders>
       <IntroductionPreview splash={{ enabled: true, folded: false }} height="640px" />
+    </StoryProviders>
+  ),
+}
+
+export const SplashCrossStackStory: Story = {
+  name: "Splash cross-stack",
+  render: () => (
+    <StoryProviders>
+      <IntroductionPreview splash={{ enabled: true, folded: false }} initialExample={0} height="640px" />
+    </StoryProviders>
+  ),
+}
+
+export const SplashOrchestratorStory: Story = {
+  name: "Splash orchestrator",
+  render: () => (
+    <StoryProviders>
+      <IntroductionPreview splash={{ enabled: true, folded: false }} initialExample={1} height="640px" />
+    </StoryProviders>
+  ),
+}
+
+export const SplashOpsStory: Story = {
+  name: "Splash ops",
+  render: () => (
+    <StoryProviders>
+      <IntroductionPreview splash={{ enabled: true, folded: false }} initialExample={2} height="640px" />
+    </StoryProviders>
+  ),
+}
+
+export const SplashVersionsStory: Story = {
+  name: "Splash versions",
+  render: () => (
+    <StoryProviders>
+      <IntroductionPreview splash={{ enabled: true, folded: false }} initialExample={3} height="640px" />
+    </StoryProviders>
+  ),
+}
+
+export const SplashBeyondCodeStory: Story = {
+  name: "Splash beyond code",
+  render: () => (
+    <StoryProviders>
+      <IntroductionPreview splash={{ enabled: true, folded: false }} initialExample={4} height="640px" />
     </StoryProviders>
   ),
 }
