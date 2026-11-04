@@ -139,8 +139,13 @@ function BlockedCard(props: {
   }
 
   return (
-    <Card variant="warning">
-      <CardTitle variant="warning" tabIndex={-1} data-readiness-title>
+    <Card variant={form() ? "normal" : "warning"}>
+      <CardTitle
+        variant={form() ? "normal" : "warning"}
+        icon={form() ? false : undefined}
+        tabIndex={-1}
+        data-readiness-title
+      >
         {title()}
       </CardTitle>
       <CardDescription>{body()}</CardDescription>
@@ -172,20 +177,22 @@ function BlockedCard(props: {
               save()
             }}
           >
-            <TextField
-              label={t("agentManager.readiness.identity.name")}
-              value={name()}
-              onChange={setName}
-              autocomplete="name"
-              data-readiness-action
-            />
-            <TextField
-              label={t("agentManager.readiness.identity.email")}
-              type="email"
-              value={email()}
-              onChange={setEmail}
-              autocomplete="email"
-            />
+            <div class="am-readiness-fields">
+              <TextField
+                label={t("agentManager.readiness.identity.name")}
+                value={name()}
+                onChange={setName}
+                autocomplete="name"
+                data-readiness-action
+              />
+              <TextField
+                label={t("agentManager.readiness.identity.email")}
+                type="email"
+                value={email()}
+                onChange={setEmail}
+                autocomplete="email"
+              />
+            </div>
             <CardActions>
               <Button
                 type="submit"
