@@ -180,6 +180,7 @@ function cacheBranches(id: string, branches: BranchInfo[], detected: string) {
 
 export const NewWorktreeDialog: Component<{
   onClose: () => void
+  closing?: () => boolean
   defaultBase?: (projectId: string) => string | undefined
   projectId?: string
   projects?: () => AgentProjectSnapshot[]
@@ -217,6 +218,7 @@ export const NewWorktreeDialog: Component<{
   let button: HTMLButtonElement | undefined
   /** Move focus to the readiness card's action, or its title when it has none. */
   const focusCard = () => {
+    if (closed || props.closing?.()) return
     const target =
       card?.querySelector<HTMLElement>("[data-readiness-action]:not(:disabled)") ??
       card?.querySelector<HTMLElement>("[data-readiness-title]")
@@ -455,6 +457,7 @@ export const NewWorktreeDialog: Component<{
     // Resize textarea if restoring a cached prompt
     if (prompt()) adjustHeight()
     const focus = () => {
+      if (closed || props.closing?.()) return
       textareaRef?.focus({ preventScroll: true })
       const end = textareaRef?.value.length ?? 0
       textareaRef?.setSelectionRange(end, end)
@@ -533,7 +536,7 @@ export const NewWorktreeDialog: Component<{
     closed = true
   })
   const handleSubmit = () => {
-    if (gate || !canSubmit()) return
+    if (closed || props.closing?.() || gate || !canSubmit()) return
     if (readiness.blocked()) {
       focusCard()
       return
@@ -545,9 +548,10 @@ export const NewWorktreeDialog: Component<{
       return
     }
     gate = true
+    const version = readiness.revision()
     void readiness.check().then(() => {
       gate = false
-      if (closed || project() !== target) return
+      if (closed || props.closing?.() || project() !== target || readiness.revision() !== version) return
       if (readiness.blocked()) {
         focusCard()
         return
@@ -559,7 +563,7 @@ export const NewWorktreeDialog: Component<{
   /** After a fix: follow a project switch, and offer Create once the project is ready. Never submits. */
   const recover = async (pending: Promise<string | undefined>) => {
     const selected = await pending
-    if (closed) return
+    if (closed || props.closing?.()) return
     if (selected) setProject(selected)
     if (readiness.state().status === "ready") button?.focus()
   }
@@ -848,7 +852,7 @@ export const NewWorktreeDialog: Component<{
       projects={projects()}
       project={project()}
       onProject={(id) => {
-        if (busy()) return
+        if (closed || props.closing?.() || busy()) return
         track("project_select", { changed: id !== props.activeProjectId })
         setProject(id)
       }}

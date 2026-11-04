@@ -97,20 +97,25 @@ const closes = { value: 0 }
 const [open, setOpen] = createSignal(false)
 const Opener = () => {
   const dialog = useDialog()
+  const [closing, setClosing] = createSignal(false)
   onCleanup(() => dialog.close())
   onMount(() =>
-    dialog.show(() => (
-      <NewWorktreeDialog
-        mode={createModeRouter()}
-        projectId="p1"
-        activeProjectId="p1"
-        projects={projects}
-        onClose={() => {
-          closes.value++
-          setOpen(false)
-        }}
-      />
-    )),
+    dialog.show(
+      () => (
+        <NewWorktreeDialog
+          closing={closing}
+          mode={createModeRouter()}
+          projectId="p1"
+          activeProjectId="p1"
+          projects={projects}
+          onClose={() => {
+            closes.value++
+            dialog.close()
+          }}
+        />
+      ),
+      () => setClosing(true),
+    ),
   )
   return null
 }
@@ -213,6 +218,53 @@ const mount = async () => {
   return checks().at(0)!.requestID
 }
 const plain: Readiness = { status: "blocked", code: "not_git_repo", name: "scratch", trusted: true, identity: true }
+
+// Deliver the reply in the same turn as close, while the real dialog is still mounted.
+for (const method of ["escape", "button"]) {
+  if (process.env.READINESS_CASE && process.env.READINESS_CASE !== method) continue
+  const id = await mount()
+  submit().click()
+  if (method === "escape") {
+    document.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }) as never)
+  } else {
+    document.querySelector<HTMLButtonElement>(".am-nv-close")!.click()
+  }
+  assert.ok(document.querySelector(".am-nv-submit"), "reply must arrive before exit cleanup")
+  post({ type: "agentManager.readiness", projectId: "p1", requestID: id, result: { status: "ready" } })
+  // Drain the request's chained continuations, not the 100 ms exit timer.
+  for (let turn = 0; turn < 12; turn++) await Promise.resolve()
+  assert.equal(creates().length, 0, `${method}: close-start must cancel submit`)
+  assert.ok(document.querySelector(".am-nv-submit"), "assert before exit cleanup")
+  await close()
+}
+
+if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "projects") {
+  const id = await mount()
+  submit().click()
+  for (const target of ["p2", "p1"]) {
+    document.querySelector<HTMLButtonElement>(".am-nv-origin-project")!.click()
+    await settle()
+    const option = Array.from(document.querySelectorAll<HTMLButtonElement>(".am-project-option")).find((item) =>
+      item.textContent?.includes(target),
+    )
+    assert.ok(option, `missing project ${target}`)
+    option.click()
+    await settle()
+  }
+  await reply("p1", id, { status: "ready" })
+  assert.equal(creates().length, 0, "returning to A must not resume A's original submit")
+  assert.equal(checks().length, 3, "returning to A must send a new request")
+  const current = checks().at(-1)!
+  assert.notEqual(current.requestID, id)
+  await settle()
+  submit().click()
+  await reply("p1", id, { status: "ready" })
+  assert.equal(creates().length, 0, "old A reply must not unlock the newer gate")
+  await reply("p1", current.requestID, { status: "ready" })
+  await settle()
+  assert.equal(creates().length, 1)
+  await close()
+}
 
 // A blocked reply keeps the dialog open with every field, and Create is aria-disabled rather than disabled.
 {

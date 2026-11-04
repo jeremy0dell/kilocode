@@ -7,7 +7,7 @@
  * never blocks creation.
  */
 
-import { createSignal, onCleanup, type Accessor } from "solid-js"
+import { createComputed, createSignal, on, onCleanup, type Accessor } from "solid-js"
 import type { Readiness, ReadinessFix, ReadinessMessage, WorktreeEntry } from "../src/types/messages"
 import { createContextRequests } from "../src/hooks/context-requests"
 import { useVSCode } from "../src/context/vscode"
@@ -59,6 +59,20 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
   const flight = new Map<string, Promise<ReadinessState | undefined>>()
   let disposed = false
   let revision = 0
+
+  createComputed(
+    on(
+      opts.project,
+      () => {
+        revision++
+        flight.clear()
+        checks.dispose("Readiness project changed", true)
+        fixes.dispose("Readiness project changed", true)
+        setState({ status: "checking", project: opts.project() })
+      },
+      { defer: true },
+    ),
+  )
 
   const track = (props: { stage: string; code: string; fix?: ReadinessFix }) =>
     vscode.postMessage({
@@ -119,7 +133,9 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
         apply(next)
         return next
       })
-      .finally(() => flight.delete(project))
+      .finally(() => {
+        if (flight.get(project) === next) flight.delete(project)
+      })
     flight.set(project, next)
     return next
   }
@@ -154,5 +170,5 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
     return (current.status === "blocked" || current.status === "fixing") && current.project === opts.project()
   }
 
-  return { state, blocked, check, fix }
+  return { state, blocked, check, fix, revision: () => revision }
 }
