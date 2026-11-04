@@ -593,4 +593,27 @@ export const dict = {
   "agentManager.readiness.working.initialCommit": "Criando o primeiro commit…",
   "agentManager.readiness.working.project": "Abrindo o projeto…",
   "agentManager.readiness.blocked": "Corrija o problema acima para criar um worktree.",
+  "agentManager.readiness.blockedGit": "Instale o Git primeiro. Você pode continuar escrevendo sua tarefa.",
+  "agentManager.readiness.blockedLfs": "Instale o Git LFS primeiro. Você pode continuar escrevendo sua tarefa.",
+  "agentManager.readiness.git.title": "O Kilo precisa do Git para criar worktrees",
+  "agentManager.readiness.git.body":
+    "O Git ainda não está instalado neste computador. Instale-o e volte a esta janela. Sua tarefa continua aqui.",
+  "agentManager.readiness.git.bodyMac":
+    "O Git ainda não está instalado neste Mac. Instale-o e volte a esta janela. Sua tarefa continua aqui.",
+  "agentManager.readiness.lfs.title": "{{name}} precisa do Git LFS",
+  "agentManager.readiness.lfs.body":
+    "Este projeto guarda alguns arquivos grandes no Git LFS, que ainda não está instalado. Instale-o e volte a esta janela. Sua tarefa continua aqui.",
+  "agentManager.readiness.tool.install": "Instalar {{tool}}",
+  "agentManager.readiness.tool.get": "Obter {{tool}}",
+  "agentManager.readiness.tool.other": "Outras formas de instalar",
+  "agentManager.readiness.install.apple.title": "Conclua a instalação na janela da Apple",
+  "agentManager.readiness.install.apple.body": "O Kilo verifica novamente quando você voltar a esta janela.",
+  "agentManager.readiness.install.terminal.title": "Instalando {{tool}}…",
+  "agentManager.readiness.install.terminal.body":
+    "Está sendo executado no terminal abaixo. O Kilo verifica novamente quando terminar.",
+  "agentManager.readiness.install.stale.title": "{{tool}} está instalado, mas o VS Code ainda não o encontra",
+  "agentManager.readiness.install.stale.body": "Recarregar a janela costuma resolver. Sua tarefa volta após a recarga.",
+  "agentManager.readiness.install.reload": "Recarregar janela",
+  "agentManager.readiness.ready.git": "O Git está pronto.",
+  "agentManager.readiness.ready.lfs": "O Git LFS está pronto.",
 }

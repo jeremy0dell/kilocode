@@ -589,4 +589,28 @@ export const dict = {
   "agentManager.readiness.working.initialCommit": "Oppretter første commit…",
   "agentManager.readiness.working.project": "Åpner prosjektet…",
   "agentManager.readiness.blocked": "Løs problemet ovenfor for å opprette en worktree.",
+  "agentManager.readiness.blockedGit": "Installer Git først. Du kan fortsette å skrive oppgaven.",
+  "agentManager.readiness.blockedLfs": "Installer Git LFS først. Du kan fortsette å skrive oppgaven.",
+  "agentManager.readiness.git.title": "Kilo trenger Git for å lage worktrees",
+  "agentManager.readiness.git.body":
+    "Git er ikke installert på denne datamaskinen ennå. Installer det og kom tilbake til dette vinduet. Oppgaven blir værende her.",
+  "agentManager.readiness.git.bodyMac":
+    "Git er ikke installert på denne Macen ennå. Installer det og kom tilbake til dette vinduet. Oppgaven blir værende her.",
+  "agentManager.readiness.lfs.title": "{{name}} trenger Git LFS",
+  "agentManager.readiness.lfs.body":
+    "Dette prosjektet lagrer noen store filer i Git LFS, som ikke er installert ennå. Installer det og kom tilbake til dette vinduet. Oppgaven blir værende her.",
+  "agentManager.readiness.tool.install": "Installer {{tool}}",
+  "agentManager.readiness.tool.get": "Hent {{tool}}",
+  "agentManager.readiness.tool.other": "Andre måter å installere",
+  "agentManager.readiness.install.apple.title": "Fullfør installasjonen i Apples vindu",
+  "agentManager.readiness.install.apple.body": "Kilo sjekker på nytt når du kommer tilbake til dette vinduet.",
+  "agentManager.readiness.install.terminal.title": "Installerer {{tool}}…",
+  "agentManager.readiness.install.terminal.body":
+    "Det kjører i terminalen nedenfor. Kilo sjekker på nytt når det er ferdig.",
+  "agentManager.readiness.install.stale.title": "{{tool}} er installert, men VS Code ser det ikke ennå",
+  "agentManager.readiness.install.stale.body":
+    "Å laste inn vinduet på nytt pleier å fikse dette. Oppgaven kommer tilbake etter innlastingen.",
+  "agentManager.readiness.install.reload": "Last inn vinduet på nytt",
+  "agentManager.readiness.ready.git": "Git er klart.",
+  "agentManager.readiness.ready.lfs": "Git LFS er klart.",
 }

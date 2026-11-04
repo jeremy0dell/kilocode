@@ -16,7 +16,9 @@ import { canonicalizePath, projectIdFor, resolveProjectRoot, samePath } from "./
 import type { SidebarTarget, SessionRef } from "./route"
 import { cloneProject, createProject, defaultParent, onboard, type Onboarding } from "./onboarding"
 import { runner } from "./prepare"
-import { check, fix, type FixOutcome } from "../worktree-readiness"
+import { check, fix, type FixOutcome, type ReadinessTools } from "../worktree-readiness"
+import { DOWNLOAD, detectInstaller, installTool } from "../worktree-install"
+import { toolEnvironment } from "../shell-env"
 import type { CheckReadinessRequest, FixReadinessRequest } from "../../../webview-ui/src/types/messages/agent-manager"
 
 const pending = new WeakSet<ProjectMessageDeps>()
@@ -72,6 +74,12 @@ export interface ProjectMessageDeps {
   refreshGit: () => void
   /** Post a project's branch list. */
   branches: (ctx: ProjectContext) => Promise<void>
+  /** Run a terminal install task; resolves its exit code, or undefined when stopped. */
+  install?: (name: string, command: import("../worktree-install").InstallCommand) => Promise<number | undefined>
+  /** Open a download page in the user's browser. */
+  openExternal?: (url: string) => void
+  /** Reload the VS Code window. */
+  reloadWindow?: () => void
   git?: GitOps
   log: (...args: unknown[]) => void
 }
@@ -82,10 +90,7 @@ export async function handleProjectMessage(m: AgentManagerInMessage, deps: Proje
     deps.openSettings(m.tab, m.projectId)
     return true
   }
-  if (m.type === "agentManager.checkReadiness" || m.type === "agentManager.fixReadiness") {
-    await readiness(m, deps)
-    return true
-  }
+  if (await local(m, deps)) return true
   if (m.type === "agentManager.requestProjects") {
     deps.push()
     return true
@@ -339,6 +344,17 @@ async function register(
   return { id, root, existing }
 }
 
+/** Readiness checks and the one window command this channel owns. */
+async function local(m: AgentManagerInMessage, deps: ProjectMessageDeps): Promise<boolean> {
+  if (m.type === "agentManager.reloadWindow") {
+    deps.reloadWindow?.()
+    return true
+  }
+  if (m.type !== "agentManager.checkReadiness" && m.type !== "agentManager.fixReadiness") return false
+  await readiness(m, deps)
+  return true
+}
+
 /** Check or fix a project's worktree readiness and reply with the original project and request IDs. */
 async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: ProjectMessageDeps): Promise<void> {
   const reply = (outcome: FixOutcome) =>
@@ -346,9 +362,31 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
   const ctx = typeof m.projectId === "string" ? deps.contexts.resolve(m.projectId) : undefined
   if (!ctx) return reply({ result: { status: "unknown", detail: "The project is unavailable." } })
   const git = deps.git ?? new GitOps({ log: deps.log })
-  const base = { git, trusted: () => deps.onboarding.isTrusted() }
+  const manager = ctx.worktreeManager()
+  const install = deps.install
+  const open = deps.openExternal
+  const tools: ReadinessTools = {
+    git: (fresh) => manager.probeGit(fresh),
+    usesLfs: (root) => manager.repoUsesLfs(root),
+    lfs: (root, fresh) => manager.probeLfs(fresh, root),
+    installer: async (kind) => detectInstaller(kind, process.platform, await toolEnvironment()),
+    install: async (kind, root) =>
+      installTool(kind, root, {
+        platform: process.platform,
+        env: await toolEnvironment(true),
+        run: async (name, command) => {
+          if (!install) throw new Error("Installing tools is unavailable.")
+          return install(name, command)
+        },
+        open: (url) => open?.(url),
+        probe: (kind, fresh) => (kind === "git" ? manager.probeGit(fresh) : manager.probeLfs(fresh, root)),
+      }),
+    download: (kind) => open?.(DOWNLOAD[kind]),
+  }
+  const base = { git, trusted: () => deps.onboarding.isTrusted(), tools }
   try {
-    if (m.type === "agentManager.checkReadiness") return reply({ result: await check(ctx.root, base) })
+    if (m.type === "agentManager.checkReadiness")
+      return reply({ result: await check(ctx.root, base, m.fresh === true) })
     reply(
       await fix(ctx.root, m, {
         ...base,

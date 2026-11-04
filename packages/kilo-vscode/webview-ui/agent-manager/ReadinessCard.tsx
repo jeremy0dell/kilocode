@@ -10,12 +10,17 @@ import { Collapsible } from "@kilocode/kilo-ui/collapsible"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { Spinner } from "@kilocode/kilo-ui/spinner"
 import { TextField } from "@kilocode/kilo-ui/text-field"
-import type { Readiness, ReadinessFix } from "../src/types/messages"
+import type { Readiness, ReadinessFix, ReadinessInstaller } from "../src/types/messages"
 import { useLanguage } from "../src/context/language"
 import type { ReadinessState } from "./worktree-readiness"
 
 type Blocked = Extract<Readiness, { status: "blocked" }>
 type Identity = { name: string; email: string }
+type ReadyFixed = "initGit" | "initialCommit" | "installGit" | "installLfs"
+type Tool = "git" | "lfs"
+
+const installed = (fix: ReadyFixed | undefined): fix is "installGit" | "installLfs" =>
+  fix === "installGit" || fix === "installLfs"
 
 export const ReadinessCard: Component<{
   state: ReadinessState
@@ -24,6 +29,7 @@ export const ReadinessCard: Component<{
   onProject: (root: string) => void
   onFolder: () => void
   onCheck: () => void
+  onReload: () => void
 }> = (props) => {
   const blocked = () => {
     const state = props.state
@@ -33,14 +39,29 @@ export const ReadinessCard: Component<{
   }
   const ready = () => {
     const state = props.state
-    if (state.status !== "ready" || (state.fixed !== "initGit" && state.fixed !== "initialCommit")) return undefined
+    if (state.status !== "ready") return undefined
+    if (
+      state.fixed !== "initGit" &&
+      state.fixed !== "initialCommit" &&
+      state.fixed !== "installGit" &&
+      state.fixed !== "installLfs"
+    )
+      return undefined
     return { fixed: state.fixed, note: state.note }
   }
+  const installing = () => (props.state.status === "installing" ? props.state : undefined)
+  const stale = () => (props.state.status === "stale" ? props.state : undefined)
   const unknown = () => (props.state.status === "unknown" ? props.state.detail : undefined)
 
   return (
     <div class="am-readiness" ref={props.ref} aria-live="polite">
       <Switch>
+        <Match when={installing()}>
+          {(view) => <InstallingCard state={view()} onFix={props.onFix} onCheck={props.onCheck} />}
+        </Match>
+        <Match when={stale()}>
+          {(view) => <StaleCard state={view()} onCheck={props.onCheck} onReload={props.onReload} />}
+        </Match>
         <Match when={blocked()}>
           {(view) => (
             <BlockedCard
@@ -76,6 +97,18 @@ function Details(props: { text: string }) {
   )
 }
 
+function tool(prefix: string) {
+  return prefix === "git" ? "Git" : "Git LFS"
+}
+
+function toolFix(kind: Tool): ReadinessFix {
+  return kind === "git" ? "installGit" : "installLfs"
+}
+
+function otherFix(kind: Tool): ReadinessFix {
+  return kind === "git" ? "downloadGit" : "downloadLfs"
+}
+
 function BlockedCard(props: {
   result: Blocked
   error?: string
@@ -89,11 +122,19 @@ function BlockedCard(props: {
   const [form, setForm] = createSignal(false)
   const [name, setName] = createSignal("")
   const [email, setEmail] = createSignal("")
-  const fix = (): ReadinessFix => (props.result.code === "no_commits" ? "initialCommit" : "initGit")
+  const fix = (): ReadinessFix => {
+    if (props.result.code === "no_commits") return "initialCommit"
+    if (props.result.code === "git_not_found") return "installGit"
+    if (props.result.code === "lfs_missing") return "installLfs"
+    return "initGit"
+  }
   const locked = () => !props.result.trusted
   const projects = () => props.result.projects ?? []
+  const install = (): ReadinessInstaller | undefined => props.result.installer
   const kind = () => {
     if (props.result.restricted) return "restricted"
+    if (props.result.code === "git_not_found") return "git"
+    if (props.result.code === "lfs_missing") return "lfs"
     if (projects().length > 0) return "projects"
     if (props.result.code === "no_commits") return "commit"
     return "plain"
@@ -113,6 +154,8 @@ function BlockedCard(props: {
   const title = () => {
     if (form() && !props.fixing) return t("agentManager.readiness.identity.title")
     if (kind() === "restricted") return t("agentManager.readiness.restricted.title")
+    if (kind() === "git") return t("agentManager.readiness.git.title")
+    if (kind() === "lfs") return t("agentManager.readiness.lfs.title", { name: props.result.name })
     if (kind() === "projects") return t("agentManager.readiness.projects.title", { name: props.result.name })
     if (kind() === "commit") return t("agentManager.readiness.commit.title", { name: props.result.name })
     return t("agentManager.readiness.plain.title", { name: props.result.name })
@@ -120,6 +163,11 @@ function BlockedCard(props: {
   const body = () => {
     if (form() && !props.fixing) return t("agentManager.readiness.identity.body")
     if (kind() === "restricted") return t("agentManager.readiness.restricted.body")
+    if (kind() === "git")
+      return t(
+        props.result.platform === "darwin" ? "agentManager.readiness.git.bodyMac" : "agentManager.readiness.git.body",
+      )
+    if (kind() === "lfs") return t("agentManager.readiness.lfs.body")
     if (kind() === "projects") {
       const count = projects().length
       if (count === 1 && !props.result.more)
@@ -224,6 +272,42 @@ function BlockedCard(props: {
                   {t("agentManager.readiness.restricted.action")}
                 </Button>
               </Match>
+              <Match when={kind() === "git"}>
+                <Button
+                  size="small"
+                  variant="secondary"
+                  disabled={locked()}
+                  onClick={() => props.onFix(toolFix("git"))}
+                  data-readiness-action
+                >
+                  {install()
+                    ? t("agentManager.readiness.tool.install", { tool: tool("git") })
+                    : t("agentManager.readiness.tool.get", { tool: tool("git") })}
+                </Button>
+                <Show when={install()}>
+                  <button class="am-readiness-link" type="button" onClick={() => props.onFix(otherFix("git"))}>
+                    {t("agentManager.readiness.tool.other")}
+                  </button>
+                </Show>
+              </Match>
+              <Match when={kind() === "lfs"}>
+                <Button
+                  size="small"
+                  variant="secondary"
+                  disabled={locked()}
+                  onClick={() => props.onFix(toolFix("lfs"))}
+                  data-readiness-action
+                >
+                  {install()
+                    ? t("agentManager.readiness.tool.install", { tool: tool("lfs") })
+                    : t("agentManager.readiness.tool.get", { tool: tool("lfs") })}
+                </Button>
+                <Show when={install()}>
+                  <button class="am-readiness-link" type="button" onClick={() => props.onFix(otherFix("lfs"))}>
+                    {t("agentManager.readiness.tool.other")}
+                  </button>
+                </Show>
+              </Match>
               <Match when={kind() === "projects"}>
                 <For each={projects()}>
                   {(project, index) => (
@@ -266,23 +350,90 @@ function BlockedCard(props: {
   )
 }
 
-function ReadyLine(props: { fixed: "initGit" | "initialCommit"; note?: "uncommitted" }) {
+function InstallingCard(props: {
+  state: Extract<ReadinessState, { status: "installing" }>
+  onFix: (fix: ReadinessFix, identity?: Identity) => void
+  onCheck: () => void
+}) {
   const { t } = useLanguage()
+  const apple = () => props.state.mode === "apple"
+  const name = () => tool(props.state.fix === "installGit" ? "git" : "lfs")
+  return (
+    <Card>
+      <div class="am-readiness-working" role="status">
+        <Spinner />
+        <span>
+          {apple()
+            ? t("agentManager.readiness.install.apple.title")
+            : t("agentManager.readiness.install.terminal.title", { tool: name() })}
+        </span>
+      </div>
+      <CardDescription>
+        {apple() ? t("agentManager.readiness.install.apple.body") : t("agentManager.readiness.install.terminal.body")}
+      </CardDescription>
+      <CardActions>
+        <Show when={apple()}>
+          <button
+            class="am-readiness-link"
+            type="button"
+            onClick={() => props.onFix(props.state.fix === "installGit" ? "downloadGit" : "downloadLfs")}
+          >
+            {t("agentManager.readiness.tool.other")}
+          </button>
+        </Show>
+        <button class="am-readiness-link" type="button" onClick={props.onCheck}>
+          {t("agentManager.readiness.check")}
+        </button>
+      </CardActions>
+    </Card>
+  )
+}
+
+function StaleCard(props: {
+  state: Extract<ReadinessState, { status: "stale" }>
+  onCheck: () => void
+  onReload: () => void
+}) {
+  const { t } = useLanguage()
+  const name = () => tool(props.state.fix === "installGit" ? "git" : "lfs")
+  return (
+    <Card variant="warning">
+      <CardTitle variant="warning" tabIndex={-1} data-readiness-title>
+        {t("agentManager.readiness.install.stale.title", { tool: name() })}
+      </CardTitle>
+      <CardDescription>{t("agentManager.readiness.install.stale.body")}</CardDescription>
+      <CardActions>
+        <Button size="small" variant="secondary" onClick={props.onReload} data-readiness-action>
+          {t("agentManager.readiness.install.reload")}
+        </Button>
+        <button class="am-readiness-link" type="button" onClick={props.onCheck}>
+          {t("agentManager.readiness.check")}
+        </button>
+      </CardActions>
+    </Card>
+  )
+}
+
+function ReadyLine(props: { fixed: ReadyFixed; note?: "uncommitted" }) {
+  const { t } = useLanguage()
+  const title = () => {
+    if (props.fixed === "installGit") return t("agentManager.readiness.ready.git")
+    if (props.fixed === "installLfs") return t("agentManager.readiness.ready.lfs")
+    if (props.fixed === "initGit") return t("agentManager.readiness.ready.initGit")
+    return t("agentManager.readiness.ready.initialCommit")
+  }
+  const note = () => {
+    if (props.fixed === "initGit") return t("agentManager.readiness.ready.initGitNote")
+    if (props.fixed === "initialCommit") return t("agentManager.readiness.ready.initialCommitNote")
+    return undefined
+  }
   return (
     <div class="am-readiness-ready" role="status">
       <Icon name="circle-check" size="small" />
       <div>
-        <div class="am-readiness-ready-title">
-          {props.fixed === "initGit"
-            ? t("agentManager.readiness.ready.initGit")
-            : t("agentManager.readiness.ready.initialCommit")}
-        </div>
-        <Show when={props.note === "uncommitted"}>
-          <div class="am-readiness-ready-body">
-            {props.fixed === "initGit"
-              ? t("agentManager.readiness.ready.initGitNote")
-              : t("agentManager.readiness.ready.initialCommitNote")}
-          </div>
+        <div class="am-readiness-ready-title">{title()}</div>
+        <Show when={installed(props.fixed) ? undefined : note()}>
+          {(text) => <div class="am-readiness-ready-body">{text()}</div>}
         </Show>
       </div>
     </div>

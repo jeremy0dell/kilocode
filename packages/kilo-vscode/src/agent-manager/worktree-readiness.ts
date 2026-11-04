@@ -6,8 +6,8 @@
  * path share one check.
  *
  * The check stops at the first problem, in this order: Git, repository, commits,
- * Git LFS. The repository and commit steps live here; Git and Git LFS are not
- * checked yet, so a missing Git surfaces as `unknown` and never blocks.
+ * Git LFS. Git and Git LFS use the same caches creation uses, and a `fresh`
+ * check bypasses both after an install or when the window regains focus.
  */
 
 import * as fs from "node:fs/promises"
@@ -18,9 +18,12 @@ import { canonicalizePath, samePath } from "./project/paths"
 import * as prepare from "./project/prepare"
 import type {
   Readiness,
+  ReadinessFix,
+  ReadinessInstaller,
   ReadinessProject,
   FixReadinessRequest,
 } from "../../webview-ui/src/types/messages/agent-manager"
+import type { InstallOutcome, ToolKind, ToolProbe } from "./worktree-install"
 
 type Git = Pick<GitOps, "execGit">
 
@@ -36,9 +39,21 @@ function allow(dir: string | undefined) {
   if (isRestrictedRoot(dir)) throw new Error(RESTRICTED)
 }
 
+export interface ReadinessTools {
+  git(fresh: boolean): Promise<ToolProbe>
+  usesLfs(root: string): Promise<boolean>
+  lfs(root: string, fresh: boolean): Promise<ToolProbe>
+  installer(kind: ToolKind): Promise<ReadinessInstaller | undefined>
+  install(kind: ToolKind, root: string): Promise<InstallOutcome>
+  download(kind: ToolKind): void
+}
+
 export interface ReadinessDeps {
   git: Git
   trusted: () => boolean
+  tools?: ReadinessTools
+  /** Injected for platform-specific probes in tests. */
+  platform?: NodeJS.Platform
 }
 
 export interface FixDeps extends ReadinessDeps {
@@ -59,12 +74,15 @@ export interface FixOutcome {
   /** Project a switch fix selected. */
   selected?: string
   error?: string
+  /** What an install or download fix did. */
+  install?: InstallOutcome
 }
 
-/** One check per folder at a time; concurrent callers share it. */
+/** One check per folder at a time; concurrent callers share it. A fresh check always bypasses it. */
 const flight = new Map<string, Promise<Readiness>>()
 
-export function check(root: string, deps: ReadinessDeps): Promise<Readiness> {
+export function check(root: string, deps: ReadinessDeps, fresh = false): Promise<Readiness> {
+  if (fresh) return probe(root, deps, true)
   const key = canonicalizePath(root)
   const running = flight.get(key)
   if (running) return running
@@ -88,25 +106,30 @@ export async function fix(
       note: false,
     }),
   )
-  const result = await probe(done.root, deps)
+  const result = await probe(done.root, deps, false)
   const outcome = {
     result:
       result.status === "ready" && done.note ? { status: "ready" as const, note: "uncommitted" as const } : result,
   }
+  const install = "install" in done ? done.install : undefined
+  if (install) return { ...outcome, install, ...("error" in done ? { error: done.error } : {}) }
   if ("error" in done) return { ...outcome, error: done.error }
   if (done.selected) return { ...outcome, selected: done.selected }
   return outcome
 }
 
-async function probe(root: string, deps: ReadinessDeps): Promise<Readiness> {
-  return inspect(root, deps).catch((err: unknown) => ({
+async function probe(root: string, deps: ReadinessDeps, fresh = false): Promise<Readiness> {
+  return inspect(root, deps, fresh).catch((err: unknown) => ({
     status: "unknown" as const,
     detail: err instanceof Error ? err.message : String(err),
   }))
 }
 
-async function inspect(root: string, deps: ReadinessDeps): Promise<Readiness> {
-  // Git: not checked yet.
+async function inspect(root: string, deps: ReadinessDeps, fresh: boolean): Promise<Readiness> {
+  if (deps.tools) {
+    const git = await deps.tools.git(fresh)
+    if (!git.ok) return missing("git", git, root, deps)
+  }
   // Repository and commits.
   const state = await prepare.inspect(root, deps.git)
   if (isRestrictedRoot(state.root ?? root)) {
@@ -128,8 +151,29 @@ async function inspect(root: string, deps: ReadinessDeps): Promise<Readiness> {
       identity: await prepare.identity(state.root, deps.git),
     }
   }
-  // Git LFS: not checked yet.
+  if (deps.tools && (await deps.tools.usesLfs(state.root))) {
+    const lfs = await deps.tools.lfs(state.root, fresh)
+    if (!lfs.ok) return missing("lfs", lfs, state.root, deps)
+  }
   return { status: "ready" }
+}
+
+/** A confirmed missing tool becomes a blocker; any other probe failure stays advisory. */
+async function missing(
+  kind: ToolKind,
+  probe: Extract<ToolProbe, { ok: false }>,
+  root: string,
+  deps: ReadinessDeps,
+): Promise<Readiness> {
+  if (probe.code === "unknown") return { status: "unknown", detail: probe.detail }
+  return {
+    status: "blocked",
+    code: kind === "git" ? "git_not_found" : "lfs_missing",
+    name: path.basename(root),
+    trusted: deps.trusted(),
+    platform: deps.platform ?? process.platform,
+    installer: await deps.tools?.installer(kind),
+  }
 }
 
 /** A folder that is not a Git project: offer the projects inside it, or setting up Git. */
@@ -171,7 +215,9 @@ async function apply(
   root: string,
   request: Pick<FixReadinessRequest, "fix" | "target" | "identity">,
   deps: FixDeps,
-): Promise<{ root: string; selected?: string; note: boolean }> {
+): Promise<{ root: string; selected?: string; note: boolean; install?: InstallOutcome }> {
+  const quick = await external(root, request, deps)
+  if (quick) return quick
   trust(deps)
   if (request.fix === "useProject") {
     const target = request.target ? canonicalizePath(request.target) : ""
@@ -201,6 +247,24 @@ async function apply(
   await deps.branches()
   const status = await deps.git.execGit(["status", "--porcelain"], repo)
   return { root, note: status.code === 0 && status.stdout.trim().length > 0 }
+}
+
+/** Downloads and installs need no repository inspection. */
+async function external(
+  root: string,
+  request: Pick<FixReadinessRequest, "fix">,
+  deps: FixDeps,
+): Promise<{ root: string; note: boolean; install?: InstallOutcome } | undefined> {
+  if (request.fix !== "downloadGit" && request.fix !== "downloadLfs") {
+    if (request.fix !== "installGit" && request.fix !== "installLfs") return undefined
+    trust(deps)
+    if (!deps.tools) throw new Error("Installing tools is unavailable.")
+    const kind = request.fix === "installGit" ? "git" : "lfs"
+    return { root, note: false, install: await deps.tools.install(kind, root) }
+  }
+  if (!deps.tools) throw new Error("Opening the download page is unavailable.")
+  deps.tools.download(request.fix === "downloadGit" ? "git" : "lfs")
+  return { root, note: false }
 }
 
 /** Register a folder's project and select it. */

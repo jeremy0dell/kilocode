@@ -100,6 +100,9 @@ export function createProjectWiring(opts: {
         },
         ctx.id,
       ),
+    install: (name, command) => opts.host.runInstall?.(name, command) ?? Promise.resolve(undefined),
+    openExternal: (url) => opts.host.openExternal?.(url),
+    reloadWindow: () => opts.host.reloadWindow?.(),
     git: opts.git,
     error: (message) => opts.host.showError(message),
     openSettings: (tab, projectId) => opts.host.openSettings(tab, projectId),
@@ -113,6 +116,9 @@ export function createProjectWiring(opts: {
   })
   const listeners: Disposable[] = [
     opts.host.onDidChangeWorkspaceFolders(() => opts.changed()),
+    // A mounted Git/LFS readiness card asks for a fresh check when the window returns,
+    // which is how an install finished outside VS Code is picked up.
+    opts.host.onWindowFocus?.(() => opts.post({ type: "agentManager.readinessFocus" })),
     opts.host.onDidChangeWorktreePool((enabled) => {
       for (const project of contexts.snapshots()) {
         const manager = contexts.get(project.id)?.peekWorktrees()

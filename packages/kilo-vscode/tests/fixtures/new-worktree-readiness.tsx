@@ -6,14 +6,16 @@ const window = new Window({ url: "http://localhost" })
 Object.defineProperty(window, "origin", { value: window.location.origin })
 const sent: WebviewMessage[] = []
 // A valid saved model is required, or Create stays disabled regardless of readiness.
-const saved = {
+const saved: Record<string, unknown> = {
   advancedDialogSelections: { model: { providerID: "kilo", modelID: "m1" } },
   advancedDialogImages: [{ id: "img", filename: "shot.png", mime: "image/png", dataUrl: "data:image/png;base64,AAAA" }],
 }
 const api = {
   postMessage: (message: WebviewMessage) => sent.push(structuredClone(message)),
   getState: () => saved,
-  setState: () => {},
+  setState: (next: Record<string, unknown>) => {
+    if ("advancedDialogReopen" in next) saved.advancedDialogReopen = next.advancedDialogReopen
+  },
 }
 
 Object.assign(globalThis, {
@@ -485,6 +487,101 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
   assert.ok(branch.textContent?.includes("agentManager.import.noBranchesFound"))
   assert.equal(branch.querySelector(".am-branch-badge"), null)
   await reply("p1", id, { status: "ready" })
+  await close()
+}
+
+// Git and Git LFS: install from the card, finish in Apple's window, fresh-check on return,
+// and offer Reload only after a terminal install that VS Code cannot see yet.
+if (process.env.READINESS_CASE === "install") {
+  const id = await mount()
+  const git: Readiness = {
+    status: "blocked",
+    code: "git_not_found",
+    name: "p1",
+    trusted: true,
+    platform: "darwin",
+    installer: "apple",
+  }
+  await reply("p1", id, git)
+  assert.equal(card()?.querySelector("[data-readiness-title]")?.textContent, "agentManager.readiness.git.title")
+  assert.equal(submit().getAttribute("aria-disabled"), "true")
+  const install = card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")
+  assert.ok(install)
+  assert.equal(install.textContent, "agentManager.readiness.tool.install")
+  install.click()
+  await settle()
+  const first = sent.find((item) => item.type === "agentManager.fixReadiness")
+  assert.ok(first && first.type === "agentManager.fixReadiness")
+  assert.equal(first.fix, "installGit")
+  assert.ok(card()?.querySelector("[role=status]"))
+  assert.ok(card()?.textContent?.includes("agentManager.readiness.install.terminal.title"))
+
+  await emit({
+    type: "agentManager.readiness",
+    projectId: "p1",
+    requestID: first.requestID,
+    result: git,
+    install: { kind: "git", mode: "apple", ok: false },
+  })
+  assert.equal(card()?.querySelector("[role=status] span")?.textContent, "agentManager.readiness.install.apple.title")
+  const links = Array.from(card()?.querySelectorAll<HTMLButtonElement>(".am-readiness-link") ?? []).map(
+    (item) => item.textContent,
+  )
+  assert.ok(links.includes("agentManager.readiness.check"))
+  assert.ok(links.includes("agentManager.readiness.tool.other"))
+  assert.equal(creates().length, 0)
+
+  await emit({ type: "agentManager.readinessFocus" })
+  const fresh = checks().at(-1)
+  assert.ok(fresh)
+  assert.equal(fresh.fresh, true)
+  assert.equal(fresh.requestID, checks().at(-1)?.requestID)
+  await reply("p1", fresh.requestID, { status: "ready" })
+  assert.ok(card()?.textContent?.includes("agentManager.readiness.ready.git"))
+  assert.equal(submit().getAttribute("aria-disabled"), null)
+  assert.equal(creates().length, 0)
+  await close()
+
+  const second = await mount()
+  const lfs: Readiness = {
+    status: "blocked",
+    code: "lfs_missing",
+    name: "orbit",
+    trusted: true,
+    platform: "darwin",
+    installer: "brew",
+  }
+  await reply("p1", second, lfs)
+  assert.equal(card()?.querySelector("[data-readiness-title]")?.textContent, "agentManager.readiness.lfs.title")
+  card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
+  await settle()
+  const fix = sent.find((item) => item.type === "agentManager.fixReadiness")
+  assert.ok(fix && fix.type === "agentManager.fixReadiness")
+  assert.equal(fix.fix, "installLfs")
+  await emit({
+    type: "agentManager.readiness",
+    projectId: "p1",
+    requestID: fix.requestID,
+    result: lfs,
+    install: { kind: "lfs", mode: "terminal", ok: true },
+  })
+  assert.equal(
+    card()?.querySelector("[data-readiness-title]")?.textContent,
+    "agentManager.readiness.install.stale.title",
+  )
+  assert.ok(card()?.textContent?.includes("agentManager.readiness.install.stale.body"))
+  assert.equal(
+    sent.some((item) => item.type === "agentManager.reloadWindow"),
+    false,
+  )
+  card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
+  await settle()
+  assert.equal(saved.advancedDialogReopen, true)
+  assert.equal(
+    sent.some((item) => item.type === "agentManager.reloadWindow"),
+    true,
+  )
+  assert.equal(creates().length, 0)
   await close()
 }
 

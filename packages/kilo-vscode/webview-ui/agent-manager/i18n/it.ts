@@ -605,4 +605,28 @@ export const dict = {
   "agentManager.readiness.working.initialCommit": "Creazione del primo commit…",
   "agentManager.readiness.working.project": "Apertura del progetto…",
   "agentManager.readiness.blocked": "Risolvi il problema qui sopra per creare un worktree.",
+  "agentManager.readiness.blockedGit": "Installa prima Git. Puoi continuare a scrivere l'attività.",
+  "agentManager.readiness.blockedLfs": "Installa prima Git LFS. Puoi continuare a scrivere l'attività.",
+  "agentManager.readiness.git.title": "Kilo ha bisogno di Git per creare i worktree",
+  "agentManager.readiness.git.body":
+    "Git non è ancora installato su questo computer. Installalo, poi torna a questa finestra. L'attività resta qui.",
+  "agentManager.readiness.git.bodyMac":
+    "Git non è ancora installato su questo Mac. Installalo, poi torna a questa finestra. L'attività resta qui.",
+  "agentManager.readiness.lfs.title": "{{name}} ha bisogno di Git LFS",
+  "agentManager.readiness.lfs.body":
+    "Questo progetto archivia alcuni file di grandi dimensioni in Git LFS, che non è ancora installato. Installalo, poi torna a questa finestra. L'attività resta qui.",
+  "agentManager.readiness.tool.install": "Installa {{tool}}",
+  "agentManager.readiness.tool.get": "Ottieni {{tool}}",
+  "agentManager.readiness.tool.other": "Altri modi per installare",
+  "agentManager.readiness.install.apple.title": "Completa l'installazione nella finestra di Apple",
+  "agentManager.readiness.install.apple.body": "Kilo controlla di nuovo quando torni a questa finestra.",
+  "agentManager.readiness.install.terminal.title": "Installazione di {{tool}}…",
+  "agentManager.readiness.install.terminal.body":
+    "È in esecuzione nel terminale sottostante. Kilo controlla di nuovo al termine.",
+  "agentManager.readiness.install.stale.title": "{{tool}} è installato, ma VS Code non lo rileva ancora",
+  "agentManager.readiness.install.stale.body":
+    "Ricaricare la finestra di solito risolve. L'attività torna dopo il ricaricamento.",
+  "agentManager.readiness.install.reload": "Ricarica finestra",
+  "agentManager.readiness.ready.git": "Git è pronto.",
+  "agentManager.readiness.ready.lfs": "Git LFS è pronto.",
 }

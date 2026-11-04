@@ -11,7 +11,27 @@ export type WorktreeErrorCode =
 export type WorktreeEntry = "modal" | "quick" | "other"
 
 /** Fixes a readiness card can ask the extension to run. */
-export type ReadinessFix = "useProject" | "initGit" | "initialCommit" | "pickFolder"
+export type ReadinessFix =
+  | "useProject"
+  | "initGit"
+  | "initialCommit"
+  | "pickFolder"
+  | "installGit"
+  | "installLfs"
+  | "downloadGit"
+  | "downloadLfs"
+
+/** A package manager a card can use, or Apple's Command Line Tools launcher. */
+export type ReadinessInstaller = "apple" | "brew" | "winget" | "apt" | "dnf"
+
+/** What the extension did after an install fix. */
+export interface ReadinessInstall {
+  kind: "git" | "lfs"
+  mode: "apple" | "terminal" | "external"
+  /** The installer succeeded, or the tool became available anyway. */
+  ok: boolean
+  error?: string
+}
 
 /** A Git project found directly inside a folder that is not one itself. */
 export interface ReadinessProject {
@@ -28,8 +48,8 @@ export type Readiness =
   | { status: "unknown"; detail: string }
   | {
       status: "blocked"
-      code: "not_git_repo" | "no_commits"
-      /** Folder name, for the card title. */
+      code: "not_git_repo" | "no_commits" | "git_not_found" | "lfs_missing"
+      /** Folder or repository name, for the card title. */
       name: string
       /** Workspace trust; every fix needs it. */
       trusted: boolean
@@ -41,12 +61,18 @@ export type Readiness =
       projects?: ReadinessProject[]
       /** More projects exist than are listed. */
       more?: boolean
+      /** Package manager offered by an install fix; absent means open a download page. */
+      installer?: ReadinessInstaller
+      /** Host platform, so copy can say "this Mac" where it applies. */
+      platform?: string
     }
 
 export interface CheckReadinessRequest {
   type: "agentManager.checkReadiness"
   projectId: string
   requestID: string
+  /** Bypass the Git and Git LFS caches and refresh the login-shell PATH first. */
+  fresh?: boolean
 }
 
 export interface FixReadinessRequest {
@@ -70,6 +96,18 @@ export interface ReadinessMessage {
   selected?: string
   /** Why a fix failed; `result` is then the re-checked state. */
   error?: string
+  /** What an install fix did, when that is the fix. */
+  install?: ReadinessInstall
+}
+
+/** One-shot trigger: the VS Code window regained focus, so a mounted Git/LFS card can re-check. */
+export interface ReadinessFocusMessage {
+  type: "agentManager.readinessFocus"
+}
+
+/** Reload the VS Code window; the New Worktree dialog reopens when the draft says so. */
+export interface ReloadWindowRequest {
+  type: "agentManager.reloadWindow"
 }
 
 export interface BaseUpdateRequest {

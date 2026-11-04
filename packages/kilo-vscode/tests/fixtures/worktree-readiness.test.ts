@@ -3,7 +3,7 @@ import os from "node:os"
 import path from "node:path"
 import fs from "node:fs/promises"
 import { GitOps } from "../../src/agent-manager/GitOps"
-import { check, fix, type FixDeps } from "../../src/agent-manager/worktree-readiness"
+import { check, fix, type FixDeps, type ReadinessTools } from "../../src/agent-manager/worktree-readiness"
 import { createProjectWiring } from "../../src/agent-manager/project/wiring"
 import { handleProjectMessage } from "../../src/agent-manager/project/messages"
 import { canonicalizePath, projectIdFor } from "../../src/agent-manager/project/paths"
@@ -77,7 +77,8 @@ async function repo(dir: string, commit: boolean) {
 /** The real project wiring over a fake Host that records what the fixes ask of VS Code. */
 function wire(root: string, trusted = true) {
   const posts: AgentManagerOutMessage[] = []
-  const calls = { refresh: 0, picks: [] as Array<string | undefined> }
+  const calls = { refresh: 0, reloads: 0, picks: [] as Array<string | undefined> }
+  const focus: Array<() => void> = []
   let stored: unknown
   const none = { dispose: () => {} }
   const host = {
@@ -90,6 +91,13 @@ function wire(root: string, trusted = true) {
     worktreePool: () => false,
     onDidChangeWorkspaceFolders: () => none,
     onDidChangeWorktreePool: () => none,
+    onWindowFocus: (cb: () => void) => {
+      focus.push(cb)
+      return none
+    },
+    reloadWindow: () => {
+      calls.reloads++
+    },
     pickFolder: async (opts?: { defaultPath?: string }) => {
       calls.picks.push(opts?.defaultPath)
       return undefined
@@ -124,10 +132,136 @@ function wire(root: string, trusted = true) {
       { type: "agentManager.fixReadiness", projectId: id, requestID: "r1", fix, ...extra },
       wiring.messages,
     )
-  return { posts, calls, wiring, id, send }
+  return { posts, calls, focus, wiring, id, send }
 }
 
 const identity = { name: "Ada Lovelace", email: "ada@example.com" }
+
+describe("worktree readiness tool checks", () => {
+  const fake = (overrides: Partial<ReadinessTools> = {}) => {
+    const calls: string[] = []
+    const tools: ReadinessTools = {
+      git: async (fresh) => {
+        calls.push(`git:${fresh}`)
+        return { ok: true }
+      },
+      usesLfs: async (root) => {
+        calls.push(`uses:${path.basename(root)}`)
+        return false
+      },
+      lfs: async (_root, fresh) => {
+        calls.push(`lfs:${fresh}`)
+        return { ok: true }
+      },
+      installer: async (kind) => {
+        calls.push(`installer:${kind}`)
+        return "apt"
+      },
+      install: async (kind) => ({ kind, mode: "terminal", ok: true }),
+      download: () => {},
+      ...overrides,
+    }
+    return { calls, tools }
+  }
+
+  it("reports missing Git before touching the repository", async () => {
+    const root = await temp("kilo-ready-git-")
+    const probe = fake({ git: async () => ({ ok: false, code: "missing", detail: "spawn git ENOENT" }) })
+    const result = await check(root, { git: ops, trusted: () => true, tools: probe.tools, platform: "linux" })
+    expect(result).toEqual({
+      status: "blocked",
+      code: "git_not_found",
+      name: path.basename(root),
+      trusted: true,
+      platform: "linux",
+      installer: "apt",
+    })
+    expect(probe.calls).toEqual(["installer:git"])
+  })
+
+  it("keeps an ambiguous Git failure advisory", async () => {
+    const root = await temp("kilo-ready-git-unknown-")
+    const probe = fake({ git: async () => ({ ok: false, code: "unknown", detail: "permission denied" }) })
+    const result = await check(root, { git: ops, trusted: () => true, tools: probe.tools })
+    expect(result).toEqual({ status: "unknown", detail: "permission denied" })
+    expect(probe.calls).toEqual([])
+  })
+
+  it("checks Git LFS last and only when the repository uses it", async () => {
+    const lfsRepo = await repo(await temp("kilo-ready-lfs-"), true)
+    await fs.writeFile(path.join(lfsRepo, ".gitattributes"), "*.bin filter=lfs diff=lfs merge=lfs -text\n")
+    const used = fake({
+      usesLfs: async (root) => {
+        calls.push(`uses:${path.basename(root)}`)
+        return true
+      },
+      lfs: async (_root, fresh) => {
+        calls.push(`lfs:${fresh}`)
+        return { ok: false, code: "missing", detail: "git: 'lfs' is not a git command." }
+      },
+    })
+    const calls: string[] = used.calls
+    const blocked = await check(lfsRepo, { git: ops, trusted: () => true, tools: used.tools, platform: "darwin" })
+    expect(blocked).toEqual({
+      status: "blocked",
+      code: "lfs_missing",
+      name: path.basename(lfsRepo),
+      trusted: true,
+      platform: "darwin",
+      installer: "apt",
+    })
+    expect(calls[0]).toBe("git:false")
+    expect(calls.at(-1)).toBe("installer:lfs")
+
+    const plainRepo = await repo(await temp("kilo-ready-no-lfs-"), true)
+    const plain = fake()
+    expect(await check(plainRepo, { git: ops, trusted: () => true, tools: plain.tools })).toEqual({
+      status: "ready",
+    })
+    expect(plain.calls).toEqual(["git:false", `uses:${path.basename(plainRepo)}`])
+  })
+
+  it("routes install and download fixes before inspecting the repository", async () => {
+    const root = await temp("kilo-ready-install-")
+    const calls: string[] = []
+    const probe = fake()
+    const tools: ReadinessTools = {
+      ...probe.tools,
+      install: async (kind, dir) => {
+        calls.push(`install:${kind}:${dir}`)
+        return { kind, mode: "terminal", ok: true }
+      },
+      download: (kind) => calls.push(`download:${kind}`),
+    }
+    const deps: FixDeps = {
+      git: ops,
+      trusted: () => true,
+      tools,
+      exclude: async () => {
+        throw new Error("install must not touch excludes")
+      },
+      refresh: () => {},
+      branches: async () => {},
+      attach: async () => "p",
+      pick: async () => undefined,
+    }
+
+    const installed = await fix(root, { fix: "installGit" }, deps)
+    expect(installed.install).toEqual({ kind: "git", mode: "terminal", ok: true })
+    expect(installed.result).toMatchObject({ status: "blocked", code: "not_git_repo" })
+    await fix(root, { fix: "downloadLfs" }, deps)
+    expect(calls).toEqual([`install:git:${root}`, "download:lfs"])
+  })
+
+  it("passes fresh through to both tool probes", async () => {
+    const healthy = await repo(await temp("kilo-ready-fresh-"), true)
+    const probe = fake()
+    expect(await check(healthy, { git: ops, trusted: () => true, tools: probe.tools }, true)).toEqual({
+      status: "ready",
+    })
+    expect(probe.calls).toEqual(["git:true", `uses:${path.basename(healthy)}`])
+  })
+})
 
 describe("worktree readiness check", () => {
   it("classifies each folder state from real repositories", async () => {
@@ -338,6 +472,15 @@ describe("worktree readiness fixes", () => {
     expect(out.fixed).toEqual({ result: card, error: expect.stringContaining("home folder") })
     expect(out.calls).toEqual([])
     expect(await Bun.file(path.join(home, ".git", "HEAD")).exists()).toBe(false)
+  })
+
+  it("posts a window-focus trigger and reloads the window when asked", async () => {
+    const root = await temp("kilo-ready-focus-")
+    const setup = wire(root)
+    for (const cb of setup.focus) cb()
+    expect(setup.posts).toContainEqual({ type: "agentManager.readinessFocus" })
+    await handleProjectMessage({ type: "agentManager.reloadWindow" }, setup.wiring.messages)
+    expect(setup.calls.reloads).toBe(1)
   })
 
   it("switches to a project inside the folder and refuses one outside it", async () => {

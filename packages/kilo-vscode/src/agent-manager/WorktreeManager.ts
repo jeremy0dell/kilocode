@@ -12,7 +12,9 @@ import { createHash, randomUUID } from "crypto"
 import { simpleGit, type SimpleGit } from "simple-git"
 import { generateBranchName, sanitizeBranchName } from "./branch-name"
 import { type GitOps, isKiloOwnedSshCommand, nonInteractiveEnv } from "./GitOps"
-import { execWithShellEnv } from "./shell-env"
+import { execWithShellEnv, toolEnvironment } from "./shell-env"
+import { exec } from "../util/process"
+import type { ToolProbe } from "./worktree-install"
 import { execGhRead } from "./gh"
 import { markNoIndex } from "../util/spotlight"
 import { BUDGET, isTimeout } from "./command-budget"
@@ -38,6 +40,37 @@ import { Semaphore } from "./semaphore"
 const TEMP_PREFIX = ".kilo-delete-"
 const RM_OPTS: fs.RmOptions = { recursive: true, force: true, maxRetries: 3, retryDelay: 200 }
 const NO_COMMITS_MESSAGE = "This repository has no commits yet. Create an initial commit before using worktrees."
+
+/** Raw error text for Show details, preferring the child's stderr. */
+function text(error: unknown): string {
+  if (error && typeof error === "object") {
+    const data = error as { stderr?: unknown; message?: unknown }
+    if (typeof data.stderr === "string" && data.stderr.trim()) return data.stderr.trim()
+    if (typeof data.message === "string" && data.message.trim()) return data.message.trim()
+  }
+  return String(error)
+}
+
+/** Whether a probe failure confirms the tool is absent rather than failing for another reason. */
+function absent(error: unknown, detail: string): boolean {
+  if (error && typeof error === "object" && (error as NodeJS.ErrnoException).code === "ENOENT") return true
+  return missingDeveloperTools(detail)
+}
+
+/** First PATH entry that resolves to an executable file. */
+function find(name: string, env: NodeJS.ProcessEnv): Promise<string | undefined> {
+  const dirs = (env.PATH ?? "").split(path.delimiter).filter(Boolean)
+  const next = (index: number): Promise<string | undefined> => {
+    const dir = dirs[index]
+    if (dir === undefined) return Promise.resolve(undefined)
+    const file = path.join(dir, name)
+    return fs.promises.access(file, fs.constants.X_OK).then(
+      () => fs.promises.realpath(file),
+      () => next(index + 1),
+    )
+  }
+  return next(0)
+}
 
 function directory(branch: string): string {
   // Keep ordinary directory names, but isolate refs that need filesystem escaping.
@@ -158,11 +191,13 @@ export class WorktreeManager {
     binary?: string,
     poolSize: number | (() => number) = 1,
     home?: string,
+    options?: { platform?: NodeJS.Platform },
   ) {
     this.root = root
     this.dir = path.join(root, KILO_DIR, "worktrees")
     this.ops = ops
     this.binary = binary ?? ops?.path ?? "git"
+    this.platform = options?.platform ?? process.platform
     this.git = this.client(root)
     this.log = log
     this.pool = new WorktreePool({
@@ -204,9 +239,11 @@ export class WorktreeManager {
   private gitAvailable = false
   private probeFailed = false
   private lfsAvailable: boolean | undefined
+  private lfsDetail: string | undefined
   /** When the last negative git-lfs probe ran, so a later install is picked up. */
   private lfsProbed = 0
   private static readonly LFS_PROBE_TTL = 300_000
+  private readonly platform: NodeJS.Platform
 
   /** Repository root this manager operates on. */
   get repo(): string {
@@ -367,27 +404,124 @@ export class WorktreeManager {
     })
   }
 
-  private async ensureGitAvailable(): Promise<void> {
-    if (this.gitAvailable) return
-    try {
-      // Bounded: an unbounded probe turns a wedged git into a hang with no error to report.
-      await execWithShellEnv(this.binary, ["--version"], { timeout: BUDGET.probe })
-      this.gitAvailable = true
-      this.probeFailed = false
-    } catch (error) {
-      this.gitAvailable = false
-      if (error instanceof Error && "code" in error && (error as NodeJS.ErrnoException).code === "ENOENT") {
-        // The probe runs without a cwd, so ENOENT here can only mean the binary is missing.
-        this.probeFailed = true
-        throw new Error(MISSING_GIT)
+  /**
+   * Probe the selected Git executable, recomputing `probeFailed` every time.
+   * On macOS, an Apple `/usr/bin/git` shim is guarded with a side-effect-free
+   * `xcode-select -p` before any git execution, so probing can never open
+   * Apple's install dialog unprompted. `fresh` bypasses the cached success and
+   * refreshes the login-shell PATH.
+   */
+  async probeGit(fresh = false, guarded = false): Promise<ToolProbe> {
+    const env = fresh ? await toolEnvironment(true) : undefined
+    if (!guarded) {
+      const guard = await this.guardApple(env)
+      if (guard && !guard.ok) {
+        this.gitAvailable = false
+        this.probeFailed = guard.missing
+        return { ok: false, code: guard.missing ? "missing" : "unknown", detail: guard.detail }
       }
-      if (error instanceof Error && missingDeveloperTools(error.message)) {
-        // Apple's /usr/bin/git shim exits 1 with this output when the Command Line Tools are missing.
-        this.probeFailed = true
-        throw new Error(MISSING_GIT)
-      }
-      throw error
     }
+    if (!fresh && this.gitAvailable) return { ok: true }
+    this.gitAvailable = false
+    this.probeFailed = false
+    try {
+      await execWithShellEnv(this.binary, ["--version"], {
+        timeout: BUDGET.probe,
+        ...(env ? { env } : {}),
+      })
+      this.gitAvailable = true
+      return { ok: true }
+    } catch (error) {
+      const detail = text(error)
+      if (absent(error, detail)) {
+        this.probeFailed = true
+        return { ok: false, code: "missing", detail }
+      }
+      return { ok: false, code: "unknown", detail }
+    }
+  }
+
+  /**
+   * Probe git-lfs. `fresh` bypasses the positive flag and the negative TTL, and
+   * refreshes the login-shell PATH first. Only git's own "not a git command"
+   * diagnosis counts as confirmed absence; timeouts, missing cwd and permission
+   * errors stay raw and non-blocking.
+   */
+  async probeLfs(fresh = false, root = this.root): Promise<ToolProbe> {
+    if (!fresh && this.lfsAvailable === true) return { ok: true }
+    if (!fresh && this.lfsAvailable === false && Date.now() - this.lfsProbed < WorktreeManager.LFS_PROBE_TTL) {
+      return { ok: false, code: "missing", detail: this.lfsDetail ?? "git-lfs is not installed." }
+    }
+    const env = fresh ? await toolEnvironment(true) : undefined
+    try {
+      await execWithShellEnv(this.binary, ["lfs", "version"], {
+        cwd: root,
+        timeout: BUDGET.probe,
+        ...(env ? { env } : {}),
+      })
+      this.lfsAvailable = true
+      this.lfsDetail = undefined
+      return { ok: true }
+    } catch (error) {
+      const detail = text(error)
+      this.lfsAvailable = false
+      this.lfsProbed = Date.now()
+      this.lfsDetail = detail
+      if (/is not a git command/i.test(detail)) return { ok: false, code: "missing", detail }
+      return { ok: false, code: "unknown", detail }
+    }
+  }
+
+  /** True when the selected executable is Apple's /usr/bin/git launcher. */
+  private async appleShim(env?: NodeJS.ProcessEnv): Promise<boolean> {
+    if (this.platform !== "darwin") return false
+    const source = env ?? process.env
+    const file = path.isAbsolute(this.binary) ? this.binary : await find(this.binary, source)
+    if (!file) return false
+    const real = await fs.promises.realpath(file).catch(() => undefined)
+    return real === "/usr/bin/git"
+  }
+
+  /** The Apple shim guard, or undefined when the selected Git is not Apple's shim. */
+  private async guardApple(
+    env?: NodeJS.ProcessEnv,
+  ): Promise<{ ok: boolean; missing: boolean; detail: string } | undefined> {
+    if (!(await this.appleShim(env))) return undefined
+    return await this.developerTools(env)
+  }
+
+  /** Side-effect-free check for Command Line Tools; exit 2 means they are absent. */
+  private async developerTools(env?: NodeJS.ProcessEnv): Promise<{ ok: boolean; missing: boolean; detail: string }> {
+    const result = await exec("xcode-select", ["-p"], {
+      timeout: BUDGET.probe,
+      ...(env ? { env } : {}),
+    }).then(
+      (out) => ({ code: 0, detail: out.stdout.trim() }),
+      (error: unknown) => {
+        const data = error as { code?: unknown; stderr?: unknown }
+        return {
+          code: data.code,
+          detail: typeof data.stderr === "string" && data.stderr.trim() ? data.stderr.trim() : text(error),
+        }
+      },
+    )
+    if (result.code === 0) return { ok: true, missing: false, detail: result.detail }
+    return { ok: false, missing: result.code === 2, detail: result.detail }
+  }
+
+  private async ensureGitAvailable(): Promise<void> {
+    // Always guard an Apple shim here, even when a previous probe cached success:
+    // this is the execution boundary the modal's branch request reaches.
+    const guard = await this.guardApple()
+    if (guard && !guard.ok) {
+      this.gitAvailable = false
+      this.probeFailed = guard.missing
+      throw new Error(guard.missing ? MISSING_GIT : guard.detail)
+    }
+    const probe = await this.probeGit(false, guard !== undefined)
+    if (probe.ok) return
+    if (probe.code === "missing") throw new Error(MISSING_GIT)
+    throw new Error(probe.detail)
   }
 
   private async ensureCommit(): Promise<void> {
@@ -1353,14 +1487,14 @@ export class WorktreeManager {
     return defaults
   }
 
-  async repoUsesLfs(): Promise<boolean> {
+  async repoUsesLfs(root = this.root): Promise<boolean> {
     // Check .git/lfs/ directory
-    const gitDir = await resolveGitDir(this.root)
+    const gitDir = await resolveGitDir(root)
     if (fs.existsSync(path.join(gitDir, "lfs"))) return true
 
     // Check .gitattributes
     try {
-      const attributes = await fs.promises.readFile(path.join(this.root, ".gitattributes"), "utf-8")
+      const attributes = await fs.promises.readFile(path.join(root, ".gitattributes"), "utf-8")
       if (attributes.includes("filter=lfs")) return true
     } catch (e) {
       this.log(`repoUsesLfs: failed to read .gitattributes: ${e}`)
@@ -1377,20 +1511,8 @@ export class WorktreeManager {
     return false
   }
 
-  async checkLfsAvailable(): Promise<boolean> {
-    if (this.lfsAvailable) return true
-    // A negative verdict expires: installing git-lfs mid-session used to require a window reload.
-    if (this.lfsAvailable === false && Date.now() - this.lfsProbed < WorktreeManager.LFS_PROBE_TTL) return false
-    try {
-      await execWithShellEnv(this.binary, ["lfs", "version"], { cwd: this.root, timeout: BUDGET.probe })
-      this.lfsAvailable = true
-      return true
-    } catch {
-      this.lfsAvailable = false
-      this.lfsProbed = Date.now()
-      // git-lfs not installed
-      return false
-    }
+  async checkLfsAvailable(fresh = false): Promise<boolean> {
+    return (await this.probeLfs(fresh)).ok
   }
 
   async currentBranch(): Promise<string> {
@@ -1477,6 +1599,9 @@ export class WorktreeManager {
   // ---------------------------------------------------------------------------
 
   async listBranches(): Promise<{ branches: BranchListItem[]; defaultBranch: string }> {
+    // The modal's branch request is the first git work a dialog can trigger, so
+    // the Apple shim guard must run here before any git execution.
+    await this.ensureGitAvailable()
     const defBranch = await this.defaultBranch()
     const raw = await this.git.raw([
       "for-each-ref",

@@ -65,6 +65,7 @@ import { validBranch } from "./new-worktree-branch"
 import { sanitizeBranchName } from "../../src/shared/branch-slug"
 import { shouldComposeGoal, submitPayload } from "./new-worktree-command"
 import { createReadiness } from "./worktree-readiness"
+import { markReopen } from "./new-worktree-reopen"
 import { ReadinessCard } from "./ReadinessCard"
 import {
   draftValues,
@@ -225,7 +226,31 @@ export const NewWorktreeDialog: Component<{
   }
   const readiness = createReadiness({ project, entry: "modal" })
   // A readiness fix changes the project on disk: hold the project choice still until it finishes.
-  const busy = () => readiness.state().status === "fixing"
+  const busy = () => {
+    const status = readiness.state().status
+    return status === "fixing" || status === "installing"
+  }
+  const recheck = () => {
+    const state = readiness.state()
+    const tool =
+      state.status === "installing" ||
+      state.status === "stale" ||
+      (state.status === "blocked" && (state.result.code === "git_not_found" || state.result.code === "lfs_missing"))
+    void readiness.check(tool)
+  }
+  const blockedTooltip = () => {
+    const state = readiness.state()
+    if (state.status === "stale") return t("agentManager.readiness.install.reload")
+    if (state.status === "installing")
+      return t("agentManager.readiness.install.terminal.title", {
+        tool: state.fix === "installGit" ? "Git" : "Git LFS",
+      })
+    if (state.status === "blocked" || state.status === "fixing") {
+      if (state.result.code === "git_not_found") return t("agentManager.readiness.blockedGit")
+      if (state.result.code === "lfs_missing") return t("agentManager.readiness.blockedLfs")
+    }
+    return t("agentManager.readiness.blocked")
+  }
   // Create stays focusable while blocked so its tooltip works on hover and keyboard focus.
   const blocked = () => (readiness.blocked() ? true : undefined)
   let card: HTMLDivElement | undefined
@@ -1252,7 +1277,11 @@ export const NewWorktreeDialog: Component<{
               onFix={(fix, identity) => void recover(readiness.fix(fix, identity ? { identity } : {}))}
               onProject={(root) => void recover(readiness.fix("useProject", { target: root }))}
               onFolder={() => void recover(readiness.fix("pickFolder"))}
-              onCheck={() => void readiness.check()}
+              onCheck={recheck}
+              onReload={() => {
+                vscode.setState(markReopen(vscode.getState<Record<string, unknown>>() ?? {}))
+                vscode.postMessage({ type: "agentManager.reloadWindow" })
+              }}
             />
           </div>
           {/* Footer: run options on the left, the action on the right. Always visible. */}
@@ -1360,7 +1389,7 @@ export const NewWorktreeDialog: Component<{
                 </DeferredPopover>
               </div>
             </Show>
-            <Tooltip value={t("agentManager.readiness.blocked")} inactive={!readiness.blocked()} placement="top">
+            <Tooltip value={blockedTooltip()} inactive={!readiness.blocked()} placement="top">
               <Button
                 ref={button}
                 variant="primary"

@@ -11,6 +11,9 @@ import * as path from "node:path"
 import type { Session } from "@kilocode/sdk/v2/client"
 import type { Host, PanelContext, OutputHandle, SessionProvider, Disposable } from "./host"
 import type { PRMergeMethod } from "./types"
+import type { InstallCommand } from "./worktree-install"
+import { executeVscodeTask } from "./task-runner"
+import { exec } from "../util/process"
 import { ProjectRouteService } from "./project/route"
 import { repoName, validateCloneUrl } from "./project/clone"
 import { samePath } from "./project/paths"
@@ -29,6 +32,8 @@ import type { CaffeinationService } from "../services/caffeination"
 
 const INTRO_KEY = "kilo.agentManager.introDismissed"
 const PR_MERGE_METHODS_KEY = "agentManager.prMergeMethod"
+/** Installing a package can exceed the setup script's five-minute budget. */
+const INSTALL_TIMEOUT = 30 * 60 * 1000
 
 export class VscodeHost implements Host {
   private diffVirtual: DiffVirtualProvider | undefined
@@ -567,6 +572,37 @@ export class VscodeHost implements Host {
 
   refreshGit(): void {
     void vscode.commands.executeCommand("git.refresh")
+  }
+
+  async runInstall(name: string, command: InstallCommand): Promise<number | undefined> {
+    if (command.mode === "launcher") {
+      return await exec(command.command, command.args, {
+        cwd: command.cwd,
+        env: command.env,
+        timeout: 60_000,
+      }).then(
+        () => 0,
+        (error: unknown) => {
+          const code = (error as NodeJS.ErrnoException | undefined)?.code
+          if (typeof code === "number") return code
+          throw error
+        },
+      )
+    }
+    return await executeVscodeTask(
+      { command: command.command, args: command.args, cwd: command.cwd, env: command.env },
+      { timeout: INSTALL_TIMEOUT, name },
+    )
+  }
+
+  onWindowFocus(cb: () => void): Disposable {
+    return vscode.window.onDidChangeWindowState((state) => {
+      if (state.focused) cb()
+    })
+  }
+
+  reloadWindow(): void {
+    void vscode.commands.executeCommand("workbench.action.reloadWindow")
   }
 
   dispose(): void {}

@@ -27,6 +27,11 @@ const FALLBACK_TTL = 10_000
 /** In-flight fix promise so concurrent ENOENT callers wait on the same resolution. */
 let fixing: Promise<boolean> | null = null
 let fixed = false
+/** In-flight production refresh, shared by every missing-tool re-check. */
+let refreshing: Promise<void> | null = null
+/** When the last production refresh ran, so one fresh check spawns one shell. */
+let refreshedAt = 0
+const REFRESH_MS = 1_000
 
 /**
  * Parse `env` output, handling multiline variable values correctly.
@@ -170,6 +175,40 @@ export async function execWithShellEnv(
   }
 }
 
+/**
+ * Refresh the login-shell environment outside an ENOENT retry, then patch
+ * process.env.PATH on POSIX. Coalesced so an install end and a window return
+ * share one shell spawn.
+ *
+ * Windows has no login shell to re-resolve, so this is a no-op there: the
+ * extension host's PATH cannot be refreshed and a Reload is the only fix.
+ */
+export async function refreshShellEnv(): Promise<void> {
+  if (process.platform === "win32") return
+  if (refreshing) return refreshing
+  if (Date.now() - refreshedAt < REFRESH_MS) return
+  refreshing = (async () => {
+    cached = null
+    cacheTime = 0
+    wasFallback = false
+    await resolvePath()
+  })().finally(() => {
+    refreshedAt = Date.now()
+    refreshing = null
+  })
+  return refreshing
+}
+
+/**
+ * The explicit environment for a probe or install. `fresh` refreshes the
+ * login shell first; otherwise the cached login environment is merged in
+ * without spawning a new shell.
+ */
+export async function toolEnvironment(fresh = false): Promise<NodeJS.ProcessEnv> {
+  if (fresh) await refreshShellEnv()
+  return { ...process.env, ...(await getShellEnvironment()) }
+}
+
 /** Clear the cached environment (for tests). */
 export function clearShellEnvCache(): void {
   cached = null
@@ -177,4 +216,6 @@ export function clearShellEnvCache(): void {
   wasFallback = false
   fixing = null
   fixed = false
+  refreshing = null
+  refreshedAt = 0
 }

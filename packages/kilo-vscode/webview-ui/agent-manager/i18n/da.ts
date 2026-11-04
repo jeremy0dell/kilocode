@@ -592,4 +592,28 @@ export const dict = {
   "agentManager.readiness.working.initialCommit": "Opretter første commit…",
   "agentManager.readiness.working.project": "Åbner projektet…",
   "agentManager.readiness.blocked": "Ret problemet ovenfor for at oprette et worktree.",
+  "agentManager.readiness.blockedGit": "Installer Git først. Du kan fortsætte med at skrive opgaven.",
+  "agentManager.readiness.blockedLfs": "Installer Git LFS først. Du kan fortsætte med at skrive opgaven.",
+  "agentManager.readiness.git.title": "Kilo skal bruge Git til at oprette worktrees",
+  "agentManager.readiness.git.body":
+    "Git er ikke installeret på denne computer endnu. Installer det, og vend tilbage til dette vindue. Din opgave bliver her.",
+  "agentManager.readiness.git.bodyMac":
+    "Git er ikke installeret på denne Mac endnu. Installer det, og vend tilbage til dette vindue. Din opgave bliver her.",
+  "agentManager.readiness.lfs.title": "{{name}} skal bruge Git LFS",
+  "agentManager.readiness.lfs.body":
+    "Dette projekt gemmer nogle store filer i Git LFS, som ikke er installeret endnu. Installer det, og vend tilbage til dette vindue. Din opgave bliver her.",
+  "agentManager.readiness.tool.install": "Installer {{tool}}",
+  "agentManager.readiness.tool.get": "Hent {{tool}}",
+  "agentManager.readiness.tool.other": "Andre måder at installere",
+  "agentManager.readiness.install.apple.title": "Fuldfør installationen i Apples vindue",
+  "agentManager.readiness.install.apple.body": "Kilo tjekker igen, når du vender tilbage til dette vindue.",
+  "agentManager.readiness.install.terminal.title": "Installerer {{tool}}…",
+  "agentManager.readiness.install.terminal.body":
+    "Det kører i terminalen nedenfor. Kilo tjekker igen, når det er færdigt.",
+  "agentManager.readiness.install.stale.title": "{{tool}} er installeret, men VS Code kan ikke se det endnu",
+  "agentManager.readiness.install.stale.body":
+    "Genindlæsning af vinduet løser det som regel. Din opgave vender tilbage efter genindlæsningen.",
+  "agentManager.readiness.install.reload": "Genindlæs vindue",
+  "agentManager.readiness.ready.git": "Git er klar.",
+  "agentManager.readiness.ready.lfs": "Git LFS er klar.",
 }
