@@ -72,10 +72,10 @@ import {
   restoreProject,
   writeAllocations,
   writeDraft,
+  type VersionCount,
   type WorktreeDraft,
 } from "./new-worktree-draft"
 
-type VersionCount = 1 | 2 | 3 | 4
 const VERSION_OPTIONS: VersionCount[] = [1, 2, 3, 4]
 // Local dialog actions offered by the prompt slash menu. Server commands
 // (custom commands, skills, MCP prompts, /goal) are always offered; the
@@ -213,10 +213,9 @@ export const NewWorktreeDialog: Component<{
   const draft = readCached(cached)
   const init = draftValues(draft)
   const projects = () => props.projects?.() ?? []
+  const fallback = props.projectId ?? props.activeProjectId
   // A saved project that no longer exists falls back to today's default; never pick another one.
-  const [project, setProject] = createSignal(
-    restoreProject(draft, projects(), props.projectId ?? props.activeProjectId),
-  )
+  const [project, setProject] = createSignal(restoreProject(draft, projects(), fallback))
   const [projectOpen, setProjectOpen] = createSignal(false)
   const showProject = () => projects().length > 0
   let submitted = false
@@ -408,7 +407,7 @@ export const NewWorktreeDialog: Component<{
     // A submitted draft must stay gone: never write it back while closing.
     if (submitted) return
     persistDraft({
-      project: project(),
+      project: project() === fallback ? undefined : project(),
       name: name(),
       branch: branchName(),
       versions: versions(),

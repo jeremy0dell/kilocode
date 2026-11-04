@@ -7,17 +7,17 @@ Object.defineProperty(window, "origin", { value: window.location.origin })
 const sent: WebviewMessage[] = []
 const model = { providerID: "kilo", modelID: "m1" }
 const image = { id: "img", filename: "shot.png", mime: "image/png", dataUrl: "data:image/png;base64,AAAA" }
-const caseName = process.env.DRAFT_CASE ?? "roundtrip"
+const scenario = process.env.DRAFT_CASE ?? "roundtrip"
 const state: Record<string, unknown> = {}
-if (caseName === "roundtrip") {
+if (scenario === "roundtrip") {
   state.advancedDialogImages = [image]
   state.advancedDialogSelections = { model }
 }
-if (caseName === "missing") {
+if (scenario === "missing") {
   state.advancedDialogDraft = { project: "gone", name: "carried" }
   state.advancedDialogSelections = { model }
 }
-if (caseName === "catalog") {
+if (scenario === "catalog") {
   state.advancedDialogSelections = { model }
   state.advancedDialogDraft = {
     compare: true,
@@ -104,12 +104,13 @@ const config = {
   discardConfig: () => {},
 }
 const language = { locale: () => "en", setLocale: () => {}, userOverride: () => "", t: (key: string) => key }
+const [active, setActive] = createSignal("p1")
 const project = (id: string) => ({
   id,
   root: `/${id}`,
   label: id,
   pinned: id === "p1",
-  active: id === "p1",
+  active: id === active(),
   expanded: true,
   initialized: true,
   missing: false,
@@ -127,8 +128,8 @@ const Opener = () => {
         <NewWorktreeDialog
           closing={closing}
           mode={createModeRouter()}
-          projectId="p1"
-          activeProjectId="p1"
+          projectId={active()}
+          activeProjectId={active()}
           projects={projects}
           onClose={() => {
             closes.value++
@@ -290,12 +291,13 @@ const mount = async () => {
   setOpen(true)
   await settle()
   // Mounting checks the selected project once.
+  assert.equal(checks().length, 1)
   const check = checks().at(0)
   assert.ok(check, "missing mount readiness check")
   return check.requestID
 }
 
-if (caseName === "roundtrip") {
+if (scenario === "roundtrip") {
   await loadAgents()
   await loadModels()
   const id = await mount()
@@ -363,14 +365,40 @@ if (caseName === "roundtrip") {
   await close()
 }
 
-if (caseName === "missing") {
+if (scenario === "missing") {
   await loadAgents()
   await loadModels()
   const id = await mount()
   assert.equal(checks().at(0)?.projectId, "p1", "a missing saved project must not be checked")
   assert.equal(document.querySelector<HTMLElement>(".am-nv-origin-project")?.textContent?.trim(), "p1")
   assert.equal(document.querySelector<HTMLInputElement>(".am-nv-name-input")?.value, "carried")
-  await reply("p1", id, { status: "ready" })
+
+  // A blocked submit keeps the draft.
+  const blocked: Readiness = {
+    status: "blocked",
+    code: "not_git_repo",
+    name: "scratch",
+    trusted: true,
+    identity: true,
+  }
+  await reply("p1", id, blocked)
+  submit().click()
+  await settle()
+  assert.equal(creates().length, 0)
+  assert.equal((state.advancedDialogDraft as { name?: string }).name, "carried")
+  assert.equal(
+    (state.advancedDialogDraft as { project?: string }).project,
+    undefined,
+    "the default project must not be persisted",
+  )
+
+  const again = Array.from(document.querySelectorAll<HTMLButtonElement>(".am-readiness button")).find(
+    (item) => item.textContent === "agentManager.readiness.check",
+  )
+  assert.ok(again)
+  again.click()
+  await settle()
+  await reply("p1", checks().at(-1)!.requestID, { status: "ready" })
 
   fill(".am-nv-branch-input", "feat/submitted")
   fill(".am-prompt-input", "do not resurrect me")
@@ -379,6 +407,14 @@ if (caseName === "missing") {
   await settle()
   assert.equal(creates().length, 1)
   assert.equal(state.advancedDialogDraft, undefined, "a dispatch must clear the persisted draft")
+
+  // A late edit during the close transition must not write the draft back.
+  const late = document.querySelector<HTMLInputElement>(".am-nv-name-input")
+  assert.ok(late, "dialog content must remain mounted during the exit transition")
+  late.value = "resurrected"
+  late.dispatchEvent(new window.Event("input", { bubbles: true }) as never)
+  await settle()
+  assert.equal(state.advancedDialogDraft, undefined, "a submitted draft must not be resurrected")
   await close()
 
   await mount()
@@ -397,7 +433,25 @@ if (caseName === "missing") {
   await close()
 }
 
-if (caseName === "catalog") {
+if (scenario === "sticky") {
+  await loadAgents()
+  await loadModels()
+  const first = await mount()
+  assert.equal(checks().at(0)?.projectId, "p1")
+  assert.equal(document.querySelector<HTMLElement>(".am-nv-origin-project")?.textContent?.trim(), "p1")
+  await reply("p1", first, { status: "ready" })
+  await close()
+
+  // An untouched draft must not pin the dialog to the project it was opened on.
+  setActive("p2")
+  const second = await mount()
+  assert.equal(checks().at(0)?.projectId, "p2")
+  assert.equal(document.querySelector<HTMLElement>(".am-nv-origin-project")?.textContent?.trim(), "p2")
+  await reply("p2", second, { status: "ready" })
+  await close()
+}
+
+if (scenario === "catalog") {
   await loadAgents()
   const id = await mount()
   assert.equal(checks().at(0)?.projectId, "p1")

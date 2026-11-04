@@ -8,6 +8,12 @@ it(
 )
 
 it(
+  "follows the active project when the untouched draft was never changed",
+  () => fixture("new-worktree-draft", { DRAFT_CASE: "sticky" }),
+  60_000,
+)
+
+it(
   "does not substitute a missing saved project and does not resurrect a submitted draft",
   () => fixture("new-worktree-draft", { DRAFT_CASE: "missing" }),
   60_000,
