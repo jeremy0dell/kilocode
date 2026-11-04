@@ -399,15 +399,13 @@ export class WorktreeManager {
    * Apple's install dialog unprompted. `fresh` bypasses the cached success and
    * refreshes the login-shell PATH.
    */
-  async probeGit(fresh = false, guarded = false, verify = false): Promise<ToolProbe> {
+  async probeGit(fresh = false, verify = false): Promise<ToolProbe> {
     const env = fresh ? await toolEnvironment(true) : undefined
-    if (!guarded) {
-      const guard = await this.guardApple(env)
-      if (guard) {
-        this.gitAvailable = false
-        this.probeFailed = guard.missing
-        return { ok: false, code: guard.missing ? "missing" : "unknown", detail: guard.detail }
-      }
+    const guard = await this.guardApple(env)
+    if (guard) {
+      this.gitAvailable = false
+      this.probeFailed = guard.missing
+      return { ok: false, code: guard.missing ? "missing" : "unknown", detail: guard.detail }
     }
     if (!fresh && !verify && this.gitAvailable) return { ok: true }
     this.gitAvailable = false
@@ -435,7 +433,7 @@ export class WorktreeManager {
    * diagnosis counts as confirmed absence; timeouts, missing cwd and permission
    * errors stay raw and non-blocking.
    */
-  async probeLfs(fresh = false, _root = this.root, verify = false): Promise<ToolProbe> {
+  async probeLfs(fresh = false, verify = false): Promise<ToolProbe> {
     if (!fresh && !verify && this.lfsAvailable === true) return { ok: true }
     if (
       !fresh &&
@@ -494,19 +492,10 @@ export class WorktreeManager {
   }
 
   private async ensureGitAvailable(): Promise<void> {
-    // Always guard an Apple shim here, even when a previous probe cached success:
-    // this is the execution boundary the modal's branch request reaches.
-    const guard = await this.guardApple()
-    if (guard) {
-      this.gitAvailable = false
-      this.probeFailed = guard.missing
-      throw new Error(guard.missing ? MISSING_GIT : guard.detail)
-    }
-    // Creation's own check re-probes; a cached positive must not survive an uninstall.
-    const probe = await this.probeGit(false, true, true)
+    // Creation re-probes; probeGit guards before any git execution and never trusts a cached positive.
+    const probe = await this.probeGit(false, true)
     if (probe.ok) return
-    if (probe.code === "missing") throw new Error(MISSING_GIT)
-    throw new Error(probe.detail)
+    throw new Error(probe.code === "missing" ? MISSING_GIT : probe.detail)
   }
 
   private async ensureCommit(): Promise<void> {
@@ -1496,9 +1485,9 @@ export class WorktreeManager {
     return false
   }
 
-  async checkLfsAvailable(fresh = false): Promise<boolean> {
+  async checkLfsAvailable(): Promise<boolean> {
     // Creation re-probes; a cached positive must not survive an uninstall.
-    return (await this.probeLfs(fresh, this.root, true)).ok
+    return (await this.probeLfs(false, true)).ok
   }
 
   async currentBranch(): Promise<string> {

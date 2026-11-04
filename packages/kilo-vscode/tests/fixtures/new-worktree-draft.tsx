@@ -191,7 +191,7 @@ if (scenario === "missing") {
   await settle()
   const verify = checks().at(-1)!
   assert.equal(verify.verify, true)
-  await reply("p1", verify.requestID, { status: "ready" })
+  await reply("p2", verify.requestID, { status: "ready" })
   await settle()
   assert.equal(creates().length, 1)
   assert.equal(state.advancedDialogDraft, undefined, "a dispatch must clear the persisted draft")

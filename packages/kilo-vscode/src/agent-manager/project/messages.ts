@@ -75,11 +75,11 @@ export interface ProjectMessageDeps {
   /** Post a project's branch list. */
   branches: (ctx: ProjectContext) => Promise<void>
   /** Run a terminal install task; resolves its exit code, or undefined when stopped. */
-  install?: (name: string, command: import("../worktree-install").InstallCommand) => Promise<number | undefined>
+  install: (name: string, command: import("../worktree-install").InstallCommand) => Promise<number | undefined>
   /** Open a download page in the user's browser. */
-  openExternal?: (url: string) => void
+  openExternal: (url: string) => void
   /** Reload the VS Code window. */
-  reloadWindow?: () => void
+  reloadWindow: () => void
   git?: GitOps
   log: (...args: unknown[]) => void
 }
@@ -347,7 +347,7 @@ async function register(
 /** Readiness checks and the one window command this channel owns. */
 async function local(m: AgentManagerInMessage, deps: ProjectMessageDeps): Promise<boolean> {
   if (m.type === "agentManager.reloadWindow") {
-    deps.reloadWindow?.()
+    deps.reloadWindow()
     return true
   }
   if (m.type !== "agentManager.checkReadiness" && m.type !== "agentManager.fixReadiness") return false
@@ -363,26 +363,21 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
   if (!ctx) return reply({ result: { status: "unknown", detail: "The project is unavailable." } })
   const git = deps.git ?? new GitOps({ log: deps.log })
   const manager = ctx.worktreeManager()
-  const install = deps.install
-  const open = deps.openExternal
   const tools: ReadinessTools = {
-    git: (fresh, verify) => manager.probeGit(fresh, false, verify),
+    git: (fresh, verify) => manager.probeGit(fresh, verify),
     usesLfs: (root) => manager.repoUsesLfs(root),
-    lfs: (root, fresh, verify) => manager.probeLfs(fresh, root, verify),
+    lfs: (_root, fresh, verify) => manager.probeLfs(fresh, verify),
     installer: async (kind) => detectInstaller(kind, process.platform, await toolEnvironment()),
     install: async (kind, root) =>
       installTool(kind, root, {
         platform: process.platform,
         env: await toolEnvironment(true),
         git: manager.binary,
-        run: async (name, command) => {
-          if (!install) throw new Error("Installing tools is unavailable.")
-          return install(name, command)
-        },
-        open: (url) => open?.(url),
-        probe: (kind, fresh) => (kind === "git" ? manager.probeGit(fresh) : manager.probeLfs(fresh, root)),
+        run: deps.install,
+        open: deps.openExternal,
+        probe: (kind, fresh) => (kind === "git" ? manager.probeGit(fresh) : manager.probeLfs(fresh)),
       }),
-    download: (kind) => open?.(DOWNLOAD[kind]),
+    download: (kind) => deps.openExternal(DOWNLOAD[kind]),
   }
   const base = { git, trusted: () => deps.onboarding.isTrusted(), tools }
   try {

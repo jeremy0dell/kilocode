@@ -51,7 +51,7 @@ export interface ReadinessTools {
 export interface ReadinessDeps {
   git: Git
   trusted: () => boolean
-  tools?: ReadinessTools
+  tools: ReadinessTools
   /** Injected for platform-specific probes in tests. */
   platform?: NodeJS.Platform
 }
@@ -113,10 +113,8 @@ async function probe(root: string, deps: ReadinessDeps, fresh = false, verify = 
 }
 
 async function inspect(root: string, deps: ReadinessDeps, fresh: boolean, verify: boolean): Promise<Readiness> {
-  if (deps.tools) {
-    const git = await deps.tools.git(fresh, verify)
-    if (!git.ok) return missing("git", git, root, deps)
-  }
+  const git = await deps.tools.git(fresh, verify)
+  if (!git.ok) return missing("git", git, root, deps)
   // Repository and commits.
   const state = await prepare.inspect(root, deps.git)
   if (isRestrictedRoot(state.root ?? root)) {
@@ -138,7 +136,7 @@ async function inspect(root: string, deps: ReadinessDeps, fresh: boolean, verify
       identity: await prepare.identity(state.root, deps.git),
     }
   }
-  if (deps.tools && (await deps.tools.usesLfs(state.root))) {
+  if (await deps.tools.usesLfs(state.root)) {
     const lfs = await deps.tools.lfs(state.root, fresh, verify)
     if (!lfs.ok) return missing("lfs", lfs, state.root, deps)
   }
@@ -159,7 +157,7 @@ async function missing(
     name: path.basename(root),
     trusted: deps.trusted(),
     platform: deps.platform ?? process.platform,
-    installer: await deps.tools?.installer(kind),
+    installer: await deps.tools.installer(kind),
   }
 }
 
@@ -243,13 +241,11 @@ async function external(
   deps: FixDeps,
 ): Promise<Applied | undefined> {
   if (request.fix === "downloadGit" || request.fix === "downloadLfs") {
-    if (!deps.tools) throw new Error("Opening the download page is unavailable.")
     deps.tools.download(request.fix === "downloadGit" ? "git" : "lfs")
     return { root }
   }
   if (request.fix !== "installGit" && request.fix !== "installLfs") return undefined
   trust(deps)
-  if (!deps.tools) throw new Error("Installing tools is unavailable.")
   return { root, install: await deps.tools.install(request.fix === "installGit" ? "git" : "lfs", root) }
 }
 

@@ -152,6 +152,15 @@ function wire(root: string, trusted = true) {
   return { posts, calls, focus, wiring, id, send }
 }
 
+const present: ReadinessTools = {
+  git: async () => ({ ok: true }),
+  usesLfs: async () => false,
+  lfs: async () => ({ ok: true }),
+  installer: async () => undefined,
+  install: async () => ({ kind: "git", mode: "external", ok: false }),
+  download: () => {},
+}
+
 const identity = { name: "Ada Lovelace", email: "ada@example.com" }
 
 describe("worktree readiness tool checks", () => {
@@ -206,7 +215,6 @@ describe("worktree readiness tool checks", () => {
 
   it("checks Git LFS last and only when the repository uses it", async () => {
     const lfsRepo = await repo(await temp("kilo-ready-lfs-"), true)
-    await fs.writeFile(path.join(lfsRepo, ".gitattributes"), "*.bin filter=lfs diff=lfs merge=lfs -text\n")
     const used = fake({
       usesLfs: async (root) => {
         calls.push(`uses:${path.basename(root)}`)
@@ -295,33 +303,6 @@ describe("worktree readiness tool checks", () => {
     await fix(root, { fix: "downloadLfs" }, deps)
     expect(calls).toEqual([`install:git:${root}`, "download:lfs"])
   })
-
-  it("passes verify through without refreshing the environment", async () => {
-    const healthy = await repo(await temp("kilo-ready-verify-"), true)
-    const calls: string[] = []
-    const tools: ReadinessTools = {
-      ...fake().tools,
-      git: async (fresh, verify) => {
-        calls.push(`git:${fresh}:${verify}`)
-        return { ok: true }
-      },
-      usesLfs: async (root) => {
-        calls.push(`uses:${path.basename(root)}`)
-        return false
-      },
-    }
-    expect(await check(healthy, { git: ops, trusted: () => true, tools }, false, true)).toEqual({ status: "ready" })
-    expect(calls).toEqual(["git:false:true", `uses:${path.basename(healthy)}`])
-  })
-
-  it("passes fresh through to both tool probes", async () => {
-    const healthy = await repo(await temp("kilo-ready-fresh-"), true)
-    const probe = fake()
-    expect(await check(healthy, { git: ops, trusted: () => true, tools: probe.tools }, true)).toEqual({
-      status: "ready",
-    })
-    expect(probe.calls).toEqual(["git:true", `uses:${path.basename(healthy)}`])
-  })
 })
 
 describe("worktree readiness check", () => {
@@ -336,7 +317,7 @@ describe("worktree readiness check", () => {
     const broken = await temp("kilo-ready-broken-")
     await fs.mkdir(path.join(broken, ".git"))
 
-    const deps = { git: ops, trusted: () => true }
+    const deps = { git: ops, trusted: () => true, tools: present }
     expect(await check(plain, deps)).toEqual({
       status: "blocked",
       code: "not_git_repo",
@@ -377,7 +358,7 @@ describe("worktree readiness check", () => {
 describe("worktree readiness flight", () => {
   it("coalesces concurrent checks for the same folder", async () => {
     const root = await repo(await temp("kilo-ready-flight-"), true)
-    const deps = { git: ops, trusted: () => true }
+    const deps = { git: ops, trusted: () => true, tools: present }
     const first = check(root, deps)
     const second = check(root, deps)
     expect(second).toBe(first)
@@ -398,7 +379,7 @@ describe("worktree readiness fixes", () => {
     const setup = wire(child)
     await setup.send("initialCommit", { identity })
     expect(Buffer.compare(await fs.readFile(file), before)).toBe(0)
-    expect(await check(child, { git: ops, trusted: () => true })).toMatchObject({
+    expect(await check(child, { git: ops, trusted: () => true, tools: present })).toMatchObject({
       status: "blocked",
       code: "not_git_repo",
       restricted: true,
@@ -532,15 +513,15 @@ describe("worktree readiness fixes", () => {
     const root = await repo(await temp("kilo-ready-route-"), true)
     const calls: string[] = []
     const manager = {
-      probeGit: async (fresh: boolean, guarded: boolean, verify: boolean) => {
+      probeGit: async (fresh: boolean, verify: boolean) => {
         calls.push(`git:${fresh}:${verify}`)
         return { ok: true }
       },
-      probeLfs: async (fresh: boolean, _root: string, verify: boolean) => {
+      probeLfs: async (fresh: boolean, verify: boolean) => {
         calls.push(`lfs:${fresh}:${verify}`)
         return { ok: true }
       },
-      repoUsesLfs: async () => false,
+      repoUsesLfs: async () => true,
     }
     const posts: AgentManagerOutMessage[] = []
     const deps = {
@@ -552,6 +533,9 @@ describe("worktree readiness fixes", () => {
         }),
       },
       onboarding: { isTrusted: () => true },
+      install: async () => 0,
+      openExternal: () => {},
+      reloadWindow: () => {},
       post: (message: AgentManagerOutMessage) => posts.push(message),
       log: () => {},
     } as unknown as ProjectMessageDeps
@@ -560,7 +544,7 @@ describe("worktree readiness fixes", () => {
       { type: "agentManager.checkReadiness", projectId: projectIdFor(root), requestID: "r1", verify: true },
       deps,
     )
-    expect(calls).toEqual(["git:false:true"])
+    expect(calls).toEqual(["git:false:true", "lfs:false:true"])
     expect(posts).toEqual([
       { type: "agentManager.readiness", projectId: projectIdFor(root), requestID: "r1", result: { status: "ready" } },
     ])
@@ -569,7 +553,20 @@ describe("worktree readiness fixes", () => {
       { type: "agentManager.checkReadiness", projectId: projectIdFor(root), requestID: "r2" },
       deps,
     )
-    expect(calls).toEqual(["git:false:true", "git:false:false"])
+    expect(calls).toEqual(["git:false:true", "lfs:false:true", "git:false:false", "lfs:false:false"])
+
+    await handleProjectMessage(
+      { type: "agentManager.checkReadiness", projectId: projectIdFor(root), requestID: "r3", fresh: true },
+      deps,
+    )
+    expect(calls).toEqual([
+      "git:false:true",
+      "lfs:false:true",
+      "git:false:false",
+      "lfs:false:false",
+      "git:true:false",
+      "lfs:true:false",
+    ])
   })
 
   it("posts a window-focus trigger and reloads the window when asked", async () => {
