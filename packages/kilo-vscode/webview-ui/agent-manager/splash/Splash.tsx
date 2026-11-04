@@ -5,7 +5,8 @@ import { WelcomeEmptyState, KiloLogo } from "../../src/components/chat/WelcomeEm
 import { useLanguage } from "../../src/context/language"
 import type { SessionInfo } from "../../src/types/messages"
 import { examples } from "./examples"
-import { Carousel } from "./Carousel"
+import { Cards } from "./Cards"
+import { Compact } from "./Compact"
 import { Preview } from "./Preview"
 import "./splash.css"
 
@@ -84,8 +85,11 @@ export function SplashExpanded(props: {
         <h2 class="am-splash-title" id={title}>
           {t("agentManager.splash.title")}
         </h2>
-        <p class="am-splash-subtitle">{t("agentManager.splash.subtitle")}</p>
-        <Carousel selected={selected} onSelect={select} />
+        {/* Container queries show one subtitle and one picker for the layout mode. */}
+        <p class="am-splash-subtitle am-splash-subtitle-wide">{t("agentManager.splash.subtitle")}</p>
+        <p class="am-splash-subtitle am-splash-subtitle-compact">{t("agentManager.splash.compact.subtitle")}</p>
+        <Cards selected={selected} onSelect={select} />
+        <Compact selected={selected} onSelect={select} />
         <Features selected={selected} onHover={setHover} />
         <div class="am-splash-actions">
           <Show when={props.git} fallback={<p>{t("agentManager.setup.error.not_git_repo")}</p>}>
@@ -109,13 +113,34 @@ export function SplashExpanded(props: {
   )
 }
 
-export function SplashFolded(props: {
+type Welcome = {
   sessions?: () => SessionInfo[]
   onSelectSession?: (id: string) => void
   onShowHistory?: () => void
   hints?: () => JSX.Element
-  onShowExamples: () => void
-}) {
+}
+
+/** The welcome list with the intro's reopen button, shown after a legacy Skip or a splash Hide. */
+export function Reopen(props: Welcome & { onOpen: () => void }) {
+  const { t } = useLanguage()
+  return (
+    <WelcomeEmptyState
+      sessions={props.sessions}
+      onSelectSession={props.onSelectSession}
+      onShowHistory={props.onShowHistory}
+      footer={
+        <>
+          {props.hints?.()}
+          <Button variant="ghost" size="small" icon="help" data-action="agent-manager-intro" onClick={props.onOpen}>
+            {t("agentManager.intro.reopen")}
+          </Button>
+        </>
+      }
+    />
+  )
+}
+
+export function SplashFolded(props: Welcome & { onShowExamples: () => void }) {
   const { t } = useLanguage()
   return (
     <div class="am-splash-folded-layout">

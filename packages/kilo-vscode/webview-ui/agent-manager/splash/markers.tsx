@@ -14,7 +14,9 @@ export function createMarkers(example: Example, hover: Accessor<number | undefin
     return (
       <span
         class="am-splash-row-marker"
-        classList={{ "am-splash-row-marker-hover": hover() === index }}
+        classList={{
+          "am-splash-row-marker-hover": hover() === index,
+        }}
         aria-hidden="true"
       >
         {index + 1}

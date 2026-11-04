@@ -519,6 +519,8 @@ export const dict = {
   "agentManager.intro.reopen": "Як працює Agent Manager",
   "agentManager.splash.preview.label": "Попередній перегляд бічної панелі Agent Manager",
   "agentManager.splash.eyebrow": "AGENT MANAGER",
+  "agentManager.splash.compact.subtitle":
+    "Запускайте завдання паралельно за допомогою worktree, делегуйте роботу та стежте за кожним агентом з одного місця.",
   "agentManager.splash.hide": "Сховати",
   "agentManager.splash.hideLabel": "Сховати ознайомлення з Agent Manager",
   "agentManager.splash.title": "Запряжіть флот агентів Kilo в роботу.",
@@ -527,7 +529,7 @@ export const dict = {
   "agentManager.splash.hint": "або",
   "agentManager.splash.proceed": "продовжте локально в полі повідомлення нижче",
   "agentManager.splash.folded.title": "Запряжіть флот агентів Kilo в роботу",
-  "agentManager.splash.folded.note": "Кросстекові функції, оркестратор, команда експлуатації та багато іншого",
+  "agentManager.splash.folded.note": "Кросстекові функції, делегування, порівняння моделей та багато іншого",
   "agentManager.splash.showExamples": "Показати приклади",
   "agentManager.splash.examples.crossStack.tag": "Мультирепо",
   "agentManager.splash.examples.crossStack.title": "Одна функція, три репо",
@@ -540,55 +542,28 @@ export const dict = {
   "agentManager.splash.examples.crossStack.feature2.text": "Одразу видно, що працює, що завершено, а що чекає на вас.",
   "agentManager.splash.examples.crossStack.feature3.name": "Значки PR і лічильники змін",
   "agentManager.splash.examples.crossStack.feature3.text": "Дізнайтеся, що змінив кожен агент, перш ніж відкрити.",
-  "agentManager.splash.examples.orchestrator.tag": "Оркестратор",
-  "agentManager.splash.examples.orchestrator.title": "Розділіть велике завдання",
-  "agentManager.splash.examples.orchestrator.pitch":
-    "Призначте будь-яку сесію оркестратором, дайте їй набір завдань і дозвольте зібрати команду, потрібну для роботи.",
-  "agentManager.splash.examples.orchestrator.feature1.name": "Сесії, що запускають сесії",
-  "agentManager.splash.examples.orchestrator.feature1.text":
-    "Оркестратор може створювати розділи, worktree та нові сесії.",
-  "agentManager.splash.examples.orchestrator.feature2.name": "Ізольовані worktree",
-  "agentManager.splash.examples.orchestrator.feature2.text":
-    "Кожна робота отримує власну копію, тож нічого не зіткнеться.",
-  "agentManager.splash.examples.orchestrator.feature3.name": "Долучайтеся будь-де",
-  "agentManager.splash.examples.orchestrator.feature3.text":
+  "agentManager.splash.examples.delegate.tag": "Делегування",
+  "agentManager.splash.examples.delegate.title": "Доручіть одній сесії велике завдання",
+  "agentManager.splash.examples.delegate.pitch":
+    "Попросіть одну сесію розділити велике завдання на паралельні сесії, а потім зайдіть у будь-яку з них.",
+  "agentManager.splash.examples.delegate.feature1.name": "Сесії, що запускають сесії",
+  "agentManager.splash.examples.delegate.feature1.text": "Сесія може запускати нові сесії у власних worktree.",
+  "agentManager.splash.examples.delegate.feature2.name": "Ізольовані worktree",
+  "agentManager.splash.examples.delegate.feature2.text": "Кожна робота отримує власну копію, тож нічого не зіткнеться.",
+  "agentManager.splash.examples.delegate.feature3.name": "Долучайтеся будь-де",
+  "agentManager.splash.examples.delegate.feature3.text":
     "Зайдіть у будь-яку запущену сесію або стежте за всією роботою згори.",
-  "agentManager.splash.examples.ops.tag": "Експлуатація",
-  "agentManager.splash.examples.ops.title": "Постійна ops-команда",
-  "agentManager.splash.examples.ops.pitch":
-    "Тримайте довготривалих агентів на чергуванні поруч із сесіями, які створюють код.",
-  "agentManager.splash.examples.ops.feature1.name": "Постійні інструкції",
-  "agentManager.splash.examples.ops.feature1.text": "Дайте сесії роль, що переживе будь-яке окреме завдання.",
-  "agentManager.splash.examples.ops.feature2.name": "Розділи",
-  "agentManager.splash.examples.ops.feature2.text":
-    "Згрупуйте Implement і Ops, щоб кожну команду було легко переглядати.",
-  "agentManager.splash.examples.ops.feature3.name": "Сигнали «потрібна ваша участь»",
-  "agentManager.splash.examples.ops.feature3.text":
-    "Агенти зупиняються й позначають ризиковані рішення, а не проштовхують їх.",
-  "agentManager.splash.examples.versions.tag": "Версії",
-  "agentManager.splash.examples.versions.title": "Із трьох оберіть найкращий",
-  "agentManager.splash.examples.versions.pitch":
+  "agentManager.splash.examples.compare.tag": "Порівняння моделей",
+  "agentManager.splash.examples.compare.title": "Із трьох оберіть найкращий",
+  "agentManager.splash.examples.compare.pitch":
     "Надішліть один запит кільком агентам або моделям і збережіть найкращий результат.",
-  "agentManager.splash.examples.versions.feature1.name": "Запуски кількох версій",
-  "agentManager.splash.examples.versions.feature1.text": "Запустіть одне завдання одразу як кілька версій.",
-  "agentManager.splash.examples.versions.feature2.name": "Змішуйте моделі",
-  "agentManager.splash.examples.versions.feature2.text": "Порівняйте Kilo Auto, Claude і GPT на однаковій роботі.",
-  "agentManager.splash.examples.versions.feature3.name": "Порівняйте й залиште",
-  "agentManager.splash.examples.versions.feature3.text":
+  "agentManager.splash.examples.compare.feature1.name": "Запуски кількох версій",
+  "agentManager.splash.examples.compare.feature1.text": "Запустіть одне завдання одразу як кілька версій.",
+  "agentManager.splash.examples.compare.feature2.name": "Змішуйте моделі",
+  "agentManager.splash.examples.compare.feature2.text": "Порівняйте Kilo Auto, Claude і GPT на однаковій роботі.",
+  "agentManager.splash.examples.compare.feature3.name": "Залиште найкращий",
+  "agentManager.splash.examples.compare.feature3.text":
     "Перегляньте справжні diff поруч, залиште один і відкиньте решту.",
-  "agentManager.splash.examples.beyondCode.tag": "Поза кодом",
-  "agentManager.splash.examples.beyondCode.title": "Створіть матеріали бренду",
-  "agentManager.splash.examples.beyondCode.pitch":
-    "Agent Manager виконує будь-яку роботу, доступну агенту, а не лише зміни коду.",
-  "agentManager.splash.examples.beyondCode.feature1.name": "Паралельні чернетки",
-  "agentManager.splash.examples.beyondCode.feature1.text": "Досліджуйте кілька напрямів логотипа одночасно.",
-  "agentManager.splash.examples.beyondCode.feature2.name": "Будь-які файли",
-  "agentManager.splash.examples.beyondCode.feature2.text": "SVG, дизайн-токени й шаблони, а не лише вихідний код.",
-  "agentManager.splash.examples.beyondCode.feature3.name": "Наступні сесії",
-  "agentManager.splash.examples.beyondCode.feature3.text": "Спрямовуйте нові сесії на версію, яку вирішите залишити.",
-  "agentManager.splash.carousel.previous": "Попередній приклад",
-  "agentManager.splash.carousel.next": "Наступний приклад",
-  "agentManager.splash.carousel.goTo": "Показати приклад: {{title}}",
   "agentManager.worktree.health.absent-restorable": "Теку видалено",
   "agentManager.worktree.health.absent-restorableNote":
     "Теки немає, але гілка {{branch}} збереглася. Відновіть її, щоб продовжити роботу тут.",
