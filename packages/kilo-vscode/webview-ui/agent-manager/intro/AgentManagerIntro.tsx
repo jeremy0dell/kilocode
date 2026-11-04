@@ -4,9 +4,10 @@ import { Popover } from "@kilocode/kilo-ui/popover"
 import { useLanguage } from "../../src/context/language"
 import { useVSCode } from "../../src/context/vscode"
 import type { SessionInfo } from "../../src/types/messages"
-import { WelcomeEmptyState, KiloLogo } from "../../src/components/chat/WelcomeEmptyState"
+import { KiloLogo } from "../../src/components/chat/WelcomeEmptyState"
 import { createSplashIntro } from "../splash"
 import { splash } from "../splash/gate"
+import { Reopen } from "../splash/Splash"
 import { IntroGraph } from "./IntroGraph"
 import "./intro.css"
 
@@ -88,29 +89,16 @@ interface EmptyProps extends Omit<IntroProps, "onDismiss"> {
 }
 
 function AgentManagerEmptyState(props: EmptyProps) {
-  const { t } = useLanguage()
   return (
     <Show
       when={props.intro.visible()}
       fallback={
-        <WelcomeEmptyState
+        <Reopen
           sessions={props.sessions}
           onSelectSession={props.onSelectSession}
           onShowHistory={props.onShowHistory}
-          footer={
-            <>
-              {props.hints?.()}
-              <Button
-                variant="ghost"
-                size="small"
-                icon="help"
-                data-action="agent-manager-intro"
-                onClick={props.intro.open}
-              >
-                {t("agentManager.intro.reopen")}
-              </Button>
-            </>
-          }
+          hints={props.hints}
+          onOpen={props.intro.open}
         />
       }
     >

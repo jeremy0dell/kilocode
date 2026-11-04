@@ -2,7 +2,7 @@ import { Show } from "solid-js"
 import { useVSCode } from "../../src/context/vscode"
 import type { Intro, IntroOptions } from "../intro/AgentManagerIntro"
 import { createFold } from "./fold"
-import { SplashExpanded, SplashFolded, SplashHidden } from "./Splash"
+import { Reopen, SplashExpanded, SplashFolded } from "./Splash"
 
 /** The splash intro, behind `gate.ts`. Hide dismisses it; the first accepted session folds it once. */
 export function createSplashIntro(
@@ -19,6 +19,11 @@ export function createSplashIntro(
     fold.show()
     opts.focus()
   }
+  // Like the legacy intro's reopen, bring the empty chat forward first.
+  const reopen = () => {
+    opts.reveal()
+    show()
+  }
   return {
     visible: () => !fold.hidden() && !fold.folded(),
     dismiss: hide,
@@ -27,12 +32,12 @@ export function createSplashIntro(
       <Show
         when={!fold.hidden()}
         fallback={
-          <SplashHidden
+          <Reopen
             sessions={opts.sessions}
             onSelectSession={opts.onSelectSession}
             onShowHistory={opts.onShowHistory}
             hints={opts.hints}
-            onShowExamples={show}
+            onOpen={reopen}
           />
         }
       >

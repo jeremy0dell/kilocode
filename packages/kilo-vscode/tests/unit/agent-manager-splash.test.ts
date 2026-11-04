@@ -114,7 +114,7 @@ describe("Agent Manager splash fold", () => {
     })
   })
 
-  it("folds once on the first session while no preference exists, until Show examples makes it explicit", () => {
+  it("folds once on the first session while no preference exists", () => {
     const vscode = poster()
     createRoot((dispose) => {
       const state = createFold(vscode)
@@ -126,20 +126,16 @@ describe("Agent Manager splash fold", () => {
       expect(state.folded()).toBe(false)
       dispose()
     })
-    expect(vscode.posted).toEqual([fold(true), fold(false), intro(false)])
+    expect(vscode.posted).toEqual([fold(true), fold(false)])
   })
 
   it("leaves a stored preference alone on session start, across reloads", () => {
-    for (const [value, dismissed] of [
-      [true, false],
-      [false, false],
-      [true, true],
-    ] as const) {
+    for (const value of [true, false]) {
       const vscode = poster()
       createRoot((dispose) => {
-        const state = createFold(vscode, value, dismissed)
+        const state = createFold(vscode, value)
         state.started()
-        expect(state.folded()).toBe(value && !dismissed)
+        expect(state.folded()).toBe(value)
         dispose()
       })
       expect(vscode.posted).toEqual([])
@@ -157,21 +153,6 @@ describe("Agent Manager splash fold", () => {
       dispose()
     })
     expect(vscode.posted).toEqual([])
-  })
-
-  it("treats a legacy folded preference as the automatic fold, unless a Hide also exists", () => {
-    createRoot((dispose) => {
-      const folded = createFold(poster(), true, false)
-      expect(folded.folded()).toBe(true)
-      expect(folded.hidden()).toBe(false)
-      dispose()
-    })
-    createRoot((dispose) => {
-      const hidden = createFold(poster(), true, true)
-      expect(hidden.hidden()).toBe(true)
-      expect(hidden.folded()).toBe(false)
-      dispose()
-    })
   })
 
   it("hides explicitly, reopens, and never auto-folds over either choice", () => {

@@ -117,13 +117,15 @@ export function SplashExpanded(props: {
   )
 }
 
-export function SplashHidden(props: {
+type Welcome = {
   sessions?: () => SessionInfo[]
   onSelectSession?: (id: string) => void
   onShowHistory?: () => void
   hints?: () => JSX.Element
-  onShowExamples: () => void
-}) {
+}
+
+/** The welcome list with the intro's reopen button, shown after a legacy Skip or a splash Hide. */
+export function Reopen(props: Welcome & { onOpen: () => void }) {
   const { t } = useLanguage()
   return (
     <WelcomeEmptyState
@@ -133,13 +135,7 @@ export function SplashHidden(props: {
       footer={
         <>
           {props.hints?.()}
-          <Button
-            variant="ghost"
-            size="small"
-            icon="help"
-            data-action="agent-manager-intro"
-            onClick={props.onShowExamples}
-          >
+          <Button variant="ghost" size="small" icon="help" data-action="agent-manager-intro" onClick={props.onOpen}>
             {t("agentManager.intro.reopen")}
           </Button>
         </>
@@ -148,13 +144,7 @@ export function SplashHidden(props: {
   )
 }
 
-export function SplashFolded(props: {
-  sessions?: () => SessionInfo[]
-  onSelectSession?: (id: string) => void
-  onShowHistory?: () => void
-  hints?: () => JSX.Element
-  onShowExamples: () => void
-}) {
+export function SplashFolded(props: Welcome & { onShowExamples: () => void }) {
   const { t } = useLanguage()
   return (
     <div class="am-splash-folded-layout">

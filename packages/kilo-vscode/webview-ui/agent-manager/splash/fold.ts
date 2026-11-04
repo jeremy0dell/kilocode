@@ -5,7 +5,7 @@ import type { VsCodePoster } from "../sidebar-collapse"
  * Persisted splash preferences. `folded` stays unset until Show examples or
  * the first accepted session chooses a fold. `dismissed` is the legacy intro
  * key: an explicit Hide (or a Skip from the legacy intro) hides the splash
- * behind the intro's reopen button instead of leaving the folded card everywhere.
+ * behind the intro's reopen button, ahead of any fold.
  */
 export function createFold(vscode: VsCodePoster, initial?: boolean, dismissed = false) {
   const [folded, setFolded] = createSignal(initial)
@@ -19,12 +19,12 @@ export function createFold(vscode: VsCodePoster, initial?: boolean, dismissed = 
     vscode.postMessage({ type: "agentManager.setIntroDismissed", dismissed: value })
   }
   return {
-    folded: () => hidden() !== true && folded() === true,
+    folded: () => folded() === true,
     hidden,
     hide: () => dismiss(true),
     show: () => {
       save(false)
-      dismiss(false)
+      if (hidden()) dismiss(false)
     },
     started: () => {
       if (hidden()) return

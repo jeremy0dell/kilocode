@@ -320,7 +320,7 @@ export const SplashRtlStory: Story = {
 }
 
 /** The folded splash inside the real chat host, which splash.css lays out around the welcome header. */
-function FoldedChat(props: { automatic?: boolean }) {
+function FoldedChat() {
   const intro = createSplashIntro(
     {
       base: () => "main",
@@ -330,16 +330,11 @@ function FoldedChat(props: { automatic?: boolean }) {
       focus: () => {},
       compose: () => {},
     },
-    props.automatic ? undefined : true,
+    true,
   )
   return (
     <ServerContext.Provider value={chatServer}>
       <WorktreeModeProvider>
-        <Show when={props.automatic}>
-          <button type="button" onClick={intro.started}>
-            Accept session
-          </button>
-        </Show>
         <div class="am-chat-wrapper" style={{ height: "100vh" }}>
           <ChatView emptyState={intro.render} introduction={intro.visible()} />
         </div>
@@ -364,10 +359,9 @@ function FoldedPreview(props: { width: string }) {
 export const SplashFoldedStory: Story = {
   name: "Splash folded",
   parameters: { layout: "fullscreen" },
-  args: { automatic: false },
-  render: (args: { automatic?: boolean }) => (
+  render: () => (
     <StoryProviders noPadding>
-      <FoldedChat automatic={args.automatic} />
+      <FoldedChat />
     </StoryProviders>
   ),
 }

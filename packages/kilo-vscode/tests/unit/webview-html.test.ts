@@ -15,6 +15,7 @@ describe("Agent Manager splash preference injection", () => {
         iconsBaseUri: uri,
         workerUri: uri,
         title: "Agent Manager",
+        introDismissed: true,
         splashFolded: preference as never,
       })
       expect(html).toContain(`window.KILO_AGENT_MANAGER_SPLASH_FOLDED = ${expected};`)
@@ -25,28 +26,9 @@ describe("Agent Manager splash preference injection", () => {
       new Function("window", script!)(scope)
       expect("KILO_AGENT_MANAGER_SPLASH_FOLDED" in scope).toBe(true)
       expect(scope.KILO_AGENT_MANAGER_SPLASH_FOLDED).toBe(expected)
+      expect(scope.KILO_AGENT_MANAGER_INTRO_DISMISSED).toBe(true)
     })
   }
-
-  it("injects intro dismissal separately so an unset splash fold can seed from it", () => {
-    const uri = Uri.file("/extension/resource")
-    const html = buildWebviewHtml({ cspSource: "vscode-resource://test" } as never, {
-      scriptUri: uri,
-      styleUri: uri,
-      iconsBaseUri: uri,
-      workerUri: uri,
-      title: "Agent Manager",
-      introDismissed: true,
-      splashFolded: undefined,
-    })
-    expect(html).toContain("window.KILO_AGENT_MANAGER_INTRO_DISMISSED = true;")
-    expect(html).toContain("window.KILO_AGENT_MANAGER_SPLASH_FOLDED = undefined;")
-    const script = html.match(/<script nonce="[^"]+">(window\.ICONS_BASE_URI[^<]*)<\/script>/)?.[1]
-    const scope: Record<string, unknown> = {}
-    new Function("window", script!)(scope)
-    expect(scope.KILO_AGENT_MANAGER_INTRO_DISMISSED).toBe(true)
-    expect(scope.KILO_AGENT_MANAGER_SPLASH_FOLDED).toBeUndefined()
-  })
 })
 
 describe("Settings webview entry", () => {
