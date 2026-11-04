@@ -68,7 +68,8 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
         flight.clear()
         checks.dispose("Readiness project changed", true)
         fixes.dispose("Readiness project changed", true)
-        setState({ status: "checking", project: opts.project() })
+        // A switch fix already applied the selected project's result; keep it while it is re-checked.
+        if (state().project !== opts.project()) setState({ status: "checking", project: opts.project() })
       },
       { defer: true },
     ),

@@ -135,7 +135,6 @@ async function inspect(root: string, deps: ReadinessDeps): Promise<Readiness> {
 /** A folder that is not a Git project: offer the projects inside it, or setting up Git. */
 async function folder(root: string, deps: ReadinessDeps): Promise<Readiness> {
   const base = { status: "blocked" as const, code: "not_git_repo" as const, name: path.basename(root) }
-  if (isRestrictedRoot(root)) return { ...base, trusted: deps.trusted(), restricted: true }
   const found = await children(root)
   if (found.length > 0) {
     return {
@@ -185,7 +184,6 @@ async function apply(
     if (!dir) return { root, note: false }
     return select(dir, deps)
   }
-  allow(root)
   const state = await prepare.inspect(root, deps.git)
   allow(state.root ?? root)
   if (request.fix === "initialCommit" && !state.root) throw new Error(`Not a Git repository: ${root}`)

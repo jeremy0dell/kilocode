@@ -266,6 +266,41 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "projects") {
   await close()
 }
 
+// A switch fix keeps the selected project's result: switching must not wipe the card.
+if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
+  for (const target of ["blocked", "ready"] as const) {
+    const id = await mount()
+    await reply("p1", id, {
+      status: "blocked",
+      code: "not_git_repo",
+      name: "parent",
+      trusted: true,
+      projects: [{ root: "/p2", label: "p2" }],
+    })
+    card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
+    await settle()
+    const fix = sent.find((item) => item.type === "agentManager.fixReadiness")
+    assert.ok(fix && fix.type === "agentManager.fixReadiness")
+    await emit({
+      type: "agentManager.readiness",
+      projectId: "p1",
+      requestID: fix.requestID,
+      selected: "p2",
+      result: target === "ready" ? { status: "ready" } : plain,
+    })
+    assert.equal(creates().length, 0)
+    if (target === "blocked") {
+      assert.equal(card()?.querySelector("[data-readiness-title]")?.textContent, "agentManager.readiness.plain.title")
+      assert.equal(submit().getAttribute("aria-disabled"), "true")
+    } else {
+      assert.equal(card()?.textContent, "")
+      assert.equal(submit().getAttribute("aria-disabled"), null)
+      assert.equal(document.activeElement, submit())
+    }
+    await close()
+  }
+}
+
 // A blocked reply keeps the dialog open with every field, and Create is aria-disabled rather than disabled.
 {
   const id = await mount()
