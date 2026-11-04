@@ -295,6 +295,22 @@ describe("worktree readiness fixes", () => {
     expect(setup.posts.at(1)).toMatchObject({ result: { status: "ready", note: "uncommitted" } })
   })
 
+  it("does not run a repository's fsmonitor program while finding uncommitted files", async () => {
+    const root = await repo(await temp("kilo-ready-fsmonitor-"), false)
+    const scripts = await temp("kilo-ready-fsmonitor-bin-")
+    const marker = path.join(scripts, "marker")
+    const hook = path.join(scripts, "hook.sh")
+    await fs.writeFile(hook, `#!/bin/sh\ntouch ${JSON.stringify(marker)}\nexit 0\n`)
+    await fs.chmod(hook, 0o755)
+    git(root, "config", "core.fsmonitor", hook)
+
+    const setup = wire(root)
+    await setup.send("initialCommit", { identity })
+
+    expect(await Bun.file(marker).exists()).toBe(false)
+    expect(setup.posts.at(1)).toMatchObject({ result: { status: "ready" } })
+  })
+
   it("refuses to change an untrusted window or the home folder", async () => {
     const scratch = await temp("kilo-ready-untrusted-")
     const untrusted = wire(scratch, false)
