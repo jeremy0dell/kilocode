@@ -387,7 +387,7 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
   const base = { git, trusted: () => deps.onboarding.isTrusted(), tools }
   try {
     if (m.type === "agentManager.checkReadiness")
-      return reply({ result: await check(ctx.root, base, m.fresh === true) })
+      return reply({ result: await check(ctx.root, base, m.fresh === true, m.verify === true) })
     reply(
       await fix(ctx.root, m, {
         ...base,

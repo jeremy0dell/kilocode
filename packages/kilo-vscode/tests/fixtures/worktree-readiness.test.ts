@@ -8,6 +8,7 @@ import { createProjectWiring } from "../../src/agent-manager/project/wiring"
 import { handleProjectMessage } from "../../src/agent-manager/project/messages"
 import { canonicalizePath, projectIdFor } from "../../src/agent-manager/project/paths"
 import type { Host } from "../../src/agent-manager/host"
+import type { ProjectMessageDeps } from "../../src/agent-manager/project/messages"
 import type { AgentManagerOutMessage } from "../../src/agent-manager/types"
 
 const dirs: string[] = []
@@ -516,6 +517,50 @@ describe("worktree readiness fixes", () => {
     expect(out.fixed).toEqual({ result: card, error: expect.stringContaining("home folder") })
     expect(out.calls).toEqual([])
     expect(await Bun.file(path.join(home, ".git", "HEAD")).exists()).toBe(false)
+  })
+
+  it("routes a verify check through the real handler without a cached positive", async () => {
+    const root = await repo(await temp("kilo-ready-route-"), true)
+    const calls: string[] = []
+    const manager = {
+      probeGit: async (fresh: boolean, guarded: boolean, verify: boolean) => {
+        calls.push(`git:${fresh}:${verify}`)
+        return { ok: true }
+      },
+      probeLfs: async (fresh: boolean, _root: string, verify: boolean) => {
+        calls.push(`lfs:${fresh}:${verify}`)
+        return { ok: true }
+      },
+      repoUsesLfs: async () => false,
+    }
+    const posts: AgentManagerOutMessage[] = []
+    const deps = {
+      contexts: {
+        resolve: () => ({
+          id: projectIdFor(root),
+          root,
+          worktreeManager: () => manager,
+        }),
+      },
+      onboarding: { isTrusted: () => true },
+      post: (message: AgentManagerOutMessage) => posts.push(message),
+      log: () => {},
+    } as unknown as ProjectMessageDeps
+
+    await handleProjectMessage(
+      { type: "agentManager.checkReadiness", projectId: projectIdFor(root), requestID: "r1", verify: true },
+      deps,
+    )
+    expect(calls).toEqual(["git:false:true"])
+    expect(posts).toEqual([
+      { type: "agentManager.readiness", projectId: projectIdFor(root), requestID: "r1", result: { status: "ready" } },
+    ])
+
+    await handleProjectMessage(
+      { type: "agentManager.checkReadiness", projectId: projectIdFor(root), requestID: "r2" },
+      deps,
+    )
+    expect(calls).toEqual(["git:false:true", "git:false:false"])
   })
 
   it("posts a window-focus trigger and reloads the window when asked", async () => {
