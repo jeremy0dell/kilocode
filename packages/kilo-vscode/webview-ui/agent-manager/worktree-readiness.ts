@@ -173,20 +173,20 @@ export function createReadiness(opts: {
    * tool caches and refreshes its login-shell PATH. `keep` keeps showing a
    * Git/LFS card unless the fresh check is ready.
    */
-  const check = (fresh = false, keep = false): Promise<ReadinessState | undefined> => {
+  const check = (fresh = false, keep = false, verify = false): Promise<ReadinessState | undefined> => {
     const project = opts.project()
     if (!project) {
       setState({ status: "checking" })
       return Promise.resolve(undefined)
     }
     const running = flight.get(project)
-    if (!fresh && running) return running
+    if (!fresh && !verify && running) return running
     // Keep showing this project's last result while it is checked again.
     if (state().project !== project) setState({ status: "checking", project })
     const version = revision
     const next = checks
       .request((requestID) =>
-        vscode.postMessage({ type: "agentManager.checkReadiness", projectId: project, requestID, fresh }),
+        vscode.postMessage({ type: "agentManager.checkReadiness", projectId: project, requestID, fresh, verify }),
       )
       .then(
         (msg) => settle(project, msg.result, installed(state())),

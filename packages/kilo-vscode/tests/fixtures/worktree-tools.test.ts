@@ -183,6 +183,50 @@ describe("LFS probe", () => {
   })
 })
 
+describe("verify probes", () => {
+  it("bypasses a cached positive Git result and creation refuses after it disappears", async () => {
+    const root = await repo()
+    const bin = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-"))
+    dirs.push(bin)
+    const git = await script(bin, "git", `echo "git $@" >> "$KILO_TOOLS_LOG"\nexec "$KILO_REAL_GIT" "$@"`)
+    const mgr = manager(root, git, "linux")
+    expect(await mgr.probeGit()).toEqual({ ok: true })
+    await fs.rm(git)
+    expect(await mgr.probeGit()).toEqual({ ok: true })
+    expect(await mgr.probeGit(false, false, true)).toMatchObject({ ok: false, code: "missing" })
+  })
+
+  it("creation re-probes Git instead of trusting the cached positive", async () => {
+    const root = await repo()
+    const bin = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-"))
+    dirs.push(bin)
+    const git = await script(bin, "git", `echo "git $@" >> "$KILO_TOOLS_LOG"\nexec "$KILO_REAL_GIT" "$@"`)
+    const mgr = manager(root, git, "linux")
+    expect(await mgr.probeGit()).toEqual({ ok: true })
+    await fs.rm(git)
+    await expect(mgr.listBranches()).rejects.toThrow(/Git is not installed/)
+  })
+
+  it("creation re-probes Git LFS instead of trusting the cached positive", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-root-"))
+    dirs.push(root)
+    const bin = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-"))
+    dirs.push(bin)
+    const mark = path.join(state, "lfs-installed")
+    await fs.writeFile(mark, "")
+    const git = await script(
+      bin,
+      "git-lfs-toggle",
+      `echo "git $@" >> "$KILO_TOOLS_LOG"\nif [ "$1" = "lfs" ]; then\n  if [ -f ${JSON.stringify(mark)} ]; then echo "git-lfs/3.0"; exit 0; fi\n  echo "git: 'lfs' is not a git command." >&2\n  exit 1\nfi\nexit 0`,
+    )
+    const mgr = manager(root, git, "linux")
+    expect(await mgr.probeLfs()).toEqual({ ok: true })
+    await fs.rm(mark)
+    expect(await mgr.probeLfs()).toEqual({ ok: true })
+    expect(await mgr.checkLfsAvailable()).toBe(false)
+  })
+})
+
 describe("fresh tool checks", () => {
   it("refreshes the login-shell PATH only for fresh checks and updates both LFS caches", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-root-"))

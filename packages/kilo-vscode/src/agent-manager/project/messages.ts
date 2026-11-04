@@ -366,9 +366,9 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
   const install = deps.install
   const open = deps.openExternal
   const tools: ReadinessTools = {
-    git: (fresh) => manager.probeGit(fresh),
+    git: (fresh, verify) => manager.probeGit(fresh, false, verify),
     usesLfs: (root) => manager.repoUsesLfs(root),
-    lfs: (root, fresh) => manager.probeLfs(fresh, root),
+    lfs: (root, fresh, verify) => manager.probeLfs(fresh, root, verify),
     installer: async (kind) => detectInstaller(kind, process.platform, await toolEnvironment()),
     install: async (kind, root) =>
       installTool(kind, root, {

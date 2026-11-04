@@ -253,15 +253,18 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "projects") {
     option.click()
     await settle()
   }
-  await reply("p1", id, { status: "ready" })
+  const gate = checks().at(1)!
+  assert.equal(gate.verify, true)
+  await reply("p1", gate.requestID, { status: "ready" })
   assert.equal(creates().length, 0, "returning to A must not resume A's original submit")
-  assert.equal(checks().length, 3, "returning to A must send a new request")
-  const current = checks().at(-1)!
-  assert.notEqual(current.requestID, id)
+  assert.equal(checks().length, 4, "returning to A must send a new request")
   await settle()
   submit().click()
   await reply("p1", id, { status: "ready" })
   assert.equal(creates().length, 0, "old A reply must not unlock the newer gate")
+  const current = checks().at(-1)!
+  assert.equal(current.verify, true)
+  assert.notEqual(current.requestID, gate.requestID)
   await reply("p1", current.requestID, { status: "ready" })
   await settle()
   assert.equal(creates().length, 1)
@@ -364,11 +367,39 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
     { stage: "resolved", code: "not_git_repo", entry: "modal" },
   ])
 
-  // With a current ready result, Create proceeds at once.
+  // A current ready result still re-probes the tools before Create.
   submit().click()
   await settle()
+  assert.equal(creates().length, 0)
+  const verify = checks().at(-1)!
+  assert.equal(verify.verify, true)
+  assert.equal(verify.fresh, false)
+  await reply("p1", verify.requestID, { status: "ready" })
   assert.equal(creates().length, 1)
   assert.equal(closes.value, 1)
+}
+
+// A cached ready result still blocks Create when the tool disappeared.
+{
+  const id = await mount()
+  await reply("p1", id, { status: "ready" })
+  const closed = closes.value
+  submit().click()
+  await settle()
+  const verify = checks().at(-1)!
+  assert.equal(verify.verify, true)
+  await reply("p1", verify.requestID, {
+    status: "blocked",
+    code: "git_not_found",
+    name: "p1",
+    trusted: true,
+    platform: "darwin",
+    installer: "apple",
+  })
+  assert.equal(creates().length, 0)
+  assert.equal(closes.value, closed)
+  assert.equal(card()?.querySelector("[data-readiness-title]")?.textContent, "agentManager.readiness.git.title")
+  await close()
 }
 
 // Activations while the check is pending wait for it and create exactly once.
@@ -379,19 +410,25 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
   shortcut()
   await settle()
   assert.equal(creates().length, 0)
-  assert.equal(checks().length, 1)
-  await reply("p2", id, { status: "ready" })
+  assert.equal(checks().length, 2)
+  const verify = checks().at(1)!
+  assert.equal(verify.verify, true)
+  await reply("p2", verify.requestID, { status: "ready" })
   assert.equal(creates().length, 0)
   await reply("p1", id, { status: "ready" })
+  assert.equal(creates().length, 0)
+  await reply("p1", verify.requestID, { status: "ready" })
   assert.equal(creates().length, 1)
   assert.equal(closes.value, 1)
 }
 
 // A blocked reply to a pending submit ends that submit.
 {
-  const id = await mount()
+  await mount()
   submit().click()
-  await reply("p1", id, plain)
+  const verify = checks().at(-1)!
+  assert.equal(verify.verify, true)
+  await reply("p1", verify.requestID, plain)
   assert.equal(creates().length, 0)
   assert.equal(closes.value, 0)
   assert.equal(document.activeElement, card()?.querySelector("[data-readiness-action]"))
@@ -459,6 +496,10 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
   branch.value = "../escape"
   branch.dispatchEvent(new window.Event("input", { bubbles: true }) as never)
   submit().click()
+  await settle()
+  const verify = checks().at(-1)!
+  assert.equal(verify.verify, true)
+  await reply("p1", verify.requestID, { status: "ready" })
   await settle()
   assert.equal(creates().length, 0)
   assert.equal(closes.value, 0)

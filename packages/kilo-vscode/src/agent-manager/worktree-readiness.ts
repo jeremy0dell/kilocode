@@ -40,9 +40,9 @@ function allow(dir: string | undefined) {
 }
 
 export interface ReadinessTools {
-  git(fresh: boolean): Promise<ToolProbe>
+  git(fresh: boolean, verify?: boolean): Promise<ToolProbe>
   usesLfs(root: string): Promise<boolean>
-  lfs(root: string, fresh: boolean): Promise<ToolProbe>
+  lfs(root: string, fresh: boolean, verify?: boolean): Promise<ToolProbe>
   installer(kind: ToolKind): Promise<ReadinessInstaller | undefined>
   install(kind: ToolKind, root: string): Promise<InstallOutcome>
   download(kind: ToolKind): void
@@ -81,12 +81,12 @@ export interface FixOutcome {
 /** One check per folder at a time; concurrent callers share it. A fresh check always bypasses it. */
 const flight = new Map<string, Promise<Readiness>>()
 
-export function check(root: string, deps: ReadinessDeps, fresh = false): Promise<Readiness> {
-  if (fresh) return probe(root, deps, true)
+export function check(root: string, deps: ReadinessDeps, fresh = false, verify = false): Promise<Readiness> {
+  if (fresh || verify) return probe(root, deps, fresh, verify)
   const key = canonicalizePath(root)
   const running = flight.get(key)
   if (running) return running
-  const next = probe(root, deps).finally(() => flight.delete(key))
+  const next = probe(root, deps, false, false).finally(() => flight.delete(key))
   flight.set(key, next)
   return next
 }
@@ -118,16 +118,16 @@ export async function fix(
   return outcome
 }
 
-async function probe(root: string, deps: ReadinessDeps, fresh = false): Promise<Readiness> {
-  return inspect(root, deps, fresh).catch((err: unknown) => ({
+async function probe(root: string, deps: ReadinessDeps, fresh = false, verify = false): Promise<Readiness> {
+  return inspect(root, deps, fresh, verify).catch((err: unknown) => ({
     status: "unknown" as const,
     detail: err instanceof Error ? err.message : String(err),
   }))
 }
 
-async function inspect(root: string, deps: ReadinessDeps, fresh: boolean): Promise<Readiness> {
+async function inspect(root: string, deps: ReadinessDeps, fresh: boolean, verify: boolean): Promise<Readiness> {
   if (deps.tools) {
-    const git = await deps.tools.git(fresh)
+    const git = await deps.tools.git(fresh, verify)
     if (!git.ok) return missing("git", git, root, deps)
   }
   // Repository and commits.
@@ -152,7 +152,7 @@ async function inspect(root: string, deps: ReadinessDeps, fresh: boolean): Promi
     }
   }
   if (deps.tools && (await deps.tools.usesLfs(state.root))) {
-    const lfs = await deps.tools.lfs(state.root, fresh)
+    const lfs = await deps.tools.lfs(state.root, fresh, verify)
     if (!lfs.ok) return missing("lfs", lfs, state.root, deps)
   }
   return { status: "ready" }

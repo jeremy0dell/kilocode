@@ -78,6 +78,8 @@ export interface CheckReadinessRequest {
   requestID: string
   /** Bypass the Git and Git LFS caches and refresh the login-shell PATH first. */
   fresh?: boolean
+  /** Bypass cached tool results without refreshing PATH; used by the Create gate. */
+  verify?: boolean
 }
 
 export interface FixReadinessRequest {

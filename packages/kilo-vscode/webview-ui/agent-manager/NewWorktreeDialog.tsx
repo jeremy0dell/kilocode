@@ -614,14 +614,14 @@ export const NewWorktreeDialog: Component<{
       return
     }
     const target = project()
-    const state = readiness.state()
-    if (!target || (state.status !== "checking" && state.project === target)) {
+    if (!target) {
       create()
       return
     }
     gate = true
     const version = readiness.revision()
-    void readiness.check().then(() => {
+    // Creation must re-probe the tools now, even when the dialog already looks ready.
+    void readiness.check(false, false, true).then(() => {
       gate = false
       if (closed || props.closing() || project() !== target || readiness.revision() !== version) return
       if (readiness.blocked()) {

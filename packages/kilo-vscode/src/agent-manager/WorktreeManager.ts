@@ -402,7 +402,7 @@ export class WorktreeManager {
    * Apple's install dialog unprompted. `fresh` bypasses the cached success and
    * refreshes the login-shell PATH.
    */
-  async probeGit(fresh = false, guarded = false): Promise<ToolProbe> {
+  async probeGit(fresh = false, guarded = false, verify = false): Promise<ToolProbe> {
     const env = fresh ? await toolEnvironment(true) : undefined
     if (!guarded) {
       const guard = await this.guardApple(env)
@@ -412,7 +412,7 @@ export class WorktreeManager {
         return { ok: false, code: guard.missing ? "missing" : "unknown", detail: guard.detail }
       }
     }
-    if (!fresh && this.gitAvailable) return { ok: true }
+    if (!fresh && !verify && this.gitAvailable) return { ok: true }
     this.gitAvailable = false
     this.probeFailed = false
     try {
@@ -438,9 +438,14 @@ export class WorktreeManager {
    * diagnosis counts as confirmed absence; timeouts, missing cwd and permission
    * errors stay raw and non-blocking.
    */
-  async probeLfs(fresh = false, root = this.root): Promise<ToolProbe> {
-    if (!fresh && this.lfsAvailable === true) return { ok: true }
-    if (!fresh && this.lfsAvailable === false && Date.now() - this.lfsProbed < WorktreeManager.LFS_PROBE_TTL) {
+  async probeLfs(fresh = false, root = this.root, verify = false): Promise<ToolProbe> {
+    if (!fresh && !verify && this.lfsAvailable === true) return { ok: true }
+    if (
+      !fresh &&
+      !verify &&
+      this.lfsAvailable === false &&
+      Date.now() - this.lfsProbed < WorktreeManager.LFS_PROBE_TTL
+    ) {
       return { ok: false, code: "missing", detail: this.lfsDetail ?? "git-lfs is not installed." }
     }
     const env = fresh ? await toolEnvironment(true) : undefined
@@ -511,7 +516,8 @@ export class WorktreeManager {
       this.probeFailed = guard.missing
       throw new Error(guard.missing ? MISSING_GIT : guard.detail)
     }
-    const probe = await this.probeGit(false, guard !== undefined)
+    // Creation's own check re-probes; a cached positive must not survive an uninstall.
+    const probe = await this.probeGit(false, guard !== undefined, true)
     if (probe.ok) return
     if (probe.code === "missing") throw new Error(MISSING_GIT)
     throw new Error(probe.detail)
@@ -1505,7 +1511,8 @@ export class WorktreeManager {
   }
 
   async checkLfsAvailable(fresh = false): Promise<boolean> {
-    return (await this.probeLfs(fresh)).ok
+    // Creation re-probes; a cached positive must not survive an uninstall.
+    return (await this.probeLfs(fresh, this.root, true)).ok
   }
 
   async currentBranch(): Promise<string> {

@@ -279,6 +279,24 @@ describe("worktree readiness tool checks", () => {
     expect(calls).toEqual([`install:git:${root}`, "download:lfs"])
   })
 
+  it("passes verify through without refreshing the environment", async () => {
+    const healthy = await repo(await temp("kilo-ready-verify-"), true)
+    const calls: string[] = []
+    const tools: ReadinessTools = {
+      ...fake().tools,
+      git: async (fresh, verify) => {
+        calls.push(`git:${fresh}:${verify}`)
+        return { ok: true }
+      },
+      usesLfs: async (root) => {
+        calls.push(`uses:${path.basename(root)}`)
+        return false
+      },
+    }
+    expect(await check(healthy, { git: ops, trusted: () => true, tools }, false, true)).toEqual({ status: "ready" })
+    expect(calls).toEqual(["git:false:true", `uses:${path.basename(healthy)}`])
+  })
+
   it("passes fresh through to both tool probes", async () => {
     const healthy = await repo(await temp("kilo-ready-fresh-"), true)
     const probe = fake()

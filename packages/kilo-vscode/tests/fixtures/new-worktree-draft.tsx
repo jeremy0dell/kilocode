@@ -309,9 +309,13 @@ if (scenario === "roundtrip") {
   assert.equal(checks().at(0)?.projectId, "p1")
   await reply("p1", id, { status: "ready" })
 
-  // Enter goal composition without dispatching.
+  // Enter goal composition without dispatching; Create still re-probes first.
   fill(".am-prompt-input", "/goal")
   submit().click()
+  await settle()
+  const goal = checks().at(-1)!
+  assert.equal(goal.verify, true)
+  await reply("p1", goal.requestID, { status: "ready" })
   await settle()
   assert.equal(creates().length, 0)
   assert.ok(document.querySelector(".prompt-goal-header"), "goal mode must be on")
@@ -409,6 +413,10 @@ if (scenario === "missing") {
   fill(".am-prompt-input", "do not resurrect me")
   await pickVersions(2)
   submit().click()
+  await settle()
+  const verify = checks().at(-1)!
+  assert.equal(verify.verify, true)
+  await reply("p1", verify.requestID, { status: "ready" })
   await settle()
   assert.equal(creates().length, 1)
   assert.equal(state.advancedDialogDraft, undefined, "a dispatch must clear the persisted draft")
