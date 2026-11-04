@@ -625,4 +625,6 @@ export const dict = {
   "agentManager.readiness.install.reload": "Перезавантажити вікно",
   "agentManager.readiness.ready.git": "Git готовий.",
   "agentManager.readiness.ready.lfs": "Git LFS готовий.",
+  "agentManager.readiness.install.failed": "Встановлення завершилося з кодом {{code}}. Див. вивід термінала.",
+  "agentManager.readiness.install.stopped": "Встановлення було зупинено. Див. вивід термінала.",
 }

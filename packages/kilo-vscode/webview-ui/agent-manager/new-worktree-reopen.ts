@@ -41,9 +41,11 @@ export function createReopen(opts: ReopenOptions) {
   let done = false
   const run = () => {
     if (done || !opts.loaded() || !opts.arrived()) return
+    // The first eligible run is this page's only chance. A Reload clicked after
+    // it must not reopen the dialog on the page that is about to be replaced.
+    done = true
     const next = takeReopen(opts.state())
     if (!next.reopen) return
-    done = true
     opts.save(next.state)
     opts.open()
   }

@@ -165,6 +165,24 @@ describe("Git probe", () => {
   })
 })
 
+describe("LFS probe", () => {
+  it("does not cache an ambiguous git-lfs failure as a missing tool", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-root-"))
+    dirs.push(root)
+    const bin = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-"))
+    dirs.push(bin)
+    const git = await script(
+      bin,
+      "git-timeout",
+      `echo "git $@" >> "$KILO_TOOLS_LOG"\nif [ "$1" = "lfs" ]; then echo "Command timed out after 5000ms" >&2; exit 1; fi\nexit 0`,
+    )
+    const mgr = manager(root, git, "linux")
+    expect(await mgr.probeLfs()).toMatchObject({ ok: false, code: "unknown" })
+    expect(await mgr.probeLfs()).toMatchObject({ ok: false, code: "unknown" })
+    expect((await calls()).filter((line) => line.startsWith("git lfs version"))).toHaveLength(2)
+  })
+})
+
 describe("fresh tool checks", () => {
   it("refreshes the login-shell PATH only for fresh checks and updates both LFS caches", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-root-"))

@@ -40,6 +40,7 @@ function deps(
   return {
     platform,
     env: { ...process.env, PATH: envPath },
+    git: "/selected/git",
     run,
     open: options.open ?? (() => {}),
     probe: options.probe ?? (async () => ({ ok: true })),
@@ -72,6 +73,12 @@ describe("installer detection", () => {
     await bin(win, "winget.EXE")
     expect(await detectInstaller("git", "win32", { PATH: win, PATHEXT: ".EXE" })).toBe("winget")
   })
+
+  it("reads Windows Path and PathExt case-insensitively", async () => {
+    const win = await dir()
+    await bin(win, "winget.EXE")
+    expect(await detectInstaller("git", "win32", { Path: win, PathExt: ".EXE" })).toBe("winget")
+  })
 })
 
 describe("install outcomes", () => {
@@ -91,11 +98,11 @@ describe("install outcomes", () => {
     expect(outcome).toEqual({ kind: "lfs", mode: "terminal", ok: true })
     expect(calls.map((call) => call.name)).toEqual(["Install Git LFS", "Set up Git LFS"])
     expect(calls[0]?.command).toMatchObject({ command: "sudo", args: ["apt-get", "install", "-y", "git-lfs"] })
-    expect(calls[1]?.command).toMatchObject({ command: "git", args: ["lfs", "install"] })
-    for (const call of calls) {
-      expect(call.command.command).not.toStartWith(path.sep)
-      expect(call.command.args[0] ?? "").not.toStartWith(path.sep)
-    }
+    expect(calls[1]?.command).toMatchObject({ command: "/selected/git", args: ["lfs", "install"] })
+    // The package-manager recipe never uses an absolute installer path. The
+    // separate git-lfs step intentionally uses the selected Git executable.
+    expect(calls[0]?.command.command).not.toStartWith(path.sep)
+    expect(calls[0]?.command.args[0] ?? "").not.toStartWith(path.sep)
   })
 
   it("counts demonstrated availability as success, even after a non-zero or stopped task", async () => {
@@ -131,7 +138,7 @@ describe("install outcomes", () => {
         await dir(),
         deps("linux", linux, async () => 1, { probe: async () => missing }),
       ),
-    ).toEqual({ kind: "git", mode: "terminal", ok: false })
+    ).toEqual({ kind: "git", mode: "terminal", ok: false, code: 1 })
 
     expect(
       await installTool(
@@ -139,7 +146,7 @@ describe("install outcomes", () => {
         await dir(),
         deps("linux", linux, async () => undefined, { probe: async () => missing }),
       ),
-    ).toEqual({ kind: "git", mode: "terminal", ok: false })
+    ).toEqual({ kind: "git", mode: "terminal", ok: false, stopped: true })
   })
 
   it("keeps a task start failure for Show details and still honors later availability", async () => {

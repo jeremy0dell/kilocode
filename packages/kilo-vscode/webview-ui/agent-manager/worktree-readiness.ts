@@ -11,14 +11,15 @@ import { createComputed, createSignal, on, onCleanup, type Accessor } from "soli
 import type { Readiness, ReadinessFix, ReadinessInstall, ReadinessMessage, WorktreeEntry } from "../src/types/messages"
 import { createContextRequests } from "../src/hooks/context-requests"
 import { useVSCode } from "../src/context/vscode"
+import { useLanguage } from "../src/context/language"
 import { TelemetryEventName } from "../../src/services/telemetry/types"
 
 /** How long a check may take before creation proceeds as if it had not run. */
 const DEADLINE = 3_000
 /** Fixes can wait on a folder picker, so they get a much longer deadline. */
 const FIX_DEADLINE = 10 * 60_000
-/** Package installs and their git-lfs step can run far longer than a folder picker. */
-const INSTALL_DEADLINE = 30 * 60_000
+/** Longer than the host's 30-minute task budget so the task's own error wins. */
+const INSTALL_DEADLINE = 35 * 60_000
 
 type Blocked = Extract<Readiness, { status: "blocked" }>
 type InstallFix = "installGit" | "installLfs"
@@ -70,8 +71,14 @@ function tool(state: ReadinessState) {
   return state.status === "blocked" && (state.result.code === "git_not_found" || state.result.code === "lfs_missing")
 }
 
-export function createReadiness(opts: { project: Accessor<string | undefined>; entry: WorktreeEntry }) {
+export function createReadiness(opts: {
+  project: Accessor<string | undefined>
+  entry: WorktreeEntry
+  /** A window-return re-check recovered a Git/LFS card; focus Create without clicking it. */
+  onRecovered?: () => void
+}) {
   const vscode = useVSCode()
+  const { t } = useLanguage()
   const scope = `readiness-${crypto.randomUUID()}`
   const checks = createContextRequests<ReadinessMessage>(`${scope}-check`, DEADLINE, "Readiness check timed out")
   const fixes = createContextRequests<ReadinessMessage>(`${scope}-fix`, FIX_DEADLINE, "Readiness fix timed out")
@@ -84,7 +91,7 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
   const flight = new Map<string, Promise<ReadinessState | undefined>>()
   let disposed = false
   let revision = 0
-  let watching: Promise<ReadinessState | undefined> | null = null
+  let watching: Promise<void> | null = null
 
   createComputed(
     on(
@@ -128,9 +135,13 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
   const unsub = vscode.onMessage((msg) => {
     if (msg.type === "agentManager.readinessFocus") {
       if (!tool(state()) || watching) return
-      watching = check(true, true).finally(() => {
-        watching = null
-      })
+      watching = check(true, true)
+        .then((next) => {
+          if (next?.status === "ready") opts.onRecovered?.()
+        })
+        .finally(() => {
+          watching = null
+        })
       return
     }
     if (msg.type !== "agentManager.readiness") return
@@ -187,6 +198,9 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
         if (revision !== version) return state()
         // A fix that started meanwhile owns the state.
         if (state().status === "fixing") return state()
+        // Keep "Installing…" until the tool is actually ready; a check must not
+        // drop the pending install and expose a second install button.
+        if (state().status === "installing" && next.status !== "ready") return state()
         if (keep && next.status !== "ready") return state()
         apply(next, installed(state()))
         return next
@@ -205,13 +219,22 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
   ): Promise<string | undefined> => {
     const current = state()
     const project = opts.project()
+    // Downloads only open a page, so they are also valid from the Apple and stale cards.
+    if (kind === "downloadGit" || kind === "downloadLfs") {
+      if (!project || !tool(current) || current.project !== project) return undefined
+      await fixes
+        .request((requestID) =>
+          vscode.postMessage({ type: "agentManager.fixReadiness", projectId: project, requestID, fix: kind, ...extra }),
+        )
+        .catch(() => undefined)
+      return undefined
+    }
     if (current.status !== "blocked" || current.project !== project) return undefined
     revision++
     const installFix = install(kind)
-    const download = kind === "downloadGit" || kind === "downloadLfs"
     if (installFix) setState({ status: "installing", project, result: current.result, fix: kind, mode: "pending" })
-    else if (!download) setState({ status: "fixing", project, result: current.result, fix: kind })
-    if (!download) track({ stage: "fix_started", code: current.result.code, fix: kind })
+    else setState({ status: "fixing", project, result: current.result, fix: kind })
+    track({ stage: "fix_started", code: current.result.code, fix: kind })
     const pool = installFix ? installs : fixes
     const reply = await pool
       .request((requestID) =>
@@ -228,7 +251,6 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
       applyInstall(project, kind, reply.result, reply.install, reply.error)
       return undefined
     }
-    if (download) return undefined
     apply(settle(reply.selected ?? project, reply.result, kind, reply.error), kind)
     return reply.selected
   }
@@ -249,8 +271,16 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
     if (outcome?.ok && result.code === expected) {
       return apply({ status: "stale", project, result, fix: kind })
     }
-    const detail = error ?? outcome?.error
-    apply(settle(project, result, kind, detail))
+    apply(settle(project, result, kind, error ?? failure(outcome)))
+  }
+
+  /** Translate a terminal install's exit state for Show details. */
+  const failure = (outcome: ReadinessInstall | undefined) => {
+    if (!outcome) return undefined
+    if (outcome.error) return outcome.error
+    if (outcome.stopped) return t("agentManager.readiness.install.stopped")
+    if (outcome.code !== undefined) return t("agentManager.readiness.install.failed", { code: outcome.code })
+    return undefined
   }
 
   const blocked = () => {

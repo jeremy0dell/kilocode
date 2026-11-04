@@ -371,8 +371,8 @@ function InstallingCard(props: {
       <CardDescription>
         {apple() ? t("agentManager.readiness.install.apple.body") : t("agentManager.readiness.install.terminal.body")}
       </CardDescription>
-      <CardActions>
-        <Show when={apple()}>
+      <Show when={apple()}>
+        <CardActions>
           <button
             class="am-readiness-link"
             type="button"
@@ -380,11 +380,11 @@ function InstallingCard(props: {
           >
             {t("agentManager.readiness.tool.other")}
           </button>
-        </Show>
-        <button class="am-readiness-link" type="button" onClick={props.onCheck}>
-          {t("agentManager.readiness.check")}
-        </button>
-      </CardActions>
+          <button class="am-readiness-link am-readiness-check" type="button" onClick={props.onCheck}>
+            {t("agentManager.readiness.check")}
+          </button>
+        </CardActions>
+      </Show>
     </Card>
   )
 }
@@ -406,7 +406,7 @@ function StaleCard(props: {
         <Button size="small" variant="secondary" onClick={props.onReload} data-readiness-action>
           {t("agentManager.readiness.install.reload")}
         </Button>
-        <button class="am-readiness-link" type="button" onClick={props.onCheck}>
+        <button class="am-readiness-link am-readiness-check" type="button" onClick={props.onCheck}>
           {t("agentManager.readiness.check")}
         </button>
       </CardActions>

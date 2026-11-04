@@ -613,6 +613,8 @@ export const dict = {
   "agentManager.readiness.install.stale.body":
     "Reloading the window usually fixes this. Your task comes back after the reload.",
   "agentManager.readiness.install.reload": "Reload window",
+  "agentManager.readiness.install.failed": "Install exited with code {{code}} — see the terminal output.",
+  "agentManager.readiness.install.stopped": "Install was stopped — see the terminal output.",
   "agentManager.readiness.ready.git": "Git is ready.",
   "agentManager.readiness.ready.lfs": "Git LFS is ready.",
 }

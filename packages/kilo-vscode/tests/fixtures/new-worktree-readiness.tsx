@@ -531,6 +531,27 @@ if (process.env.READINESS_CASE === "install") {
   assert.ok(links.includes("agentManager.readiness.tool.other"))
   assert.equal(creates().length, 0)
 
+  // Check again while Apple's installer is still open keeps the Installing card.
+  card()?.querySelector<HTMLButtonElement>(".am-readiness-check")?.click()
+  await settle()
+  const retry = checks().at(-1)
+  assert.ok(retry)
+  assert.equal(retry.fresh, true)
+  await reply("p1", retry.requestID, git)
+  assert.equal(card()?.querySelector("[role=status] span")?.textContent, "agentManager.readiness.install.apple.title")
+
+  // Other ways is still live from Apple's "Finish installing" card.
+  const other = Array.from(card()?.querySelectorAll<HTMLButtonElement>(".am-readiness-link") ?? []).find(
+    (item) => item.textContent === "agentManager.readiness.tool.other",
+  )
+  assert.ok(other)
+  other.click()
+  await settle()
+  const download = sent.find((item) => item.type === "agentManager.fixReadiness" && item.fix === "downloadGit")
+  assert.ok(download && download.type === "agentManager.fixReadiness")
+  await emit({ type: "agentManager.readiness", projectId: "p1", requestID: download.requestID, result: git })
+  assert.equal(card()?.querySelector("[role=status] span")?.textContent, "agentManager.readiness.install.apple.title")
+
   await emit({ type: "agentManager.readinessFocus" })
   const fresh = checks().at(-1)
   assert.ok(fresh)
@@ -539,10 +560,10 @@ if (process.env.READINESS_CASE === "install") {
   await reply("p1", fresh.requestID, { status: "ready" })
   assert.ok(card()?.textContent?.includes("agentManager.readiness.ready.git"))
   assert.equal(submit().getAttribute("aria-disabled"), null)
+  assert.equal(document.activeElement, submit())
   assert.equal(creates().length, 0)
   await close()
 
-  const second = await mount()
   const lfs: Readiness = {
     status: "blocked",
     code: "lfs_missing",
@@ -551,6 +572,10 @@ if (process.env.READINESS_CASE === "install") {
     platform: "darwin",
     installer: "brew",
   }
+
+  // A terminal install keeps Installing even when a focus check still misses it,
+  // and offers no second install while the task runs.
+  const second = await mount()
   await reply("p1", second, lfs)
   assert.equal(card()?.querySelector("[data-readiness-title]")?.textContent, "agentManager.readiness.lfs.title")
   card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
@@ -558,10 +583,46 @@ if (process.env.READINESS_CASE === "install") {
   const fix = sent.find((item) => item.type === "agentManager.fixReadiness")
   assert.ok(fix && fix.type === "agentManager.fixReadiness")
   assert.equal(fix.fix, "installLfs")
+  assert.equal(card()?.querySelectorAll("[data-readiness-action]").length, 0)
+  assert.equal(card()?.querySelector(".am-readiness-check"), null)
+  await emit({ type: "agentManager.readinessFocus" })
+  const live = checks().at(-1)
+  assert.ok(live)
+  assert.equal(live.fresh, true)
+  await reply("p1", live.requestID, { status: "blocked", code: "lfs_missing", name: "orbit", trusted: true })
+  assert.equal(
+    card()?.querySelector("[role=status] span")?.textContent,
+    "agentManager.readiness.install.terminal.title",
+  )
+  assert.equal(sent.filter((item) => item.type === "agentManager.fixReadiness").length, 1)
+
+  // A failed terminal task that still misses the tool is blocked, never the Reload card.
   await emit({
     type: "agentManager.readiness",
     projectId: "p1",
     requestID: fix.requestID,
+    result: lfs,
+    install: { kind: "lfs", mode: "terminal", ok: false, code: 1 },
+  })
+  assert.equal(card()?.querySelector("[data-readiness-title]")?.textContent, "agentManager.readiness.lfs.title")
+  assert.equal(card()?.querySelector(".am-readiness-check")?.textContent, "agentManager.readiness.check")
+  assert.equal(
+    sent.some((item) => item.type === "agentManager.reloadWindow"),
+    false,
+  )
+  await close()
+
+  // A successful terminal install that VS Code cannot see yet is the only path to Reload.
+  const third = await mount()
+  await reply("p1", third, lfs)
+  card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
+  await settle()
+  const stale = sent.find((item) => item.type === "agentManager.fixReadiness")
+  assert.ok(stale && stale.type === "agentManager.fixReadiness")
+  await emit({
+    type: "agentManager.readiness",
+    projectId: "p1",
+    requestID: stale.requestID,
     result: lfs,
     install: { kind: "lfs", mode: "terminal", ok: true },
   })
@@ -570,6 +631,7 @@ if (process.env.READINESS_CASE === "install") {
     "agentManager.readiness.install.stale.title",
   )
   assert.ok(card()?.textContent?.includes("agentManager.readiness.install.stale.body"))
+  assert.equal(card()?.querySelector(".am-readiness-check")?.textContent, "agentManager.readiness.check")
   assert.equal(
     sent.some((item) => item.type === "agentManager.reloadWindow"),
     false,
@@ -582,6 +644,21 @@ if (process.env.READINESS_CASE === "install") {
     true,
   )
   assert.equal(creates().length, 0)
+  await close()
+
+  // Focus is ignored unless a Git/LFS card is showing.
+  const healthy = await mount()
+  await reply("p1", healthy, { status: "ready" })
+  const before = checks().length
+  await emit({ type: "agentManager.readinessFocus" })
+  assert.equal(checks().length, before)
+  await close()
+
+  const commits = await mount()
+  await reply("p1", commits, { status: "blocked", code: "no_commits", name: "p1", trusted: true, identity: true })
+  const blocked = checks().length
+  await emit({ type: "agentManager.readinessFocus" })
+  assert.equal(checks().length, blocked)
   await close()
 }
 

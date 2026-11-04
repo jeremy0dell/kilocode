@@ -612,4 +612,6 @@ export const dict = {
   "agentManager.readiness.install.reload": "Ponovo učitaj prozor",
   "agentManager.readiness.ready.git": "Git je spreman.",
   "agentManager.readiness.ready.lfs": "Git LFS je spreman.",
+  "agentManager.readiness.install.failed": "Instalacija je završena s kodom {{code}}. Pogledajte izlaz terminala.",
+  "agentManager.readiness.install.stopped": "Instalacija je zaustavljena. Pogledajte izlaz terminala.",
 }

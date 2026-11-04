@@ -586,4 +586,6 @@ export const dict = {
   "agentManager.readiness.install.reload": "重新載入視窗",
   "agentManager.readiness.ready.git": "Git 已就緒。",
   "agentManager.readiness.ready.lfs": "Git LFS 已就緒。",
+  "agentManager.readiness.install.failed": "安裝以代碼 {{code}} 結束。請查看終端機輸出。",
+  "agentManager.readiness.install.stopped": "安裝已停止。請查看終端機輸出。",
 }

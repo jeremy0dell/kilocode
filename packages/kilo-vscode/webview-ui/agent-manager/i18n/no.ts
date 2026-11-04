@@ -613,4 +613,6 @@ export const dict = {
   "agentManager.readiness.install.reload": "Last inn vinduet på nytt",
   "agentManager.readiness.ready.git": "Git er klart.",
   "agentManager.readiness.ready.lfs": "Git LFS er klart.",
+  "agentManager.readiness.install.failed": "Installasjonen avsluttet med kode {{code}}. Se terminalutdataene.",
+  "agentManager.readiness.install.stopped": "Installasjonen ble stoppet. Se terminalutdataene.",
 }

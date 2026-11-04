@@ -30,6 +30,9 @@ function harness(start: Record<string, unknown> | undefined) {
     open: () => opens,
     run: () => run(),
     state: () => state,
+    set: (next: Record<string, unknown> | undefined) => {
+      state = next
+    },
     dispose,
   }
 }
@@ -70,6 +73,38 @@ describe("New Worktree reopen flag", () => {
       expect(setup.open()).toBe(1)
     } finally {
       setup.dispose()
+    }
+  })
+
+  it("waits for the project list, then consumes the flag exactly once on the new page", () => {
+    // The page that clicks Reload has already had its one chance, even without a flag.
+    const old = harness({ advancedDialogDraft: { project: "p1" } })
+    try {
+      old.setLoaded(true)
+      old.setArrived(true)
+      old.run()
+      expect(old.open()).toBe(0)
+      old.set({ advancedDialogReopen: true, advancedDialogDraft: { project: "p1" } })
+      old.run()
+      expect(old.open()).toBe(0)
+      expect(old.state()?.advancedDialogReopen).toBe(true)
+    } finally {
+      old.dispose()
+    }
+
+    // The reloaded page waits for the project list before it opens and clears the flag.
+    const next = harness({ advancedDialogReopen: true, advancedDialogDraft: { project: "p1" } })
+    try {
+      next.setLoaded(true)
+      next.run()
+      expect(next.open()).toBe(0)
+      expect(next.state()?.advancedDialogReopen).toBe(true)
+      next.setArrived(true)
+      next.run()
+      expect(next.open()).toBe(1)
+      expect(next.state()).toEqual({ advancedDialogDraft: { project: "p1" } })
+    } finally {
+      next.dispose()
     }
   })
 

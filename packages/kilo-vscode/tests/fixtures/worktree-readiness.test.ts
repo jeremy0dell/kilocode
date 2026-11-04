@@ -221,6 +221,32 @@ describe("worktree readiness tool checks", () => {
     expect(plain.calls).toEqual(["git:false", `uses:${path.basename(plainRepo)}`])
   })
 
+  it("refuses an install without workspace trust and never runs it", async () => {
+    const root = await temp("kilo-ready-untrusted-")
+    let called = 0
+    const tools: ReadinessTools = {
+      ...fake().tools,
+      install: async (kind) => {
+        called++
+        return { kind, mode: "terminal", ok: true }
+      },
+    }
+    const deps: FixDeps = {
+      git: ops,
+      trusted: () => false,
+      tools,
+      exclude: async () => {},
+      refresh: () => {},
+      branches: async () => {},
+      attach: async () => "p",
+      pick: async () => undefined,
+    }
+    const outcome = await fix(root, { fix: "installGit" }, deps)
+    expect(called).toBe(0)
+    expect(outcome.error).toBe("Trust this VS Code window before Kilo changes the project.")
+    expect(outcome.result.status).toBe("blocked")
+  })
+
   it("routes install and download fixes before inspecting the repository", async () => {
     const root = await temp("kilo-ready-install-")
     const calls: string[] = []

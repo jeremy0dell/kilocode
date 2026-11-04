@@ -621,4 +621,6 @@ export const dict = {
   "agentManager.readiness.install.reload": "Pencereyi yeniden yükle",
   "agentManager.readiness.ready.git": "Git hazır.",
   "agentManager.readiness.ready.lfs": "Git LFS hazır.",
+  "agentManager.readiness.install.failed": "Kurulum {{code}} koduyla sona erdi. Terminal çıktısına bakın.",
+  "agentManager.readiness.install.stopped": "Kurulum durduruldu. Terminal çıktısına bakın.",
 }

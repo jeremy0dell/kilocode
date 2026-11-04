@@ -629,4 +629,7 @@ export const dict = {
   "agentManager.readiness.install.reload": "Ricarica finestra",
   "agentManager.readiness.ready.git": "Git è pronto.",
   "agentManager.readiness.ready.lfs": "Git LFS è pronto.",
+  "agentManager.readiness.install.failed":
+    "L'installazione è terminata con il codice {{code}}. Controlla l'output del terminale.",
+  "agentManager.readiness.install.stopped": "L'installazione è stata interrotta. Controlla l'output del terminale.",
 }

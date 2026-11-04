@@ -30,7 +30,12 @@ export interface ReadinessInstall {
   mode: "apple" | "terminal" | "external"
   /** The installer succeeded, or the tool became available anyway. */
   ok: boolean
+  /** A raw launch error, shown verbatim in Show details. */
   error?: string
+  /** The install task's exit code when the tool is still missing. */
+  code?: number
+  /** The install task was stopped without an exit code. */
+  stopped?: boolean
 }
 
 /** A Git project found directly inside a folder that is not one itself. */

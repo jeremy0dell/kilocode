@@ -603,4 +603,6 @@ export const dict = {
   "agentManager.readiness.install.reload": "โหลดหน้าต่างใหม่",
   "agentManager.readiness.ready.git": "Git พร้อมแล้ว",
   "agentManager.readiness.ready.lfs": "Git LFS พร้อมแล้ว",
+  "agentManager.readiness.install.failed": "การติดตั้งสิ้นสุดด้วยรหัส {{code}} โปรดดูผลลัพธ์ในเทอร์มินัล",
+  "agentManager.readiness.install.stopped": "การติดตั้งถูกหยุด โปรดดูผลลัพธ์ในเทอร์มินัล",
 }

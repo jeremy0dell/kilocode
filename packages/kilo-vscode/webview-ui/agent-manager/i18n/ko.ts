@@ -607,4 +607,6 @@ export const dict = {
   "agentManager.readiness.install.reload": "창 다시 로드",
   "agentManager.readiness.ready.git": "Git이 준비되었습니다.",
   "agentManager.readiness.ready.lfs": "Git LFS가 준비되었습니다.",
+  "agentManager.readiness.install.failed": "설치가 코드 {{code}}으로 종료되었습니다. 터미널 출력을 확인하세요.",
+  "agentManager.readiness.install.stopped": "설치가 중지되었습니다. 터미널 출력을 확인하세요.",
 }

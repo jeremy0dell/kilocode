@@ -14,6 +14,7 @@ import { generateBranchName, sanitizeBranchName } from "./branch-name"
 import { type GitOps, isKiloOwnedSshCommand, nonInteractiveEnv } from "./GitOps"
 import { execWithShellEnv, toolEnvironment } from "./shell-env"
 import { exec } from "../util/process"
+import { lookup } from "./path-lookup"
 import type { ToolProbe } from "./worktree-install"
 import { execGhRead } from "./gh"
 import { markNoIndex } from "../util/spotlight"
@@ -55,21 +56,6 @@ function text(error: unknown): string {
 function absent(error: unknown, detail: string): boolean {
   if (error && typeof error === "object" && (error as NodeJS.ErrnoException).code === "ENOENT") return true
   return missingDeveloperTools(detail)
-}
-
-/** First PATH entry that resolves to an executable file. */
-function find(name: string, env: NodeJS.ProcessEnv): Promise<string | undefined> {
-  const dirs = (env.PATH ?? "").split(path.delimiter).filter(Boolean)
-  const next = (index: number): Promise<string | undefined> => {
-    const dir = dirs[index]
-    if (dir === undefined) return Promise.resolve(undefined)
-    const file = path.join(dir, name)
-    return fs.promises.access(file, fs.constants.X_OK).then(
-      () => fs.promises.realpath(file),
-      () => next(index + 1),
-    )
-  }
-  return next(0)
 }
 
 function directory(branch: string): string {
@@ -244,6 +230,11 @@ export class WorktreeManager {
   private lfsProbed = 0
   private static readonly LFS_PROBE_TTL = 300_000
   private readonly platform: NodeJS.Platform
+
+  /** The Git executable this manager runs (selected path, or PATH). */
+  get gitBinary(): string {
+    return this.binary
+  }
 
   /** Repository root this manager operates on. */
   get repo(): string {
@@ -464,11 +455,13 @@ export class WorktreeManager {
       return { ok: true }
     } catch (error) {
       const detail = text(error)
-      this.lfsAvailable = false
-      this.lfsProbed = Date.now()
-      this.lfsDetail = detail
-      if (/is not a git command/i.test(detail)) return { ok: false, code: "missing", detail }
-      return { ok: false, code: "unknown", detail }
+      const absent = /is not a git command/i.test(detail)
+      // A timeout, deleted cwd or permission error is not proof git-lfs is missing:
+      // do not let it poison the negative cache for the next five minutes.
+      this.lfsAvailable = absent ? false : undefined
+      this.lfsProbed = absent ? Date.now() : 0
+      this.lfsDetail = absent ? detail : undefined
+      return { ok: false, code: absent ? "missing" : "unknown", detail }
     }
   }
 
@@ -476,7 +469,7 @@ export class WorktreeManager {
   private async appleShim(env?: NodeJS.ProcessEnv): Promise<boolean> {
     if (this.platform !== "darwin") return false
     const source = env ?? process.env
-    const file = path.isAbsolute(this.binary) ? this.binary : await find(this.binary, source)
+    const file = path.isAbsolute(this.binary) ? this.binary : await lookup(this.binary, source, this.platform)
     if (!file) return false
     const real = await fs.promises.realpath(file).catch(() => undefined)
     return real === "/usr/bin/git"

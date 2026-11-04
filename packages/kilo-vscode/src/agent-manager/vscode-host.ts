@@ -583,8 +583,9 @@ export class VscodeHost implements Host {
       }).then(
         () => 0,
         (error: unknown) => {
-          const code = (error as NodeJS.ErrnoException | undefined)?.code
-          if (typeof code === "number") return code
+          const data = error as { code?: unknown; stderr?: unknown }
+          if (typeof data.stderr === "string" && data.stderr.trim()) throw new Error(data.stderr.trim())
+          if (typeof data.code === "number") return data.code
           throw error
         },
       )

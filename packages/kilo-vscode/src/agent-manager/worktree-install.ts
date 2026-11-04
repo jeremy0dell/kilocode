@@ -6,9 +6,7 @@
  * local scenario fakes can never fall through to a real installer.
  */
 
-import { constants } from "node:fs"
-import * as fs from "node:fs/promises"
-import * as path from "node:path"
+import { lookup } from "./path-lookup"
 
 export type ToolKind = "git" | "lfs"
 export type ToolProbe = { ok: true } | { ok: false; code: "missing" | "unknown"; detail: string }
@@ -27,12 +25,19 @@ export interface InstallOutcome {
   mode: "apple" | "terminal" | "external"
   /** The installer succeeded, or the tool became available regardless of its exit code. */
   ok: boolean
+  /** A launch error, kept raw for Show details. */
   error?: string
+  /** Exit code when the install task ran and the tool is still missing. */
+  code?: number
+  /** The install task was stopped without an exit code. */
+  stopped?: boolean
 }
 
 export interface InstallDeps {
   platform: NodeJS.Platform
   env: NodeJS.ProcessEnv
+  /** The Git executable worktree creation uses, for `git lfs install`. */
+  git: string
   run: (name: string, command: InstallCommand) => Promise<number | undefined>
   open: (url: string) => void
   probe: (kind: ToolKind, fresh: boolean) => Promise<ToolProbe>
@@ -71,35 +76,17 @@ function order(platform: NodeJS.Platform): Installer[] {
   return ["apt", "dnf"]
 }
 
-function executable(name: string, env: NodeJS.ProcessEnv, platform: NodeJS.Platform): Promise<string | undefined> {
-  const dirs = (env.PATH ?? "").split(path.delimiter).filter(Boolean)
-  const exts = platform === "win32" ? (env.PATHEXT ?? ".EXE;.CMD;.BAT;.COM").split(";") : [""]
-  const mode = platform === "win32" ? constants.F_OK : constants.X_OK
-  const next = (index: number, ext: number): Promise<string | undefined> => {
-    const dir = dirs[index]
-    const suffix = exts[ext]
-    if (dir === undefined) return Promise.resolve(undefined)
-    if (suffix === undefined) return next(index + 1, 0)
-    const file = path.join(dir, `${name}${suffix}`)
-    return fs.access(file, mode).then(
-      () => file,
-      () => next(index, ext + 1),
-    )
-  }
-  return next(0, 0)
-}
-
 export async function detectInstaller(
   kind: ToolKind,
   platform: NodeJS.Platform,
   env: NodeJS.ProcessEnv,
 ): Promise<Installer | undefined> {
   if (platform === "darwin" && kind === "git") {
-    return (await executable("xcode-select", env, platform)) ? "apple" : undefined
+    return (await lookup("xcode-select", env, platform)) ? "apple" : undefined
   }
   for (const id of order(platform)) {
     const manager = MANAGERS.find((item) => item.id === id)
-    if (manager && (await executable(manager.bin, env, platform))) return id
+    if (manager && (await lookup(manager.bin, env, platform))) return id
   }
   return undefined
 }
@@ -125,10 +112,16 @@ function message(error: unknown): string {
   return String(error)
 }
 
+/** A terminal install that ran (or stopped) without making the tool available. */
+function failed(kind: ToolKind, failure: number | undefined): InstallOutcome {
+  if (failure === undefined) return { kind, mode: "terminal", ok: false, stopped: true }
+  return { kind, mode: "terminal", ok: false, code: failure }
+}
+
 /** Best-effort git-lfs registration after the package is installed. Availability still wins. */
 async function configureLfs(root: string, deps: InstallDeps): Promise<InstallOutcome> {
   const command: InstallCommand = {
-    command: "git",
+    command: deps.git,
     args: ["lfs", "install"],
     cwd: root,
     env: strings(deps.env),
@@ -142,7 +135,8 @@ async function configureLfs(root: string, deps: InstallDeps): Promise<InstallOut
       : { kind: "lfs", mode: "terminal", ok: false, error: failure }
   }
   const available = (await deps.probe("lfs", true)).ok
-  return { kind: "lfs", mode: "terminal", ok: failure === 0 || available }
+  if (available || failure === 0) return { kind: "lfs", mode: "terminal", ok: true }
+  return failed("lfs", failure)
 }
 
 export async function installTool(kind: ToolKind, root: string, deps: InstallDeps): Promise<InstallOutcome> {
@@ -183,7 +177,8 @@ export async function installTool(kind: ToolKind, root: string, deps: InstallDep
       return available ? { kind, mode: "terminal", ok: true } : { kind, mode: "terminal", ok: false, error: failure }
     }
     const available = (await deps.probe("git", true)).ok
-    return { kind, mode: "terminal", ok: failure === 0 || available }
+    if (failure === 0 || available) return { kind, mode: "terminal", ok: true }
+    return failed(kind, failure)
   }
 
   if (typeof failure === "string") {
@@ -191,6 +186,6 @@ export async function installTool(kind: ToolKind, root: string, deps: InstallDep
     return available ? await configureLfs(root, deps) : { kind, mode: "terminal", ok: false, error: failure }
   }
   const available = (await deps.probe("lfs", true)).ok
-  if (!available) return { kind, mode: "terminal", ok: failure === 0 }
+  if (!available) return failed(kind, failure)
   return await configureLfs(root, deps)
 }

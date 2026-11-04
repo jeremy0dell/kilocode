@@ -614,4 +614,6 @@ export const dict = {
   "agentManager.readiness.install.reload": "بارگذاری مجدد پنجره",
   "agentManager.readiness.ready.git": "Git آماده است.",
   "agentManager.readiness.ready.lfs": "Git LFS آماده است.",
+  "agentManager.readiness.install.failed": "نصب با کد {{code}} پایان یافت. خروجی ترمینال را ببینید.",
+  "agentManager.readiness.install.stopped": "نصب متوقف شد. خروجی ترمینال را ببینید.",
 }

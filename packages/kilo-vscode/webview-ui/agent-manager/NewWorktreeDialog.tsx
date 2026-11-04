@@ -224,7 +224,12 @@ export const NewWorktreeDialog: Component<{
     const id = project()
     return id ? props.defaultBase?.(id) : undefined
   }
-  const readiness = createReadiness({ project, entry: "modal" })
+  let createButton: HTMLButtonElement | undefined
+  const readiness = createReadiness({
+    project,
+    entry: "modal",
+    onRecovered: () => queueMicrotask(() => createButton?.focus()),
+  })
   // A readiness fix changes the project on disk: hold the project choice still until it finishes.
   const busy = () => {
     const status = readiness.state().status
@@ -242,9 +247,11 @@ export const NewWorktreeDialog: Component<{
     const state = readiness.state()
     if (state.status === "stale") return t("agentManager.readiness.install.reload")
     if (state.status === "installing")
-      return t("agentManager.readiness.install.terminal.title", {
-        tool: state.fix === "installGit" ? "Git" : "Git LFS",
-      })
+      return state.mode === "apple"
+        ? t("agentManager.readiness.install.apple.title")
+        : t("agentManager.readiness.install.terminal.title", {
+            tool: state.fix === "installGit" ? "Git" : "Git LFS",
+          })
     if (state.status === "blocked" || state.status === "fixing") {
       if (state.result.code === "git_not_found") return t("agentManager.readiness.blockedGit")
       if (state.result.code === "lfs_missing") return t("agentManager.readiness.blockedLfs")
@@ -254,7 +261,6 @@ export const NewWorktreeDialog: Component<{
   // Create stays focusable while blocked so its tooltip works on hover and keyboard focus.
   const blocked = () => (readiness.blocked() ? true : undefined)
   let card: HTMLDivElement | undefined
-  let button: HTMLButtonElement | undefined
   /** Move focus to the readiness card's action, or its title when it has none. */
   const focusCard = () => {
     if (closed || props.closing()) return
@@ -625,7 +631,7 @@ export const NewWorktreeDialog: Component<{
     const selected = await pending
     if (closed || props.closing()) return
     if (selected) setProject(selected)
-    if (readiness.state().status === "ready") button?.focus()
+    if (readiness.state().status === "ready") createButton?.focus()
   }
 
   const create = () => {
@@ -1391,7 +1397,7 @@ export const NewWorktreeDialog: Component<{
             </Show>
             <Tooltip value={blockedTooltip()} inactive={!readiness.blocked()} placement="top">
               <Button
-                ref={button}
+                ref={createButton}
                 variant="primary"
                 size="large"
                 class="am-nv-submit"
