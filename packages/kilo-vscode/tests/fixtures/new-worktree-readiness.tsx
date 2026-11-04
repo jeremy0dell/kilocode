@@ -476,6 +476,18 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
   assert.equal(closes.value, 1)
 }
 
+// A project whose branch list is empty or failed shows the no-branches state.
+{
+  const id = await mount()
+  await emit({ type: "agentManager.branches", projectId: "p1", branches: [], defaultBranch: "main" })
+  const branch = document.querySelector<HTMLButtonElement>(".am-nv-origin-branch")
+  assert.ok(branch)
+  assert.ok(branch.textContent?.includes("agentManager.import.noBranchesFound"))
+  assert.equal(branch.querySelector(".am-branch-badge"), null)
+  await reply("p1", id, { status: "ready" })
+  await close()
+}
+
 dispose()
 await window.happyDOM.abort()
 window.close()

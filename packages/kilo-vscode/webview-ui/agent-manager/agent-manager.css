@@ -4141,6 +4141,92 @@ body.am-wt-dragging-active * {
   color: var(--text-weak);
 }
 
+/* Line up every card line with the title text, after the warning icon. */
+.am-readiness [data-slot="card-description"],
+.am-readiness .am-readiness-working,
+.am-readiness .am-readiness-form,
+.am-readiness [data-component="collapsible"] {
+  padding-left: var(--card-indent);
+}
+
+/* The shared action row is inline content; make it a wrapping row with even gaps. */
+.am-readiness [data-slot="card-actions"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The form already carries the indent, so its action row must not add it again. */
+.am-readiness .am-readiness-form [data-slot="card-actions"] {
+  padding-left: 0;
+}
+
+/* Compact neutral chips: the secondary token can be transparent in some themes. */
+.am-readiness [data-component="button"][data-variant="secondary"] {
+  background-color: var(--surface-raised-base);
+  border: 1px solid var(--border-base);
+  color: var(--text-strong);
+  box-shadow: none;
+}
+
+.am-readiness [data-component="button"][data-variant="secondary"]:hover:not(:disabled) {
+  background-color: var(--surface-raised-base-hover);
+  border-color: var(--border-base);
+}
+
+.am-readiness [data-component="button"][data-variant="secondary"]:disabled {
+  background-color: var(--surface-raised-base);
+  border-color: var(--border-base);
+  opacity: 0.5;
+}
+
+.am-readiness [data-component="button"][data-variant="secondary"][data-size="small"] {
+  min-height: 24px;
+  padding: 3px 6px;
+}
+
+.am-readiness-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.am-readiness-fields > * {
+  min-width: 0;
+}
+
+.am-readiness-fields [data-slot="input-input"] {
+  min-height: 28px;
+  padding: 4px 8px;
+}
+
+.am-readiness-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--vscode-textLink-foreground, var(--text-info));
+  cursor: pointer;
+}
+
+.am-readiness-link:hover,
+.am-readiness-link:focus-visible {
+  color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground, var(--text-info)));
+  text-decoration: underline;
+}
+
+.am-readiness-link:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+.am-readiness-link:disabled {
+  color: var(--text-weak);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
 .am-readiness-details {
   margin: 0;
   white-space: pre-wrap;
