@@ -68,8 +68,8 @@ export interface ProjectMessageDeps {
   ready: (ctx: ProjectContext, options?: { warm?: boolean }) => Promise<ProjectInitResult>
   /** Route one session to a directory inside a project (session override + project route). */
   routeSession?: (projectId: string, sessionId: string, directory: string, generation: number) => void
-  /** Refresh VS Code's Source Control view. */
-  refreshGit: () => void
+  /** Open a repository in VS Code's Source Control view. */
+  openRepository: (root: string) => void
   /** Post a project's branch list. */
   branches: (ctx: ProjectContext) => Promise<void>
   git?: GitOps
@@ -353,7 +353,7 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
       await fix(ctx.root, m, {
         ...base,
         exclude: () => ctx.worktreeManager().ensureGitExclude(),
-        refresh: () => deps.refreshGit(),
+        openRepository: (root) => deps.openRepository(root),
         branches: () => deps.branches(ctx),
         attach: async (root) => (await register(root, deps, git)).id,
         pick: () => deps.pickFolder({ defaultPath: ctx.root, title: "Choose your project folder" }),
