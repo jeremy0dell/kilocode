@@ -569,5 +569,9 @@ export class VscodeHost implements Host {
     void vscode.commands.executeCommand("git.refresh")
   }
 
+  openRepository(root: string): void {
+    void Promise.resolve(vscode.commands.executeCommand("git.openRepository", root)).catch(() => undefined)
+  }
+
   dispose(): void {}
 }

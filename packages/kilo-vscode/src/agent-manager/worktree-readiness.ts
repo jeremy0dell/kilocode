@@ -44,8 +44,8 @@ export interface ReadinessDeps {
 export interface FixDeps extends ReadinessDeps {
   /** Write Kilo's entries to the project's `.git/info/exclude`. */
   exclude: () => Promise<void>
-  /** Refresh VS Code's Source Control view. */
-  refresh: () => void
+  /** Open the repository in VS Code's Source Control view. */
+  openRepository: (root: string) => void
   /** Post the project's refreshed branch list. */
   branches: () => Promise<void>
   /** Register a folder as a project and resolve its project ID. */
@@ -197,7 +197,7 @@ async function apply(
   if (request.identity) await prepare.configure(repo, deps.git, request.identity)
   trust(deps)
   await prepare.commit(repo, deps.git)
-  deps.refresh()
+  deps.openRepository(repo)
   await deps.branches()
   const status = await deps.git.execGit(["status", "--porcelain"], repo)
   return { root, note: status.code === 0 && status.stdout.trim().length > 0 }
