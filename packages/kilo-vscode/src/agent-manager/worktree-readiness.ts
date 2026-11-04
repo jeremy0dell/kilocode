@@ -199,7 +199,7 @@ async function apply(
   await prepare.commit(repo, deps.git)
   deps.openRepository(repo)
   await deps.branches()
-  const status = await deps.git.execGit(["status", "--porcelain"], repo)
+  const status = await deps.git.execGit(["-c", "core.fsmonitor=false", "status", "--porcelain"], repo)
   return { root, note: status.code === 0 && status.stdout.trim().length > 0 }
 }
 
