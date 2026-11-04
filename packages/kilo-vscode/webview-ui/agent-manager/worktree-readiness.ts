@@ -57,6 +57,8 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
   const fixes = createContextRequests<ReadinessMessage>(`${scope}-fix`, FIX_DEADLINE, "Readiness fix timed out")
   const [state, setState] = createSignal<ReadinessState>({ status: "checking", project: opts.project() })
   const flight = new Map<string, Promise<ReadinessState | undefined>>()
+  let disposed = false
+  let revision = 0
 
   const track = (props: { stage: string; code: string; fix?: ReadinessFix }) =>
     vscode.postMessage({
@@ -73,11 +75,13 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
 
   const unsub = vscode.onMessage((msg) => {
     if (msg.type !== "agentManager.readiness") return
+    if (msg.projectId !== opts.project()) return
     checks.settle(msg.requestID, (req) => req.resolve(msg))
     fixes.settle(msg.requestID, (req) => req.resolve(msg))
   })
 
   onCleanup(() => {
+    disposed = true
     unsub()
     const current = state()
     if ((current.status === "blocked" || current.status === "fixing") && current.project === opts.project())
@@ -97,6 +101,7 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
     if (running) return running
     // Keep showing this project's last result while it is checked again.
     if (state().project !== project) setState({ status: "checking", project })
+    const version = revision
     const next = checks
       .request((requestID) =>
         vscode.postMessage({ type: "agentManager.checkReadiness", projectId: project, requestID }),
@@ -107,7 +112,8 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
           settle(project, { status: "unknown", detail: err instanceof Error ? err.message : String(err) }),
       )
       .then((next) => {
-        if (opts.project() !== project) return undefined
+        if (disposed || opts.project() !== project) return undefined
+        if (revision !== version) return state()
         // A fix that started meanwhile owns the state.
         if (state().status === "fixing") return state()
         apply(next)
@@ -126,6 +132,7 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
     const current = state()
     const project = opts.project()
     if (current.status !== "blocked" || current.project !== project) return undefined
+    revision++
     setState({ status: "fixing", project, result: current.result, fix: kind })
     track({ stage: "fix_started", code: current.result.code, fix: kind })
     const reply = await fixes
@@ -137,7 +144,7 @@ export function createReadiness(opts: { project: Accessor<string | undefined>; e
         result: current.result,
         error: err instanceof Error ? err.message : String(err),
       }))
-    if (opts.project() !== project) return undefined
+    if (disposed || opts.project() !== project) return undefined
     apply(settle(reply.selected ?? project, reply.result, kind, reply.error), kind)
     return reply.selected
   }

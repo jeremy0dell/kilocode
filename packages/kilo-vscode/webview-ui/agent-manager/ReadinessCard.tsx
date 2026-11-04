@@ -65,7 +65,7 @@ function Details(props: { text: string }) {
   const { t } = useLanguage()
   return (
     <Collapsible variant="ghost">
-      <Collapsible.Trigger class="am-readiness-details-trigger">
+      <Collapsible.Trigger>
         <span>{t("error.details.show")}</span>
         <Collapsible.Arrow />
       </Collapsible.Trigger>
@@ -139,7 +139,7 @@ function BlockedCard(props: {
   }
 
   return (
-    <Card variant="warning" class="am-readiness-card">
+    <Card variant="warning">
       <CardTitle variant="warning" tabIndex={-1} data-readiness-title>
         {title()}
       </CardTitle>
@@ -285,7 +285,7 @@ function ReadyLine(props: { fixed: "initGit" | "initialCommit"; note?: "uncommit
 function UnknownCard(props: { detail: string; onCheck: () => void }) {
   const { t } = useLanguage()
   return (
-    <Card class="am-readiness-card">
+    <Card>
       <CardTitle icon={false} tabIndex={-1} data-readiness-title>
         {t("agentManager.readiness.unknown.title")}
       </CardTitle>

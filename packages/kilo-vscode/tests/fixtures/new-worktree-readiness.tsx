@@ -291,6 +291,8 @@ const plain: Readiness = { status: "blocked", code: "not_git_repo", name: "scrat
   await settle()
   assert.equal(creates().length, 0)
   assert.equal(checks().length, 1)
+  await reply("p2", id, { status: "ready" })
+  assert.equal(creates().length, 0)
   await reply("p1", id, { status: "ready" })
   assert.equal(creates().length, 1)
   assert.equal(closes.value, 1)
@@ -309,6 +311,54 @@ const plain: Readiness = { status: "blocked", code: "not_git_repo", name: "scrat
     { stage: "identified", code: "not_git_repo", entry: "modal" },
     { stage: "abandoned", code: "not_git_repo", entry: "modal" },
   ])
+}
+
+// A fix owns the state even when an earlier manual check replies after it finishes.
+{
+  const id = await mount()
+  await reply("p1", id, plain)
+  const again = Array.from(card()?.querySelectorAll<HTMLButtonElement>("button") ?? []).find(
+    (item) => item.textContent === "agentManager.readiness.check",
+  )
+  assert.ok(again)
+  again.click()
+  await settle()
+  const pending = checks().at(-1)!.requestID
+  card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
+  await settle()
+  const fix = sent.find((item) => item.type === "agentManager.fixReadiness")
+  assert.ok(fix && fix.type === "agentManager.fixReadiness")
+  assert.equal(fix.fix, "initGit")
+  assert.ok(card()?.querySelector("[role=status]"))
+  assert.equal(creates().length, 0)
+  await emit({
+    type: "agentManager.readiness",
+    projectId: "p1",
+    requestID: fix.requestID,
+    result: { status: "ready", note: "uncommitted" },
+  })
+  assert.ok(card()?.textContent?.includes("agentManager.readiness.ready.initGit"))
+  assert.equal(document.activeElement, submit())
+  await reply("p1", pending, plain)
+  assert.equal(submit().getAttribute("aria-disabled"), null)
+  assert.ok(card()?.textContent?.includes("agentManager.readiness.ready.initGit"))
+  assert.equal(creates().length, 0)
+  assert.equal(closes.value, 0)
+  assert.deepEqual(readiness(), [
+    { stage: "identified", code: "not_git_repo", entry: "modal" },
+    { stage: "fix_started", code: "not_git_repo", fix: "initGit", entry: "modal" },
+    { stage: "resolved", code: "not_git_repo", fix: "initGit", entry: "modal" },
+  ])
+}
+
+// Closing a pending submit cancels it without creating or reporting a late unknown transition.
+{
+  const id = await mount()
+  submit().click()
+  await close()
+  await reply("p1", id, { status: "ready" })
+  assert.equal(creates().length, 0)
+  assert.deepEqual(readiness(), [])
 }
 
 // An invalid branch name stops a ready submit before anything is created, cleared or closed.
