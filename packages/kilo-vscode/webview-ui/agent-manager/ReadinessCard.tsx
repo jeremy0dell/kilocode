@@ -340,7 +340,7 @@ function BlockedCard(props: {
                 </button>
               </Match>
             </Switch>
-            <button class="am-readiness-link" type="button" onClick={props.onCheck}>
+            <button class="am-readiness-link am-readiness-check" type="button" onClick={props.onCheck}>
               {t("agentManager.readiness.check")}
             </button>
           </CardActions>
@@ -450,7 +450,7 @@ function UnknownCard(props: { detail: string; onCheck: () => void }) {
       <CardDescription>{props.detail.split("\n").at(0)}</CardDescription>
       <Details text={props.detail} />
       <CardActions>
-        <button class="am-readiness-link" type="button" onClick={props.onCheck}>
+        <button class="am-readiness-link am-readiness-check" type="button" onClick={props.onCheck}>
           {t("agentManager.readiness.check")}
         </button>
       </CardActions>
