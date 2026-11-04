@@ -18,9 +18,7 @@ type Blocked = Extract<Readiness, { status: "blocked" }>
 type Identity = { name: string; email: string }
 type ReadyFixed = "initGit" | "initialCommit" | "installGit" | "installLfs"
 type Tool = "git" | "lfs"
-
-const installed = (fix: ReadyFixed | undefined): fix is "installGit" | "installLfs" =>
-  fix === "installGit" || fix === "installLfs"
+const READY = new Set<string | undefined>(["initGit", "initialCommit", "installGit", "installLfs"])
 
 export const ReadinessCard: Component<{
   state: ReadinessState
@@ -39,15 +37,8 @@ export const ReadinessCard: Component<{
   }
   const ready = () => {
     const state = props.state
-    if (state.status !== "ready") return undefined
-    if (
-      state.fixed !== "initGit" &&
-      state.fixed !== "initialCommit" &&
-      state.fixed !== "installGit" &&
-      state.fixed !== "installLfs"
-    )
-      return undefined
-    return { fixed: state.fixed, note: state.note }
+    if (state.status !== "ready" || !READY.has(state.fixed)) return undefined
+    return { fixed: state.fixed as ReadyFixed, note: state.note }
   }
   const installing = () => (props.state.status === "installing" ? props.state : undefined)
   const stale = () => (props.state.status === "stale" ? props.state : undefined)
@@ -272,38 +263,20 @@ function BlockedCard(props: {
                   {t("agentManager.readiness.restricted.action")}
                 </Button>
               </Match>
-              <Match when={kind() === "git"}>
+              <Match when={kind() === "git" || kind() === "lfs"}>
                 <Button
                   size="small"
                   variant="secondary"
                   disabled={locked()}
-                  onClick={() => props.onFix(toolFix("git"))}
+                  onClick={() => props.onFix(toolFix(kind() as Tool))}
                   data-readiness-action
                 >
-                  {install()
-                    ? t("agentManager.readiness.tool.install", { tool: tool("git") })
-                    : t("agentManager.readiness.tool.get", { tool: tool("git") })}
+                  {t(install() ? "agentManager.readiness.tool.install" : "agentManager.readiness.tool.get", {
+                    tool: tool(kind()),
+                  })}
                 </Button>
                 <Show when={install()}>
-                  <button class="am-readiness-link" type="button" onClick={() => props.onFix(otherFix("git"))}>
-                    {t("agentManager.readiness.tool.other")}
-                  </button>
-                </Show>
-              </Match>
-              <Match when={kind() === "lfs"}>
-                <Button
-                  size="small"
-                  variant="secondary"
-                  disabled={locked()}
-                  onClick={() => props.onFix(toolFix("lfs"))}
-                  data-readiness-action
-                >
-                  {install()
-                    ? t("agentManager.readiness.tool.install", { tool: tool("lfs") })
-                    : t("agentManager.readiness.tool.get", { tool: tool("lfs") })}
-                </Button>
-                <Show when={install()}>
-                  <button class="am-readiness-link" type="button" onClick={() => props.onFix(otherFix("lfs"))}>
+                  <button class="am-readiness-link" type="button" onClick={() => props.onFix(otherFix(kind() as Tool))}>
                     {t("agentManager.readiness.tool.other")}
                   </button>
                 </Show>
@@ -432,7 +405,7 @@ function ReadyLine(props: { fixed: ReadyFixed; note?: "uncommitted" }) {
       <Icon name="circle-check" size="small" />
       <div>
         <div class="am-readiness-ready-title">{title()}</div>
-        <Show when={installed(props.fixed) ? undefined : note()}>
+        <Show when={props.note === "uncommitted" && note()}>
           {(text) => <div class="am-readiness-ready-body">{text()}</div>}
         </Show>
       </div>

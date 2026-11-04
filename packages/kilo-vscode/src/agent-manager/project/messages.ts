@@ -374,7 +374,7 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
       installTool(kind, root, {
         platform: process.platform,
         env: await toolEnvironment(true),
-        git: manager.gitBinary,
+        git: manager.binary,
         run: async (name, command) => {
           if (!install) throw new Error("Installing tools is unavailable.")
           return install(name, command)

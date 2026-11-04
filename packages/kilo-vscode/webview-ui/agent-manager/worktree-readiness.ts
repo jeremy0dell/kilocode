@@ -50,8 +50,7 @@ function settle(project: string, result: Readiness, fixed?: ReadinessFix, error?
 
 /** Telemetry code for a state that has one. */
 function code(state: ReadinessState) {
-  if (state.status === "blocked" || state.status === "fixing") return state.result.code
-  if (state.status === "installing" || state.status === "stale") return state.result.code
+  if ("result" in state) return state.result.code
   if (state.status === "unknown") return "unknown"
   return undefined
 }
@@ -65,10 +64,13 @@ function stage(prev: ReadinessState, next: ReadinessState) {
   return undefined
 }
 
-/** The card currently shows Git or Git LFS, so a window return should re-check. */
-function tool(state: ReadinessState) {
-  if (state.status === "installing" || state.status === "stale") return true
-  return state.status === "blocked" && (state.result.code === "git_not_found" || state.result.code === "lfs_missing")
+/** The install a Git or Git LFS card represents; such a card re-checks fresh and on window return. */
+function installed(state: ReadinessState): InstallFix | undefined {
+  if (state.status === "installing" || state.status === "stale") return state.fix
+  if (state.status !== "blocked") return undefined
+  if (state.result.code === "git_not_found") return "installGit"
+  if (state.result.code === "lfs_missing") return "installLfs"
+  return undefined
 }
 
 export function createReadiness(opts: {
@@ -122,19 +124,9 @@ export function createReadiness(opts: {
     if (event) track({ ...event, ...(fix && event.stage === "resolved" ? { fix } : {}) })
   }
 
-  /** The install a card represents, so a later ready check can show its green line. */
-  const installed = (current: ReadinessState): InstallFix | undefined => {
-    if (current.status === "installing" || current.status === "stale") return current.fix
-    if (current.status === "blocked") {
-      if (current.result.code === "git_not_found") return "installGit"
-      if (current.result.code === "lfs_missing") return "installLfs"
-    }
-    return undefined
-  }
-
   const unsub = vscode.onMessage((msg) => {
     if (msg.type === "agentManager.readinessFocus") {
-      if (!tool(state()) || watching) return
+      if (!installed(state()) || watching) return
       watching = check(true, true)
         .then((next) => {
           if (next?.status === "ready") opts.onRecovered?.()
@@ -155,13 +147,7 @@ export function createReadiness(opts: {
     disposed = true
     unsub()
     const current = state()
-    if (
-      (current.status === "blocked" ||
-        current.status === "fixing" ||
-        current.status === "installing" ||
-        current.status === "stale") &&
-      current.project === opts.project()
-    )
+    if ("result" in current && current.project === opts.project())
       track({ stage: "abandoned", code: current.result.code })
     checks.dispose("Readiness check cancelled")
     fixes.dispose("Readiness fix cancelled")
@@ -225,7 +211,7 @@ export function createReadiness(opts: {
     const project = opts.project()
     // Downloads only open a page, so they are also valid from the Apple and stale cards.
     if (kind === "downloadGit" || kind === "downloadLfs") {
-      if (!project || !tool(current) || current.project !== project) return undefined
+      if (!project || !installed(current) || current.project !== project) return undefined
       await fixes
         .request((requestID) =>
           vscode.postMessage({ type: "agentManager.fixReadiness", projectId: project, requestID, fix: kind, ...extra }),
@@ -289,14 +275,11 @@ export function createReadiness(opts: {
 
   const blocked = () => {
     const current = state()
-    return (
-      (current.status === "blocked" ||
-        current.status === "fixing" ||
-        current.status === "installing" ||
-        current.status === "stale") &&
-      current.project === opts.project()
-    )
+    return "result" in current && current.project === opts.project()
   }
 
-  return { state, blocked, check, fix: run, revision: () => revision }
+  /** Check again from the card: a Git or Git LFS card refreshes the tool caches and PATH. */
+  const recheck = () => void check(installed(state()) !== undefined)
+
+  return { state, blocked, check, recheck, fix: run, revision: () => revision }
 }

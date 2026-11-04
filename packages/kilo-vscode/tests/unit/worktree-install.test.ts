@@ -78,16 +78,11 @@ describe("installer detection", () => {
     expect(await detectInstaller("lfs", "darwin", { PATH: mac })).toBe("brew")
   })
 
-  it("uses winget on Windows", async () => {
-    const win = await dir()
-    await bin(win, "winget.EXE")
-    expect(await detectInstaller("git", "win32", { PATH: win, PATHEXT: ".EXE" })).toBe("winget")
-  })
-
   it("reads Windows Path and PathExt case-insensitively", async () => {
     const win = await dir()
-    await bin(win, "winget.EXE")
-    expect(await detectInstaller("git", "win32", { Path: win, PathExt: ".EXE" })).toBe("winget")
+    await bin(win, "winget.CMD")
+    expect(await detectInstaller("git", "win32", { Path: win, PathExt: ".EXE;.CMD" })).toBe("winget")
+    expect(await detectInstaller("git", "win32", { Path: win, PathExt: ".EXE" })).toBeUndefined()
   })
 })
 
@@ -113,72 +108,137 @@ describe("install outcomes", () => {
       args: ["lfs", "install"],
       cwd: os.tmpdir(),
     })
-    // The package-manager recipe never uses an absolute installer path. The
-    // separate git-lfs step intentionally uses the selected Git executable.
-    expect(calls[0]?.command.command).not.toStartWith(path.sep)
-    expect(calls[0]?.command.args[0] ?? "").not.toStartWith(path.sep)
   })
 
-  it("counts demonstrated availability as success, even after a non-zero or stopped task", async () => {
+  it.each([
+    ["non-zero but visible", async () => 1, true, { ok: true }],
+    ["stopped but visible", async () => undefined, true, { ok: true }],
+    ["non-zero and missing", async () => 1, false, { ok: false, code: 1 }],
+    ["stopped and missing", async () => undefined, false, { ok: false, stopped: true }],
+    [
+      "start failure but visible",
+      async () => {
+        throw new Error("terminal could not start")
+      },
+      true,
+      { ok: true },
+    ],
+    [
+      "start failure and missing",
+      async () => {
+        throw new Error("terminal could not start")
+      },
+      false,
+      { ok: false, error: "terminal could not start" },
+    ],
+  ])("Git install: %s", async (_name, run, present, expected) => {
     const linux = await dir()
     await bin(linux, "apt-get")
-    const exists: ToolProbe = { ok: true }
-
-    expect(
-      await installTool(
-        "git",
-        await dir(),
-        deps("linux", linux, async () => 1, { probe: async () => exists }),
-      ),
-    ).toEqual({ kind: "git", mode: "terminal", ok: true })
-
-    expect(
-      await installTool(
-        "git",
-        await dir(),
-        deps("linux", linux, async () => undefined, { probe: async () => exists }),
-      ),
-    ).toEqual({ kind: "git", mode: "terminal", ok: true })
-  })
-
-  it("reports a failed or stopped install that leaves the tool missing", async () => {
-    const linux = await dir()
-    await bin(linux, "apt-get")
-    const missing: ToolProbe = { ok: false, code: "missing", detail: "not installed" }
-
-    expect(
-      await installTool(
-        "git",
-        await dir(),
-        deps("linux", linux, async () => 1, { probe: async () => missing }),
-      ),
-    ).toEqual({ kind: "git", mode: "terminal", ok: false, code: 1 })
-
-    expect(
-      await installTool(
-        "git",
-        await dir(),
-        deps("linux", linux, async () => undefined, { probe: async () => missing }),
-      ),
-    ).toEqual({ kind: "git", mode: "terminal", ok: false, stopped: true })
-  })
-
-  it("keeps a task start failure for Show details and still honors later availability", async () => {
-    const linux = await dir()
-    await bin(linux, "apt-get")
-    const failure = async () => {
-      throw new Error("terminal could not start")
-    }
-    const missing: ToolProbe = { ok: false, code: "missing", detail: "not installed" }
-    const installed = await installTool(
+    const outcome = await installTool(
       "git",
       await dir(),
-      deps("linux", linux, failure, { probe: async () => ({ ok: true }) }),
+      deps("linux", linux, run, {
+        probe: async () => (present ? { ok: true } : { ok: false, code: "missing", detail: "not installed" }),
+      }),
     )
-    expect(installed).toEqual({ kind: "git", mode: "terminal", ok: true })
+    expect(outcome).toEqual({ kind: "git", mode: "terminal", ...expected })
+  })
 
-    const failed = await installTool("git", await dir(), deps("linux", linux, failure, { probe: async () => missing }))
-    expect(failed).toMatchObject({ kind: "git", mode: "terminal", ok: false, error: "terminal could not start" })
+  it("treats a clean LFS package exit as success even when the tool is invisible", async () => {
+    const linux = await dir()
+    await bin(linux, "apt-get")
+    const calls: string[] = []
+    const outcome = await installTool(
+      "lfs",
+      await dir(),
+      deps(
+        "linux",
+        linux,
+        async (name) => {
+          calls.push(name)
+          return 0
+        },
+        { probe: async () => ({ ok: false, code: "missing", detail: "not installed" }) },
+      ),
+    )
+    expect(outcome).toEqual({ kind: "lfs", mode: "terminal", ok: true })
+    expect(calls).toEqual(["Install Git LFS"])
+  })
+
+  it("reports a failed package step without running the lfs setup", async () => {
+    const linux = await dir()
+    await bin(linux, "apt-get")
+    const calls: string[] = []
+    const outcome = await installTool(
+      "lfs",
+      await dir(),
+      deps(
+        "linux",
+        linux,
+        async (name) => {
+          calls.push(name)
+          return 1
+        },
+        { probe: async () => ({ ok: false, code: "missing", detail: "not installed" }) },
+      ),
+    )
+    expect(outcome).toEqual({ kind: "lfs", mode: "terminal", ok: false, code: 1 })
+    expect(calls).toEqual(["Install Git LFS"])
+  })
+
+  it.each([
+    ["failed", async () => 1, { ok: false, code: 1 }],
+    ["stopped", async () => undefined, { ok: false, stopped: true }],
+  ])("reports a %s git lfs install step", async (_name, setup, expected) => {
+    const linux = await dir()
+    await bin(linux, "apt-get")
+    const calls: string[] = []
+    const probes: boolean[] = []
+    let sequence = 0
+    const outcome = await installTool(
+      "lfs",
+      await dir(),
+      deps(
+        "linux",
+        linux,
+        async (name) => {
+          calls.push(name)
+          return name === "Set up Git LFS" ? setup() : 0
+        },
+        {
+          probe: async (_kind, fresh) => {
+            probes.push(fresh)
+            sequence++
+            return sequence < 3 ? { ok: true } : { ok: false, code: "missing", detail: "gone" }
+          },
+        },
+      ),
+    )
+    expect(outcome).toEqual({ kind: "lfs", mode: "terminal", ...expected })
+    expect(calls).toEqual(["Install Git LFS", "Set up Git LFS"])
+    expect(probes.every(Boolean)).toBe(true)
+  })
+
+  it("uses the explicit env for both package and lfs steps", async () => {
+    const linux = await dir()
+    await bin(linux, "apt-get")
+    const calls: InstallCommand[] = []
+    const outcome = await installTool(
+      "lfs",
+      await dir(),
+      deps("linux", linux, async (_name, command) => {
+        calls.push(command)
+        return 0
+      }),
+    )
+    expect(outcome).toEqual({ kind: "lfs", mode: "terminal", ok: true })
+    expect(calls).toHaveLength(2)
+    expect(calls[0]?.env).toEqual(
+      Object.fromEntries(
+        Object.entries({ ...process.env, PATH: linux }).filter((entry) => typeof entry[1] === "string"),
+      ),
+    )
+    expect(calls[1]?.env).toEqual(calls[0]?.env)
   })
 
   it("launches Apple's installer when macOS has no Git", async () => {

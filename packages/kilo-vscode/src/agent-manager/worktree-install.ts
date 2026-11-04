@@ -8,10 +8,15 @@
 
 import { tmpdir } from "node:os"
 import { lookup } from "./path-lookup"
+import type {
+  ReadinessInstall as InstallOutcome,
+  ReadinessInstaller,
+} from "../../webview-ui/src/types/messages/agent-manager"
 
-export type ToolKind = "git" | "lfs"
+export type { ReadinessInstall as InstallOutcome } from "../../webview-ui/src/types/messages/agent-manager"
+export type ToolKind = InstallOutcome["kind"]
 export type ToolProbe = { ok: true } | { ok: false; code: "missing" | "unknown"; detail: string }
-export type Installer = "apple" | "brew" | "winget" | "apt" | "dnf"
+export type Installer = ReadinessInstaller
 
 export interface InstallCommand {
   command: string
@@ -19,19 +24,6 @@ export interface InstallCommand {
   cwd: string
   env: Record<string, string>
   mode: "task" | "launcher"
-}
-
-export interface InstallOutcome {
-  kind: ToolKind
-  mode: "apple" | "terminal" | "external"
-  /** The installer succeeded, or the tool became available regardless of its exit code. */
-  ok: boolean
-  /** A launch error, kept raw for Show details. */
-  error?: string
-  /** Exit code when the install task ran and the tool is still missing. */
-  code?: number
-  /** The install task was stopped without an exit code. */
-  stopped?: boolean
 }
 
 export interface InstallDeps {
@@ -49,29 +41,21 @@ export const DOWNLOAD = {
   lfs: "https://git-lfs.com",
 }
 
-interface Manager {
-  id: Installer
-  bin: string
-  git: string[]
-  lfs: string[]
-  sudo: boolean
-}
-
-/** Small allowlist, in the order each platform should try. */
-const MANAGERS: Manager[] = [
-  { id: "brew", bin: "brew", git: ["install", "git"], lfs: ["install", "git-lfs"], sudo: false },
-  {
-    id: "winget",
+/** Small allowlist; `sudo` managers run through sudo in the visible task. */
+const MANAGERS = {
+  brew: { bin: "brew", sudo: false, git: ["install", "git"], lfs: ["install", "git-lfs"] },
+  winget: {
     bin: "winget",
+    sudo: false,
     git: ["install", "-e", "--id", "Git.Git"],
     lfs: ["install", "-e", "--id", "GitHub.GitLFS"],
-    sudo: false,
   },
-  { id: "apt", bin: "apt-get", git: ["install", "-y", "git"], lfs: ["install", "-y", "git-lfs"], sudo: true },
-  { id: "dnf", bin: "dnf", git: ["install", "-y", "git"], lfs: ["install", "-y", "git-lfs"], sudo: true },
-]
+  apt: { bin: "apt-get", sudo: true, git: ["install", "-y", "git"], lfs: ["install", "-y", "git-lfs"] },
+  dnf: { bin: "dnf", sudo: true, git: ["install", "-y", "git"], lfs: ["install", "-y", "git-lfs"] },
+} satisfies Record<Exclude<Installer, "apple">, { bin: string; sudo: boolean } & Record<ToolKind, string[]>>
 
-function order(platform: NodeJS.Platform): Installer[] {
+/** Managers in the order each platform should try them. */
+function order(platform: NodeJS.Platform): (keyof typeof MANAGERS)[] {
   if (platform === "darwin") return ["brew"]
   if (platform === "win32") return ["winget"]
   return ["apt", "dnf"]
@@ -86,59 +70,22 @@ export async function detectInstaller(
     return (await lookup("xcode-select", env, platform)) ? "apple" : undefined
   }
   for (const id of order(platform)) {
-    const manager = MANAGERS.find((item) => item.id === id)
-    if (manager && (await lookup(manager.bin, env, platform))) return id
+    if (await lookup(MANAGERS[id].bin, env, platform)) return id
   }
   return undefined
 }
 
-function strings(env: NodeJS.ProcessEnv): Record<string, string> {
-  const out: Record<string, string> = {}
-  for (const [key, value] of Object.entries(env)) {
-    if (typeof value === "string") out[key] = value
-  }
-  return out
-}
-
-function recipe(manager: Manager, kind: ToolKind, root: string, env: NodeJS.ProcessEnv): InstallCommand {
-  const args = kind === "git" ? manager.git : manager.lfs
-  if (manager.sudo) {
-    return { command: "sudo", args: [manager.bin, ...args], cwd: root, env: strings(env), mode: "task" }
-  }
-  return { command: manager.bin, args, cwd: root, env: strings(env), mode: "task" }
-}
-
-function message(error: unknown): string {
-  if (error instanceof Error) return error.message
-  return String(error)
-}
-
-/** A terminal install that ran (or stopped) without making the tool available. */
-function failed(kind: ToolKind, failure: number | undefined): InstallOutcome {
-  if (failure === undefined) return { kind, mode: "terminal", ok: false, stopped: true }
-  return { kind, mode: "terminal", ok: false, code: failure }
-}
-
-/** Best-effort git-lfs registration after the package is installed. Availability still wins. */
-async function configureLfs(deps: InstallDeps): Promise<InstallOutcome> {
-  const command: InstallCommand = {
-    command: deps.git,
-    args: ["lfs", "install"],
-    // Global registration works outside the repository; a repo alias must not hijack it.
-    cwd: tmpdir(),
-    env: strings(deps.env),
-    mode: "task",
-  }
-  const failure = await deps.run("Set up Git LFS", command).catch(message)
-  if (typeof failure === "string") {
-    const available = (await deps.probe("lfs", true)).ok
-    return available
-      ? { kind: "lfs", mode: "terminal", ok: true }
-      : { kind: "lfs", mode: "terminal", ok: false, error: failure }
-  }
-  const available = (await deps.probe("lfs", true)).ok
-  if (available || failure === 0) return { kind: "lfs", mode: "terminal", ok: true }
-  return failed("lfs", failure)
+/**
+ * Run one terminal step. The tool's availability afterwards wins; otherwise keep the launch error,
+ * exit code, or stopped state. `zero` also counts a clean exit as success.
+ */
+async function step(deps: InstallDeps, kind: ToolKind, name: string, command: InstallCommand, zero: boolean) {
+  const exit = await deps.run(name, command).catch((err: unknown) => (err instanceof Error ? err.message : String(err)))
+  const ok = (await deps.probe(kind, true)).ok || (zero && exit === 0)
+  if (ok) return { kind, mode: "terminal", ok } satisfies InstallOutcome
+  if (typeof exit === "string") return { kind, mode: "terminal", ok, error: exit } satisfies InstallOutcome
+  if (exit === undefined) return { kind, mode: "terminal", ok, stopped: true } satisfies InstallOutcome
+  return { kind, mode: "terminal", ok, code: exit } satisfies InstallOutcome
 }
 
 export async function installTool(kind: ToolKind, root: string, deps: InstallDeps): Promise<InstallOutcome> {
@@ -147,47 +94,30 @@ export async function installTool(kind: ToolKind, root: string, deps: InstallDep
     deps.open(DOWNLOAD[kind])
     return { kind, mode: "external", ok: false }
   }
+  const env = Object.fromEntries(
+    Object.entries(deps.env).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
+  )
 
   if (installer === "apple") {
-    const command: InstallCommand = {
-      command: "xcode-select",
-      args: ["--install"],
-      cwd: root,
-      env: strings(deps.env),
-      mode: "launcher",
-    }
-    const failure = await deps.run("Install Git", command).catch(message)
-    if (typeof failure === "string") return { kind, mode: "apple", ok: false, error: failure }
-    const available = (await deps.probe("git", false)).ok
-    const ok = failure === 0 || available
-    return {
-      kind,
-      mode: "apple",
-      ok,
-      ...(ok ? {} : { error: `xcode-select exited with code ${failure}` }),
-    }
+    const command: InstallCommand = { command: "xcode-select", args: ["--install"], cwd: root, env, mode: "launcher" }
+    const exit = await deps
+      .run("Install Git", command)
+      .catch((err: unknown) => (err instanceof Error ? err.message : String(err)))
+    if (typeof exit === "string") return { kind, mode: "apple", ok: false, error: exit }
+    const ok = exit === 0 || (await deps.probe("git", false)).ok
+    return { kind, mode: "apple", ok, ...(ok ? {} : { error: `xcode-select exited with code ${exit}` }) }
   }
 
-  const manager = MANAGERS.find((item) => item.id === installer)
-  if (!manager) return { kind, mode: "external", ok: false }
-  const failure = await deps
-    .run(kind === "git" ? "Install Git" : "Install Git LFS", recipe(manager, kind, root, deps.env))
-    .catch(message)
-  if (kind === "git") {
-    if (typeof failure === "string") {
-      const available = (await deps.probe("git", true)).ok
-      return available ? { kind, mode: "terminal", ok: true } : { kind, mode: "terminal", ok: false, error: failure }
-    }
-    const available = (await deps.probe("git", true)).ok
-    if (failure === 0 || available) return { kind, mode: "terminal", ok: true }
-    return failed(kind, failure)
-  }
-
-  if (typeof failure === "string") {
-    const available = (await deps.probe("lfs", true)).ok
-    return available ? await configureLfs(deps) : { kind, mode: "terminal", ok: false, error: failure }
-  }
-  const available = (await deps.probe("lfs", true)).ok
-  if (!available) return failed(kind, failure)
-  return await configureLfs(deps)
+  const manager = MANAGERS[installer]
+  const args = manager.sudo ? [manager.bin, ...manager[kind]] : manager[kind]
+  const command = manager.sudo ? "sudo" : manager.bin
+  const name = kind === "git" ? "Install Git" : "Install Git LFS"
+  // A clean package exit means the installer succeeded even if VS Code cannot see the tool yet.
+  const installed = await step(deps, kind, name, { command, args, cwd: root, env, mode: "task" }, true)
+  if (kind === "git" || !installed.ok) return installed
+  if (!(await deps.probe("lfs", true)).ok) return installed
+  // Best-effort registration once the package is visible. Global registration works outside the
+  // repository, so a repo alias must not hijack it.
+  const lfs: InstallCommand = { command: deps.git, args: ["lfs", "install"], cwd: tmpdir(), env, mode: "task" }
+  return step(deps, "lfs", "Set up Git LFS", lfs, true)
 }

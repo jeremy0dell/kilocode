@@ -153,7 +153,8 @@ export class WorktreeManager {
   private readonly dir: string
   private readonly git: SimpleGit
   private readonly ops: GitOps | undefined
-  private readonly binary: string
+  /** The Git executable this manager runs (selected path, or PATH). */
+  readonly binary: string
   private readonly log: (msg: string) => void
   private readonly pool: WorktreePool
   /** Deferred git bookkeeping from `detachWorktree`, flushed by `settle()`. */
@@ -231,11 +232,6 @@ export class WorktreeManager {
   private lfsProbed = 0
   private static readonly LFS_PROBE_TTL = 300_000
   private readonly platform: NodeJS.Platform
-
-  /** The Git executable this manager runs (selected path, or PATH). */
-  get gitBinary(): string {
-    return this.binary
-  }
 
   /** Repository root this manager operates on. */
   get repo(): string {
@@ -407,7 +403,7 @@ export class WorktreeManager {
     const env = fresh ? await toolEnvironment(true) : undefined
     if (!guarded) {
       const guard = await this.guardApple(env)
-      if (guard && !guard.ok) {
+      if (guard) {
         this.gitAvailable = false
         this.probeFailed = guard.missing
         return { ok: false, code: guard.missing ? "missing" : "unknown", detail: guard.detail }
@@ -472,54 +468,42 @@ export class WorktreeManager {
     }
   }
 
-  /** True when the selected executable is Apple's /usr/bin/git launcher. */
-  private async appleShim(env?: NodeJS.ProcessEnv): Promise<boolean> {
-    if (this.platform !== "darwin") return false
-    const source = env ?? process.env
-    const file = path.isAbsolute(this.binary) ? this.binary : await lookup(this.binary, source, this.platform)
-    if (!file) return false
-    const real = await fs.promises.realpath(file).catch(() => undefined)
-    return real === "/usr/bin/git"
-  }
-
-  /** The Apple shim guard, or undefined when the selected Git is not Apple's shim. */
-  private async guardApple(
-    env?: NodeJS.ProcessEnv,
-  ): Promise<{ ok: boolean; missing: boolean; detail: string } | undefined> {
-    if (!(await this.appleShim(env))) return undefined
-    return await this.developerTools(env)
-  }
-
-  /** Side-effect-free check for Command Line Tools; exit 2 means they are absent. */
-  private async developerTools(env?: NodeJS.ProcessEnv): Promise<{ ok: boolean; missing: boolean; detail: string }> {
-    const result = await exec("xcode-select", ["-p"], {
-      timeout: BUDGET.probe,
-      ...(env ? { env } : {}),
-    }).then(
-      (out) => ({ code: 0, detail: out.stdout.trim() }),
-      (error: unknown) => {
-        const data = error as { code?: unknown; stderr?: unknown }
-        return {
-          code: data.code,
-          detail: typeof data.stderr === "string" && data.stderr.trim() ? data.stderr.trim() : text(error),
-        }
-      },
+  /**
+   * A failed side-effect-free `xcode-select -p` when the selected executable is Apple's
+   * /usr/bin/git launcher (exit 2 means the Command Line Tools are absent); otherwise undefined.
+   */
+  private async guardApple(env?: NodeJS.ProcessEnv): Promise<{ missing: boolean; detail: string } | undefined> {
+    if (this.platform !== "darwin") return undefined
+    const file = path.isAbsolute(this.binary)
+      ? this.binary
+      : await lookup(this.binary, env ?? process.env, this.platform)
+    if (!file || (await fs.promises.realpath(file).catch(() => undefined)) !== "/usr/bin/git") return undefined
+    return exec("xcode-select", ["-p"], { timeout: BUDGET.probe, ...(env ? { env } : {}) }).then(
+      () => undefined,
+      (error: unknown) => ({ missing: (error as { code?: unknown }).code === 2, detail: text(error) }),
     )
-    if (result.code === 0) return { ok: true, missing: false, detail: result.detail }
-    return { ok: false, missing: result.code === 2, detail: result.detail }
+  }
+
+  /** The C8 boundary for branch requests: guard an Apple shim without a git probe. */
+  private async guard(): Promise<void> {
+    const guard = await this.guardApple()
+    if (!guard) return
+    this.gitAvailable = false
+    this.probeFailed = guard.missing
+    throw new Error(guard.missing ? MISSING_GIT : guard.detail)
   }
 
   private async ensureGitAvailable(): Promise<void> {
     // Always guard an Apple shim here, even when a previous probe cached success:
     // this is the execution boundary the modal's branch request reaches.
     const guard = await this.guardApple()
-    if (guard && !guard.ok) {
+    if (guard) {
       this.gitAvailable = false
       this.probeFailed = guard.missing
       throw new Error(guard.missing ? MISSING_GIT : guard.detail)
     }
     // Creation's own check re-probes; a cached positive must not survive an uninstall.
-    const probe = await this.probeGit(false, guard !== undefined, true)
+    const probe = await this.probeGit(false, true, true)
     if (probe.ok) return
     if (probe.code === "missing") throw new Error(MISSING_GIT)
     throw new Error(probe.detail)
@@ -1603,7 +1587,7 @@ export class WorktreeManager {
   async listBranches(): Promise<{ branches: BranchListItem[]; defaultBranch: string }> {
     // The modal's branch request is the first git work a dialog can trigger, so
     // the Apple shim guard must run here before any git execution.
-    await this.ensureGitAvailable()
+    await this.guard()
     const defBranch = await this.defaultBranch()
     const raw = await this.git.raw([
       "for-each-ref",

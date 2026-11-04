@@ -18,8 +18,8 @@ import { canonicalizePath, samePath } from "./project/paths"
 import * as prepare from "./project/prepare"
 import type {
   Readiness,
-  ReadinessFix,
   ReadinessInstaller,
+  ReadinessMessage,
   ReadinessProject,
   FixReadinessRequest,
 } from "../../webview-ui/src/types/messages/agent-manager"
@@ -69,14 +69,7 @@ export interface FixDeps extends ReadinessDeps {
   pick: () => Promise<string | undefined>
 }
 
-export interface FixOutcome {
-  result: Readiness
-  /** Project a switch fix selected. */
-  selected?: string
-  error?: string
-  /** What an install or download fix did. */
-  install?: InstallOutcome
-}
+export type FixOutcome = Omit<ReadinessMessage, "type" | "projectId" | "requestID">
 
 /** One check per folder at a time; concurrent callers share it. A fresh check always bypasses it. */
 const flight = new Map<string, Promise<Readiness>>()
@@ -97,26 +90,20 @@ export async function fix(
   request: Pick<FixReadinessRequest, "fix" | "target" | "identity">,
   deps: FixDeps,
 ): Promise<FixOutcome> {
-  const done = await apply(root, request, deps).then(
-    (value) => value,
-    (err: unknown) => ({
-      error: err instanceof Error ? err.message : String(err),
-      root,
-      selected: undefined,
-      note: false,
-    }),
-  )
+  const done: Applied = await apply(root, request, deps).catch((err: unknown) => ({
+    root,
+    error: err instanceof Error ? err.message : String(err),
+  }))
   const result = await probe(done.root, deps, false)
-  const outcome = {
-    result:
-      result.status === "ready" && done.note ? { status: "ready" as const, note: "uncommitted" as const } : result,
+  return {
+    result: result.status === "ready" && done.note ? { status: "ready", note: "uncommitted" } : result,
+    ...(done.selected ? { selected: done.selected } : {}),
+    ...(done.error ? { error: done.error } : {}),
+    ...(done.install ? { install: done.install } : {}),
   }
-  const install = "install" in done ? done.install : undefined
-  if (install) return { ...outcome, install, ...("error" in done ? { error: done.error } : {}) }
-  if ("error" in done) return { ...outcome, error: done.error }
-  if (done.selected) return { ...outcome, selected: done.selected }
-  return outcome
 }
+
+type Applied = { root: string; selected?: string; note?: boolean; install?: InstallOutcome; error?: string }
 
 async function probe(root: string, deps: ReadinessDeps, fresh = false, verify = false): Promise<Readiness> {
   return inspect(root, deps, fresh, verify).catch((err: unknown) => ({
@@ -215,7 +202,7 @@ async function apply(
   root: string,
   request: Pick<FixReadinessRequest, "fix" | "target" | "identity">,
   deps: FixDeps,
-): Promise<{ root: string; selected?: string; note: boolean; install?: InstallOutcome }> {
+): Promise<Applied> {
   const quick = await external(root, request, deps)
   if (quick) return quick
   trust(deps)
@@ -227,7 +214,7 @@ async function apply(
   }
   if (request.fix === "pickFolder") {
     const dir = await deps.pick()
-    if (!dir) return { root, note: false }
+    if (!dir) return { root }
     return select(dir, deps)
   }
   const state = await prepare.inspect(root, deps.git)
@@ -254,24 +241,23 @@ async function external(
   root: string,
   request: Pick<FixReadinessRequest, "fix">,
   deps: FixDeps,
-): Promise<{ root: string; note: boolean; install?: InstallOutcome } | undefined> {
-  if (request.fix !== "downloadGit" && request.fix !== "downloadLfs") {
-    if (request.fix !== "installGit" && request.fix !== "installLfs") return undefined
-    trust(deps)
-    if (!deps.tools) throw new Error("Installing tools is unavailable.")
-    const kind = request.fix === "installGit" ? "git" : "lfs"
-    return { root, note: false, install: await deps.tools.install(kind, root) }
+): Promise<Applied | undefined> {
+  if (request.fix === "downloadGit" || request.fix === "downloadLfs") {
+    if (!deps.tools) throw new Error("Opening the download page is unavailable.")
+    deps.tools.download(request.fix === "downloadGit" ? "git" : "lfs")
+    return { root }
   }
-  if (!deps.tools) throw new Error("Opening the download page is unavailable.")
-  deps.tools.download(request.fix === "downloadGit" ? "git" : "lfs")
-  return { root, note: false }
+  if (request.fix !== "installGit" && request.fix !== "installLfs") return undefined
+  trust(deps)
+  if (!deps.tools) throw new Error("Installing tools is unavailable.")
+  return { root, install: await deps.tools.install(request.fix === "installGit" ? "git" : "lfs", root) }
 }
 
 /** Register a folder's project and select it. */
-async function select(dir: string, deps: FixDeps): Promise<{ root: string; selected: string; note: boolean }> {
+async function select(dir: string, deps: FixDeps): Promise<Applied> {
   const state = await prepare.inspect(dir, deps.git)
   const root = state.root ?? canonicalizePath(dir)
   allow(root)
   trust(deps)
-  return { root, selected: await deps.attach(root), note: false }
+  return { root, selected: await deps.attach(root) }
 }

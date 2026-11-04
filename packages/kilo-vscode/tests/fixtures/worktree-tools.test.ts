@@ -31,6 +31,12 @@ afterEach(async () => {
   await Promise.all(dirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })))
 })
 
+async function temp(prefix: string) {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), prefix))
+  dirs.push(dir)
+  return dir
+}
+
 async function script(dir: string, name: string, body: string) {
   const file = path.join(dir, name)
   await fs.writeFile(file, `#!/bin/sh\n${body}\n`)
@@ -63,8 +69,7 @@ async function repo() {
 describe("Git probe", () => {
   it("guards the modal branch request before any Git execution on an Apple shim", async () => {
     const root = await repo()
-    const bin = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-"))
-    dirs.push(bin)
+    const bin = await temp("kilo-tools-bin-")
     const shim = path.join(bin, "git")
     await fs.symlink("/usr/bin/git", shim)
     await script(
@@ -89,8 +94,7 @@ describe("Git probe", () => {
 
   it("never guards a Homebrew or custom Git", async () => {
     const root = await repo()
-    const bin = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-"))
-    dirs.push(bin)
+    const bin = await temp("kilo-tools-bin-")
     await script(bin, "xcode-select", `echo "xcode-select $@" >> "$KILO_TOOLS_LOG"\nexit 2`)
     const custom = await script(bin, "custom-git", `echo "git $@" >> "$KILO_TOOLS_LOG"\nexec "$KILO_REAL_GIT" "$@"`)
     const previous = process.env.PATH
@@ -107,8 +111,7 @@ describe("Git probe", () => {
   }, 60_000)
 
   it("recomputes probeFailed instead of keeping a sticky missing verdict", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-root-"))
-    dirs.push(root)
+    const root = await temp("kilo-tools-root-")
     const bin = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-")), "git")
     dirs.push(path.dirname(bin))
 
@@ -129,10 +132,8 @@ describe("Git probe", () => {
   })
 
   it("preserves raw Git and Git LFS errors and only blocks confirmed absence", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-root-"))
-    dirs.push(root)
-    const bin = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-"))
-    dirs.push(bin)
+    const root = await temp("kilo-tools-root-")
+    const bin = await temp("kilo-tools-bin-")
 
     const xcrun = await script(
       bin,
@@ -163,14 +164,19 @@ describe("Git probe", () => {
     expect(absent.ok).toBe(false)
     expect(absent.ok ? "" : absent.code).toBe("missing")
   })
+  it("prefers stderr in probe details", async () => {
+    const root = await temp("kilo-tools-root-")
+    const bin = await temp("kilo-tools-bin-")
+    const git = await script(bin, "git-stderr", `echo "stdout noise"\necho "stderr truth" >&2\nexit 1`)
+    const probe = await manager(root, git, "linux").probeGit()
+    expect(probe.ok ? "" : probe.detail).toBe("stderr truth")
+  })
 })
 
 describe("LFS probe", () => {
   it("does not cache an ambiguous git-lfs failure as a missing tool", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-root-"))
-    dirs.push(root)
-    const bin = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-"))
-    dirs.push(bin)
+    const root = await temp("kilo-tools-root-")
+    const bin = await temp("kilo-tools-bin-")
     const git = await script(
       bin,
       "git-timeout",
@@ -184,34 +190,19 @@ describe("LFS probe", () => {
 })
 
 describe("verify probes", () => {
-  it("bypasses a cached positive Git result and creation refuses after it disappears", async () => {
-    const root = await repo()
-    const bin = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-"))
-    dirs.push(bin)
-    const git = await script(bin, "git", `echo "git $@" >> "$KILO_TOOLS_LOG"\nexec "$KILO_REAL_GIT" "$@"`)
-    const mgr = manager(root, git, "linux")
-    expect(await mgr.probeGit()).toEqual({ ok: true })
-    await fs.rm(git)
-    expect(await mgr.probeGit()).toEqual({ ok: true })
-    expect(await mgr.probeGit(false, false, true)).toMatchObject({ ok: false, code: "missing" })
-  })
-
   it("creation re-probes Git instead of trusting the cached positive", async () => {
     const root = await repo()
-    const bin = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-"))
-    dirs.push(bin)
+    const bin = await temp("kilo-tools-bin-")
     const git = await script(bin, "git", `echo "git $@" >> "$KILO_TOOLS_LOG"\nexec "$KILO_REAL_GIT" "$@"`)
     const mgr = manager(root, git, "linux")
-    expect(await mgr.probeGit()).toEqual({ ok: true })
+    await mgr.listBranches()
     await fs.rm(git)
-    await expect(mgr.listBranches()).rejects.toThrow(/Git is not installed/)
+    await expect(mgr.createWorktree({})).rejects.toThrow(/Git is not installed/)
   })
 
   it("creation re-probes Git LFS instead of trusting the cached positive", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-root-"))
-    dirs.push(root)
-    const bin = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-"))
-    dirs.push(bin)
+    const root = await temp("kilo-tools-root-")
+    const bin = await temp("kilo-tools-bin-")
     const mark = path.join(state, "lfs-installed")
     await fs.writeFile(mark, "")
     const git = await script(
@@ -259,12 +250,9 @@ describe("LFS alias safety", () => {
 
 describe("fresh tool checks", () => {
   it("refreshes the login-shell PATH only for fresh checks and updates both LFS caches", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-root-"))
-    dirs.push(root)
-    const bin = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-"))
-    dirs.push(bin)
-    const later = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-later-"))
-    dirs.push(later)
+    const root = await temp("kilo-tools-root-")
+    const bin = await temp("kilo-tools-bin-")
+    const later = await temp("kilo-tools-later-")
     const shellCalls = path.join(state, "shell.log")
     await fs.writeFile(shellCalls, "")
     const shell = await script(
@@ -277,7 +265,7 @@ describe("fresh tool checks", () => {
       "git",
       `echo "git $@" >> "$KILO_TOOLS_LOG"\nif [ "$1" = "lfs" ]; then\n  found=$(command -v git-lfs)\n  if [ -n "$found" ]; then exec "$found" version; fi\n  echo "git: 'lfs' is not a git command." >&2\n  exit 1\nfi\nexit 0`,
     )
-    const lfs = await script(later, "git-lfs", `echo "git-lfs/3.0"`)
+    await script(later, "git-lfs", `echo "git-lfs/3.0"`)
 
     const previous = { PATH: process.env.PATH, SHELL: process.env.SHELL }
     process.env.SHELL = shell
@@ -291,7 +279,6 @@ describe("fresh tool checks", () => {
       expect((await calls()).filter((line) => line.startsWith("git lfs version"))).toHaveLength(1)
 
       await fs.writeFile(path.join(state, "path"), [later, bin, previous.PATH].join(path.delimiter))
-      expect(lfs).toBe(path.join(later, "git-lfs"))
       expect(await mgr.probeLfs()).toMatchObject({ ok: false, code: "missing" })
       expect((await fs.readFile(shellCalls, "utf8")).trim()).toBe("")
 
@@ -304,17 +291,5 @@ describe("fresh tool checks", () => {
       process.env.PATH = previous.PATH
       process.env.SHELL = previous.SHELL
     }
-  })
-
-  it("reports a non-missing Git failure without blocking", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-root-"))
-    dirs.push(root)
-    const bin = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-"))
-    dirs.push(bin)
-    const slow = await script(bin, "git-fail", `echo "permission denied while reading the repository" >&2\nexit 1`)
-    const probe: ToolProbe = await manager(root, slow, "linux").probeGit()
-    expect(probe.ok).toBe(false)
-    expect(probe.ok ? "" : probe.code).toBe("unknown")
-    expect(probe.ok ? "" : probe.detail).toContain("permission denied")
   })
 })

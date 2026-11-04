@@ -242,14 +242,6 @@ export const NewWorktreeDialog: Component<{
     const status = readiness.state().status
     return status === "fixing" || status === "installing"
   }
-  const recheck = () => {
-    const state = readiness.state()
-    const tool =
-      state.status === "installing" ||
-      state.status === "stale" ||
-      (state.status === "blocked" && (state.result.code === "git_not_found" || state.result.code === "lfs_missing"))
-    void readiness.check(tool)
-  }
   const blockedTooltip = () => {
     const state = readiness.state()
     if (state.status === "stale") return t("agentManager.readiness.install.reload")
@@ -1289,7 +1281,7 @@ export const NewWorktreeDialog: Component<{
               onFix={(fix, identity) => void recover(readiness.fix(fix, identity ? { identity } : {}))}
               onProject={(root) => void recover(readiness.fix("useProject", { target: root }))}
               onFolder={() => void recover(readiness.fix("pickFolder"))}
-              onCheck={recheck}
+              onCheck={readiness.recheck}
               onReload={() => {
                 vscode.setState(markReopen(vscode.getState<Record<string, unknown>>() ?? {}))
                 vscode.postMessage({ type: "agentManager.reloadWindow" })

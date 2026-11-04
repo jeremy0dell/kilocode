@@ -79,7 +79,10 @@ export async function executeVscodeTask(
     const budget = options.timeout ?? TIMEOUT_MS
     timeout = setTimeout(() => {
       if (options.stop) void Promise.resolve(started.terminate()).catch(() => undefined)
-      finish(undefined, new Error(`Task timed out after ${Math.round(budget / 60_000)} minutes`))
+      const message = options.stop
+        ? `Task timed out after ${Math.round(budget / 60_000)} minutes`
+        : "Setup script timed out after 5 minutes"
+      finish(undefined, new Error(message))
     }, budget)
   })
 }
