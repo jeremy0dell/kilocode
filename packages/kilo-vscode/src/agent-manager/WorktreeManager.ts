@@ -7,6 +7,7 @@
  */
 
 import * as path from "path"
+import { tmpdir } from "node:os"
 import * as fs from "fs"
 import { createHash, randomUUID } from "crypto"
 import { simpleGit, type SimpleGit } from "simple-git"
@@ -438,7 +439,7 @@ export class WorktreeManager {
    * diagnosis counts as confirmed absence; timeouts, missing cwd and permission
    * errors stay raw and non-blocking.
    */
-  async probeLfs(fresh = false, root = this.root, verify = false): Promise<ToolProbe> {
+  async probeLfs(fresh = false, _root = this.root, verify = false): Promise<ToolProbe> {
     if (!fresh && !verify && this.lfsAvailable === true) return { ok: true }
     if (
       !fresh &&
@@ -451,7 +452,8 @@ export class WorktreeManager {
     const env = fresh ? await toolEnvironment(true) : undefined
     try {
       await execWithShellEnv(this.binary, ["lfs", "version"], {
-        cwd: root,
+        // Not the repository: a repo-local `alias.lfs = !cmd` must not run here.
+        cwd: tmpdir(),
         timeout: BUDGET.probe,
         ...(env ? { env } : {}),
       })

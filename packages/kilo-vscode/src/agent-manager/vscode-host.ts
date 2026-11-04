@@ -596,7 +596,7 @@ export class VscodeHost implements Host {
     }
     return await executeVscodeTask(
       { command: command.command, args: command.args, cwd: command.cwd, env: command.env },
-      { timeout: INSTALL_TIMEOUT, name },
+      { timeout: INSTALL_TIMEOUT, name, stop: true },
     )
   }
 

@@ -13,6 +13,8 @@ export interface TaskOptions {
   name?: string
   /** Wall-clock budget; the default matches the setup script's five minutes. */
   timeout?: number
+  /** Terminate the task when the budget expires. Installs only; setup scripts keep running. */
+  stop?: boolean
 }
 
 export async function executeVscodeTask(
@@ -76,6 +78,7 @@ export async function executeVscodeTask(
 
     const budget = options.timeout ?? TIMEOUT_MS
     timeout = setTimeout(() => {
+      if (options.stop) void Promise.resolve(started.terminate()).catch(() => undefined)
       finish(undefined, new Error(`Task timed out after ${Math.round(budget / 60_000)} minutes`))
     }, budget)
   })

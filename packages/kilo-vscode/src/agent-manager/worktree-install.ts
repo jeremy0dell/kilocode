@@ -6,6 +6,7 @@
  * local scenario fakes can never fall through to a real installer.
  */
 
+import { tmpdir } from "node:os"
 import { lookup } from "./path-lookup"
 
 export type ToolKind = "git" | "lfs"
@@ -119,11 +120,12 @@ function failed(kind: ToolKind, failure: number | undefined): InstallOutcome {
 }
 
 /** Best-effort git-lfs registration after the package is installed. Availability still wins. */
-async function configureLfs(root: string, deps: InstallDeps): Promise<InstallOutcome> {
+async function configureLfs(deps: InstallDeps): Promise<InstallOutcome> {
   const command: InstallCommand = {
     command: deps.git,
     args: ["lfs", "install"],
-    cwd: root,
+    // Global registration works outside the repository; a repo alias must not hijack it.
+    cwd: tmpdir(),
     env: strings(deps.env),
     mode: "task",
   }
@@ -183,9 +185,9 @@ export async function installTool(kind: ToolKind, root: string, deps: InstallDep
 
   if (typeof failure === "string") {
     const available = (await deps.probe("lfs", true)).ok
-    return available ? await configureLfs(root, deps) : { kind, mode: "terminal", ok: false, error: failure }
+    return available ? await configureLfs(deps) : { kind, mode: "terminal", ok: false, error: failure }
   }
   const available = (await deps.probe("lfs", true)).ok
   if (!available) return failed(kind, failure)
-  return await configureLfs(root, deps)
+  return await configureLfs(deps)
 }

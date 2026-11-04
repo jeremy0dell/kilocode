@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "bun:test"
 import os from "node:os"
 import path from "node:path"
 import fs from "node:fs/promises"
+import { lookup } from "../../src/agent-manager/path-lookup"
 import {
   DOWNLOAD,
   detectInstaller,
@@ -60,6 +61,15 @@ describe("installer detection", () => {
     expect(await detectInstaller("git", "linux", { PATH: "/usr/bin:/bin" })).toBeUndefined()
   })
 
+  it("ignores a directory named like the tool on PATH", async () => {
+    const tools = await dir()
+    await fs.mkdir(path.join(tools, "git"))
+    expect(await lookup("git", { PATH: tools }, "linux")).toBeUndefined()
+    await fs.rm(path.join(tools, "git"), { recursive: true, force: true })
+    await bin(tools, "git")
+    expect(await lookup("git", { PATH: tools }, "linux")).toBe(path.join(tools, "git"))
+  })
+
   it("uses Apple's launcher for Git on macOS and brew for LFS", async () => {
     const mac = await dir()
     await bin(mac, "xcode-select")
@@ -98,7 +108,11 @@ describe("install outcomes", () => {
     expect(outcome).toEqual({ kind: "lfs", mode: "terminal", ok: true })
     expect(calls.map((call) => call.name)).toEqual(["Install Git LFS", "Set up Git LFS"])
     expect(calls[0]?.command).toMatchObject({ command: "sudo", args: ["apt-get", "install", "-y", "git-lfs"] })
-    expect(calls[1]?.command).toMatchObject({ command: "/selected/git", args: ["lfs", "install"] })
+    expect(calls[1]?.command).toMatchObject({
+      command: "/selected/git",
+      args: ["lfs", "install"],
+      cwd: os.tmpdir(),
+    })
     // The package-manager recipe never uses an absolute installer path. The
     // separate git-lfs step intentionally uses the selected Git executable.
     expect(calls[0]?.command.command).not.toStartWith(path.sep)

@@ -33,8 +33,14 @@ export function lookup(
     if (dir === undefined) return Promise.resolve(undefined)
     if (suffix === undefined) return next(index + 1, 0)
     const file = path.join(dir, `${name}${suffix}`)
-    return fs.access(file, mode).then(
-      () => file,
+    return fs.stat(file).then(
+      (info) =>
+        info.isFile()
+          ? fs.access(file, mode).then(
+              () => file,
+              () => next(index, ext + 1),
+            )
+          : next(index, ext + 1),
       () => next(index, ext + 1),
     )
   }

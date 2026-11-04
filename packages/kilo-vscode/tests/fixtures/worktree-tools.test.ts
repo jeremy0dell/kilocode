@@ -227,6 +227,36 @@ describe("verify probes", () => {
   })
 })
 
+describe("LFS alias safety", () => {
+  it("does not run a repository alias while probing git-lfs", async () => {
+    const root = await repo()
+    const mark = path.join(state, "alias-ran")
+    const real = process.env.KILO_REAL_GIT
+    if (!real) throw new Error("KILO_REAL_GIT is required")
+    const seeded = Bun.spawnSync([real, "-C", root, "config", "alias.lfs", `!touch ${mark}`])
+    expect(seeded.exitCode).toBe(0)
+
+    const previous = process.env.PATH
+    process.env.PATH = "/usr/bin:/bin"
+    try {
+      const binary = await fs.access("/usr/bin/git").then(
+        () => "/usr/bin/git",
+        () => real,
+      )
+      const mgr = manager(root, binary, "linux")
+      expect(await mgr.probeLfs()).toMatchObject({ ok: false, code: "missing" })
+      expect(
+        await fs.access(mark).then(
+          () => true,
+          () => false,
+        ),
+      ).toBe(false)
+    } finally {
+      process.env.PATH = previous
+    }
+  })
+})
+
 describe("fresh tool checks", () => {
   it("refreshes the login-shell PATH only for fresh checks and updates both LFS caches", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-root-"))
