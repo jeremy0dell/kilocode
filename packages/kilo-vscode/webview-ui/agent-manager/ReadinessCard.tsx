@@ -190,16 +190,16 @@ function BlockedCard(props: {
               <Button
                 type="submit"
                 size="small"
-                variant="primary"
+                variant="secondary"
                 disabled={locked() || !name().trim() || !email().trim()}
               >
                 {fix() === "initialCommit"
                   ? t("agentManager.readiness.identity.saveCommit")
                   : t("agentManager.readiness.identity.saveInit")}
               </Button>
-              <Button type="button" size="small" variant="ghost" onClick={() => setForm(false)}>
+              <button class="am-readiness-link" type="button" onClick={() => setForm(false)}>
                 {t("common.cancel")}
-              </Button>
+              </button>
             </CardActions>
           </form>
         </Show>
@@ -209,7 +209,7 @@ function BlockedCard(props: {
               <Match when={kind() === "restricted"}>
                 <Button
                   size="small"
-                  variant="primary"
+                  variant="secondary"
                   disabled={locked()}
                   onClick={props.onFolder}
                   data-readiness-action
@@ -222,7 +222,7 @@ function BlockedCard(props: {
                   {(project, index) => (
                     <Button
                       size="small"
-                      variant={index() === 0 ? "primary" : "secondary"}
+                      variant="secondary"
                       disabled={locked()}
                       onClick={() => props.onProject(project.root)}
                       data-readiness-action={index() === 0 ? "" : undefined}
@@ -231,27 +231,27 @@ function BlockedCard(props: {
                     </Button>
                   )}
                 </For>
-                <Button size="small" variant="ghost" disabled={locked()} onClick={props.onFolder}>
+                <button class="am-readiness-link" type="button" disabled={locked()} onClick={props.onFolder}>
                   {t("agentManager.readiness.projects.other")}
-                </Button>
+                </button>
               </Match>
               <Match when={kind() === "commit"}>
-                <Button size="small" variant="primary" disabled={locked()} onClick={start} data-readiness-action>
+                <Button size="small" variant="secondary" disabled={locked()} onClick={start} data-readiness-action>
                   {t("agentManager.readiness.commit.action")}
                 </Button>
               </Match>
               <Match when={kind() === "plain"}>
-                <Button size="small" variant="primary" disabled={locked()} onClick={start} data-readiness-action>
+                <Button size="small" variant="secondary" disabled={locked()} onClick={start} data-readiness-action>
                   {t("agentManager.readiness.plain.action")}
                 </Button>
-                <Button size="small" variant="ghost" disabled={locked()} onClick={props.onFolder}>
+                <button class="am-readiness-link" type="button" disabled={locked()} onClick={props.onFolder}>
                   {t("agentManager.readiness.plain.other")}
-                </Button>
+                </button>
               </Match>
             </Switch>
-            <Button size="small" variant="ghost" onClick={props.onCheck}>
+            <button class="am-readiness-link" type="button" onClick={props.onCheck}>
               {t("agentManager.readiness.check")}
-            </Button>
+            </button>
           </CardActions>
         </Show>
       </Show>
@@ -292,9 +292,9 @@ function UnknownCard(props: { detail: string; onCheck: () => void }) {
       <CardDescription>{props.detail.split("\n").at(0)}</CardDescription>
       <Details text={props.detail} />
       <CardActions>
-        <Button size="small" variant="ghost" onClick={props.onCheck}>
+        <button class="am-readiness-link" type="button" onClick={props.onCheck}>
           {t("agentManager.readiness.check")}
-        </Button>
+        </button>
       </CardActions>
     </Card>
   )

@@ -4141,6 +4141,53 @@ body.am-wt-dragging-active * {
   color: var(--text-weak);
 }
 
+/* Line up every card line with the title text, after the warning icon. */
+.am-readiness [data-slot="card-description"],
+.am-readiness .am-readiness-working,
+.am-readiness .am-readiness-form,
+.am-readiness [data-component="collapsible"] {
+  padding-left: var(--card-indent);
+}
+
+/* The shared action row is inline content; make it a wrapping row with even gaps. */
+.am-readiness [data-slot="card-actions"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The form already carries the indent, so its action row must not add it again. */
+.am-readiness .am-readiness-form [data-slot="card-actions"] {
+  padding-left: 0;
+}
+
+.am-readiness-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--vscode-textLink-foreground, var(--text-info));
+  cursor: pointer;
+}
+
+.am-readiness-link:hover,
+.am-readiness-link:focus-visible {
+  color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground, var(--text-info)));
+  text-decoration: underline;
+}
+
+.am-readiness-link:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+.am-readiness-link:disabled {
+  color: var(--text-weak);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
 .am-readiness-details {
   margin: 0;
   white-space: pre-wrap;
