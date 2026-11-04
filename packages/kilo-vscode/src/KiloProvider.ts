@@ -205,7 +205,12 @@ import {
   type ConfigTarget,
 } from "./kilo-provider/config-bindings"
 import { canonicalizePath, projectIdFor, samePath } from "./agent-manager/project/paths"
-import { buildTimelineSettingMessage, validChatSetting, watchChatConfig } from "./kilo-provider/chat-settings"
+import {
+  buildChatSettingsMessage,
+  buildTimelineSettingMessage,
+  validChatSetting,
+  watchChatConfig,
+} from "./kilo-provider/chat-settings"
 import { retention } from "./services/task-cleanup/retention"
 import { failure } from "./services/task-cleanup/failure"
 import { buildThroughputSettingMessage, watchThroughputConfig } from "./kilo-provider/throughput-settings"
@@ -3289,7 +3294,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private async fetchAndSendConfig(): Promise<void> {
     if (!this.client || this.connectionState !== "connected") {
       if (this.cachedConfigMessage) {
-        this.postMessage(this.cachedConfigMessage)
+        // Extension settings remain live even while the backend config is cached.
+        this.postMessage({
+          ...(this.cachedConfigMessage as Record<string, unknown>),
+          settings: this.configSettings(),
+        })
       }
       return
     }
@@ -4485,6 +4494,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       maxCost: this.maxCostSetting(),
       languageCommitMessage: this.commitMessageLanguageSetting(),
       claudeMigration: this.claudeMigrationSetting(),
+      agentManagerSplash: buildChatSettingsMessage().settings.agentManagerSplash,
       browserAutomation: this.browserAutomationSetting(),
       conversationPromptHistory: this.conversationPromptHistorySetting(),
       agentManagerBrowserUseSystemChrome: integratedBrowserUseSystemChrome(),

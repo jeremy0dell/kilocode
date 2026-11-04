@@ -1,7 +1,6 @@
 import { describe, expect, it } from "bun:test"
 import { createRoot } from "solid-js"
 import { createFold } from "../../webview-ui/agent-manager/splash/fold"
-import { splash } from "../../webview-ui/agent-manager/splash/gate"
 import { navigate, start, wrap } from "../../webview-ui/agent-manager/splash/carousel-logic"
 import { frame } from "../../webview-ui/agent-manager/splash/frame"
 import { examples, type Row } from "../../webview-ui/agent-manager/splash/examples"
@@ -15,11 +14,7 @@ import type { ExtensionMessage, WebviewMessage } from "../../webview-ui/src/type
 const source = await Bun.file(new URL("../../webview-ui/agent-manager/AgentManagerApp.tsx", import.meta.url)).text()
 
 describe("Agent Manager splash gating", () => {
-  it("keeps the dev gate off", () => {
-    expect(splash).toBe(false)
-  })
-
-  it("renders the legacy intro, whose session start posts nothing, while the gate is off", () =>
+  it("defaults to legacy and switches live without changing dismissal or fold preferences", () =>
     fixture("splash-intro"))
 })
 

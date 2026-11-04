@@ -119,9 +119,12 @@ describe("Agent Manager application settings", () => {
   })
 })
 
-describe("Claude migration application setting", () => {
+describe.each([
+  ["Claude migration", "claudeMigration"],
+  ["Agent Manager splash", "agentManagerSplash"],
+])("%s application setting", (_label, key) => {
   it("declares an opt-in application setting", () => {
-    expect(PACKAGE.contributes.configuration.properties["kilo-code.new.experimental.claudeMigration"]).toEqual({
+    expect(PACKAGE.contributes.configuration.properties[`kilo-code.new.experimental.${key}`]).toEqual({
       type: "boolean",
       default: false,
       scope: "application",
@@ -129,7 +132,7 @@ describe("Claude migration application setting", () => {
     })
   })
 
-  it("loads and saves the migration setting globally", async () => {
+  it("loads and saves the experimental setting globally", async () => {
     const vscode = await import("vscode")
     const { KiloProvider } = await import("../../src/KiloProvider")
     const original = vscode.workspace.getConfiguration
@@ -144,21 +147,39 @@ describe("Claude migration application setting", () => {
       },
     })) as typeof original
     try {
-      const provider = new KiloProvider({} as never, {} as never) as unknown as {
+      const instance = new KiloProvider({} as never, {} as never)
+      const provider = instance as unknown as {
         configSettings(): Record<string, unknown>
         handleUpdateSetting(key: string, value: unknown): Promise<void>
+        fetchAndSendConfig(): Promise<void>
+        cachedConfigMessage: unknown
       }
-      expect(provider.configSettings().claudeMigration).toBe(false)
-      await provider.handleUpdateSetting("experimental.claudeMigration", true)
+      expect(provider.configSettings()[key]).toBe(false)
+      await provider.handleUpdateSetting(`experimental.${key}`, true)
       expect(writes).toEqual([
         {
           section: "kilo-code.new.experimental",
-          key: "claudeMigration",
+          key,
           value: true,
           target: vscode.ConfigurationTarget.Global,
         },
       ])
-      expect(provider.configSettings().claudeMigration).toBe(true)
+      expect(provider.configSettings()[key]).toBe(true)
+      await provider.handleUpdateSetting(`experimental.${key}`, false)
+      expect(provider.configSettings()[key]).toBe(false)
+      expect(writes.at(-1)).toEqual({
+        section: "kilo-code.new.experimental",
+        key,
+        value: false,
+        target: vscode.ConfigurationTarget.Global,
+      })
+      const sent: unknown[] = []
+      instance.postMessage = (message) => {
+        sent.push(message)
+      }
+      provider.cachedConfigMessage = { type: "configLoaded", config: {}, settings: { [key]: true } }
+      await provider.fetchAndSendConfig()
+      expect(sent.at(-1)).toMatchObject({ type: "configLoaded", settings: { [key]: false } })
     } finally {
       vscode.workspace.getConfiguration = original
     }
