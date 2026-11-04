@@ -8,7 +8,7 @@ import * as fs from "node:fs/promises"
 import * as path from "node:path"
 
 /** Read an environment variable by name, matching case on Windows. */
-export function envValue(
+function envValue(
   env: NodeJS.ProcessEnv,
   name: string,
   platform: NodeJS.Platform = process.platform,

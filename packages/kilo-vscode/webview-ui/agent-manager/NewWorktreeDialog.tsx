@@ -225,10 +225,17 @@ export const NewWorktreeDialog: Component<{
     return id ? props.defaultBase?.(id) : undefined
   }
   let createButton: HTMLButtonElement | undefined
+  let card: HTMLDivElement | undefined
   const readiness = createReadiness({
     project,
     entry: "modal",
-    onRecovered: () => queueMicrotask(() => createButton?.focus()),
+    onRecovered: () =>
+      queueMicrotask(() => {
+        // Only pull focus when it is not already in the user's input.
+        const active = document.activeElement
+        if (active && active !== document.body && !card?.contains(active)) return
+        createButton?.focus()
+      }),
   })
   // A readiness fix changes the project on disk: hold the project choice still until it finishes.
   const busy = () => {
@@ -260,7 +267,6 @@ export const NewWorktreeDialog: Component<{
   }
   // Create stays focusable while blocked so its tooltip works on hover and keyboard focus.
   const blocked = () => (readiness.blocked() ? true : undefined)
-  let card: HTMLDivElement | undefined
   /** Move focus to the readiness card's action, or its title when it has none. */
   const focusCard = () => {
     if (closed || props.closing()) return

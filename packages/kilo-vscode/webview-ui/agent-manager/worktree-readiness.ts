@@ -18,8 +18,8 @@ import { TelemetryEventName } from "../../src/services/telemetry/types"
 const DEADLINE = 3_000
 /** Fixes can wait on a folder picker, so they get a much longer deadline. */
 const FIX_DEADLINE = 10 * 60_000
-/** Longer than the host's 30-minute task budget so the task's own error wins. */
-const INSTALL_DEADLINE = 35 * 60_000
+/** Longer than LFS's two chained 30-minute tasks so the task's own error wins. */
+const INSTALL_DEADLINE = 65 * 60_000
 
 type Blocked = Extract<Readiness, { status: "blocked" }>
 type InstallFix = "installGit" | "installLfs"
@@ -198,10 +198,14 @@ export function createReadiness(opts: {
         if (revision !== version) return state()
         // A fix that started meanwhile owns the state.
         if (state().status === "fixing") return state()
-        // Keep "Installing…" until the tool is actually ready; a check must not
-        // drop the pending install and expose a second install button.
-        if (state().status === "installing" && next.status !== "ready") return state()
-        if (keep && next.status !== "ready") return state()
+        // A terminal install stays "Installing…" until the tool is ready; a check
+        // must not drop the pending task and expose a second install button.
+        const current = state()
+        if (current.status === "installing" && current.mode === "pending" && next.status !== "ready") return current
+        // A window-return check keeps a tool card only for an inconclusive result or
+        // the same blocker. A different blocker (e.g. no_commits) must win.
+        const same = next.status === "blocked" && "result" in current && next.result.code === current.result.code
+        if (keep && next.status !== "ready" && (next.status === "unknown" || same)) return current
         apply(next, installed(state()))
         return next
       })
