@@ -574,6 +574,10 @@ export class VscodeHost implements Host {
     void vscode.commands.executeCommand("git.refresh")
   }
 
+  openRepository(root: string): void {
+    void Promise.resolve(vscode.commands.executeCommand("git.openRepository", root)).catch(() => undefined)
+  }
+
   async runInstall(name: string, command: InstallCommand): Promise<number | undefined> {
     if (command.mode === "launcher") {
       return await exec(command.command, command.args, {

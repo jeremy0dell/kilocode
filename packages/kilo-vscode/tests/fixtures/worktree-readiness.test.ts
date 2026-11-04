@@ -78,7 +78,7 @@ async function repo(dir: string, commit: boolean) {
 /** The real project wiring over a fake Host that records what the fixes ask of VS Code. */
 function wire(root: string, trusted = true) {
   const posts: AgentManagerOutMessage[] = []
-  const calls = { refresh: 0, reloads: 0, picks: [] as Array<string | undefined> }
+  const calls = { refresh: 0, opened: [] as string[], reloads: 0, picks: [] as Array<string | undefined> }
   const focus: Array<() => void> = []
   let stored: unknown
   const none = { dispose: () => {} }
@@ -106,6 +106,9 @@ function wire(root: string, trusted = true) {
     isTrusted: () => trusted,
     refreshGit: () => {
       calls.refresh++
+    },
+    openRepository: (root: string) => {
+      calls.opened.push(root)
     },
     showError: () => {},
     notify: () => {},
@@ -237,7 +240,7 @@ describe("worktree readiness tool checks", () => {
       trusted: () => false,
       tools,
       exclude: async () => {},
-      refresh: () => {},
+      openRepository: () => {},
       branches: async () => {},
       attach: async () => "p",
       pick: async () => undefined,
@@ -267,7 +270,7 @@ describe("worktree readiness tool checks", () => {
       exclude: async () => {
         throw new Error("install must not touch excludes")
       },
-      refresh: () => {},
+      openRepository: () => {},
       branches: async () => {},
       attach: async () => "p",
       pick: async () => undefined,
@@ -388,7 +391,7 @@ describe("worktree readiness fixes", () => {
         exclude: async () => {
           trusted = false
         },
-        refresh: () => {},
+        openRepository: () => {},
         branches: async () => {},
         attach: async (dir) => {
           attached.push(dir)
@@ -440,7 +443,8 @@ describe("worktree readiness fixes", () => {
     expect(git(scratch, "config", "--local", "user.name")).toBe(identity.name)
     expect(git(scratch, "config", "--local", "user.email")).toBe(identity.email)
     expect(await fs.readFile(path.join(home, ".gitconfig"), "utf8")).toBe(global)
-    expect(setup.calls.refresh).toBe(1)
+    expect(setup.calls.opened).toEqual([scratch])
+    expect(setup.calls.refresh).toBe(0)
     expect(setup.posts.map((post) => post.type)).toEqual(["agentManager.branches", "agentManager.readiness"])
     expect(setup.posts.at(0)).toMatchObject({ projectId: setup.id, defaultBranch: "trunk" })
     expect(setup.posts.at(0)).toMatchObject({ branches: [expect.objectContaining({ name: "trunk" })] })
@@ -465,6 +469,7 @@ describe("worktree readiness fixes", () => {
     expect(git(empty, "ls-tree", "-r", "HEAD")).toBe("")
     expect(git(empty, "status", "--porcelain").split("\n")).toEqual(["A  staged.txt", "?? loose.txt"])
     expect(await fs.readFile(path.join(empty, ".git", "info", "exclude"), "utf8")).toContain("\n.kilo/worktrees/\n")
+    expect(setup.calls.opened).toEqual([empty])
     expect(setup.posts.map((post) => post.type)).toEqual(["agentManager.branches", "agentManager.readiness"])
     expect(setup.posts.at(1)).toMatchObject({ result: { status: "ready", note: "uncommitted" } })
   })
@@ -503,7 +508,7 @@ describe("worktree readiness fixes", () => {
       const record = (name) => async () => { calls.push(name) }
       const checked = await check(home, deps)
       const fixed = await fix(home, { fix: "initGit", identity: { name: "A", email: "a@example.com" } }, {
-        ...deps, exclude: record("exclude"), refresh: () => calls.push("refresh"), branches: record("branches"),
+        ...deps, exclude: record("exclude"), openRepository: () => calls.push("openRepository"), branches: record("branches"),
         attach: async () => "", pick: async () => undefined,
       })
       git.dispose()

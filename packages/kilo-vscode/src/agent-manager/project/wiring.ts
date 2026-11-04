@@ -88,7 +88,7 @@ export function createProjectWiring(opts: {
     selected: opts.selected,
     post: opts.post,
     routeSession: opts.routeSession,
-    refreshGit: () => opts.host.refreshGit(),
+    openRepository: (root) => opts.host.openRepository(root),
     branches: (ctx) =>
       postBranches(
         {
