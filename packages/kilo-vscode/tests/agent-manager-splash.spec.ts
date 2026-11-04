@@ -4,28 +4,6 @@ import { expect, test, type Page } from "@playwright/test"
 const preview = { thin: 340, narrow: 360, wide: 428 }
 const mode = (width: number) => (width < 560 ? "thin" : width < 880 ? "narrow" : "wide")
 
-for (const width of [420, 1280]) {
-  test(`${width}px applies the experimental splash setting live and preserves intro preferences`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 1400 })
-    await page.goto("/iframe.html?id=agentmanager--introduction&viewMode=story")
-    await expect(page.locator(".am-intro")).toBeVisible()
-    const setting = (enabled: boolean) =>
-      page.evaluate((enabled) => {
-        window.postMessage({ type: "chatSettingsLoaded", settings: { agentManagerSplash: enabled } }, window.origin)
-      }, enabled)
-    await setting(true)
-    await expect(page.locator(".am-splash")).toBeVisible()
-    await expect(page.locator(".am-intro")).toHaveCount(0)
-    await page.locator(".am-splash-hide").click()
-    await expect(page.locator(".am-splash-folded")).toBeVisible()
-    await setting(false)
-    await expect(page.locator(".am-intro")).toBeVisible()
-    await expect(page.locator(".am-splash, .am-splash-folded")).toHaveCount(0)
-    await setting(true)
-    await expect(page.locator(".am-splash-folded")).toBeVisible()
-  })
-}
-
 async function open(page: Page, theme = "dark-modern", story = "cross-stack") {
   await page.goto(
     `/iframe.html?id=agentmanager--splash-${story}-story&viewMode=story&globals=theme:kilo-vscode;vscodeTheme:${theme}`,

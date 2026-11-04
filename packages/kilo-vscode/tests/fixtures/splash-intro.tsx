@@ -79,6 +79,7 @@ for (const dismissed of [false, true]) {
       await wait()
       const selector = folded ? ".am-splash-folded" : ".am-splash"
       assert.ok(root.querySelector(selector), "bootstrap restores the opt-in before config loads")
+      config.updateSetting("showTokenThroughput", true)
       config.discardConfig()
       await wait()
       assert.ok(root.querySelector(selector), "discarding unrelated drafts retains the bootstrap setting")

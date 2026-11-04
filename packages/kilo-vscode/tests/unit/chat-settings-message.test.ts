@@ -62,33 +62,7 @@ describe("buildChatSettingsMessage", () => {
     expect(buildChatSettingsMessage().settings.agentManagerSplash).toBe(value === true)
   })
 
-  it("broadcasts splash opt-in and opt-out without the CLI backend", () => {
-    const prefs = new Map<string, unknown>()
-    stubConfig(prefs, "kilo-code.new.experimental")
-    const listeners = new Set<(event: vscode.ConfigurationChangeEvent) => void>()
-    ;(vscode.workspace as unknown as Stub).onDidChangeConfiguration = (listener) => {
-      listeners.add(listener)
-      return new vscode.Disposable(() => listeners.delete(listener))
-    }
-    const parent: unknown[] = []
-    const child: unknown[] = []
-    const main = watchChatConfig((message) => parent.push(message))
-    const viewer = watchChatConfig((message) => child.push(message))
-    for (const enabled of [true, false]) {
-      prefs.set("agentManagerSplash", enabled)
-      for (const listener of listeners)
-        listener({
-          affectsConfiguration: (key) => key === "kilo-code.new.experimental.agentManagerSplash",
-        })
-      expect(parent.at(-1)).toMatchObject({ type: "chatSettingsLoaded", settings: { agentManagerSplash: enabled } })
-      expect(child).toEqual(parent)
-    }
-    main.dispose()
-    viewer.dispose()
-    expect(listeners.size).toBe(0)
-  })
-
-  it("broadcasts browser preference changes to all open chat viewers", () => {
+  it("broadcasts browser and splash preference changes to all open chat viewers", () => {
     Object.defineProperty(vscode.workspace, "isTrusted", { configurable: true, value: true })
     const workspace = vscode.workspace as unknown as Stub
     const prefs = new Map<string, unknown>([
@@ -122,6 +96,12 @@ describe("buildChatSettingsMessage", () => {
         },
       },
     ])
+    const splash = "kilo-code.new.experimental.agentManagerSplash"
+    for (const enabled of [true, false]) {
+      prefs.set(splash, enabled)
+      for (const listener of listeners) listener({ affectsConfiguration: (name) => name === splash })
+      expect(parent.at(-1)).toMatchObject({ settings: { agentManagerSplash: enabled } })
+    }
     expect(child).toEqual(parent)
     main.dispose()
     viewer.dispose()

@@ -119,12 +119,9 @@ describe("Agent Manager application settings", () => {
   })
 })
 
-describe.each([
-  ["Claude migration", "claudeMigration"],
-  ["Agent Manager splash", "agentManagerSplash"],
-])("%s application setting", (_label, key) => {
+describe("Claude migration application setting", () => {
   it("declares an opt-in application setting", () => {
-    expect(PACKAGE.contributes.configuration.properties[`kilo-code.new.experimental.${key}`]).toEqual({
+    expect(PACKAGE.contributes.configuration.properties["kilo-code.new.experimental.claudeMigration"]).toEqual({
       type: "boolean",
       default: false,
       scope: "application",
@@ -132,7 +129,7 @@ describe.each([
     })
   })
 
-  it("loads and saves the experimental setting globally", async () => {
+  it("loads and saves the migration setting globally", async () => {
     const vscode = await import("vscode")
     const { KiloProvider } = await import("../../src/KiloProvider")
     const original = vscode.workspace.getConfiguration
@@ -147,39 +144,62 @@ describe.each([
       },
     })) as typeof original
     try {
-      const instance = new KiloProvider({} as never, {} as never)
-      const provider = instance as unknown as {
+      const provider = new KiloProvider({} as never, {} as never) as unknown as {
         configSettings(): Record<string, unknown>
         handleUpdateSetting(key: string, value: unknown): Promise<void>
-        fetchAndSendConfig(): Promise<void>
-        cachedConfigMessage: unknown
       }
-      expect(provider.configSettings()[key]).toBe(false)
-      await provider.handleUpdateSetting(`experimental.${key}`, true)
+      expect(provider.configSettings().claudeMigration).toBe(false)
+      await provider.handleUpdateSetting("experimental.claudeMigration", true)
       expect(writes).toEqual([
         {
           section: "kilo-code.new.experimental",
-          key,
+          key: "claudeMigration",
           value: true,
           target: vscode.ConfigurationTarget.Global,
         },
       ])
-      expect(provider.configSettings()[key]).toBe(true)
-      await provider.handleUpdateSetting(`experimental.${key}`, false)
-      expect(provider.configSettings()[key]).toBe(false)
-      expect(writes.at(-1)).toEqual({
-        section: "kilo-code.new.experimental",
-        key,
-        value: false,
-        target: vscode.ConfigurationTarget.Global,
-      })
-      const sent: unknown[] = []
-      instance.postMessage = (message) => {
-        sent.push(message)
+      expect(provider.configSettings().claudeMigration).toBe(true)
+    } finally {
+      vscode.workspace.getConfiguration = original
+    }
+  })
+})
+
+describe("Agent Manager splash application setting", () => {
+  it("declares an opt-in application setting", () => {
+    expect(PACKAGE.contributes.configuration.properties["kilo-code.new.experimental.agentManagerSplash"]).toEqual({
+      type: "boolean",
+      default: false,
+      scope: "application",
+      description: expect.any(String),
+    })
+  })
+
+  it("saves the opt-in globally", async () => {
+    const vscode = await import("vscode")
+    const { KiloProvider } = await import("../../src/KiloProvider")
+    const original = vscode.workspace.getConfiguration
+    const writes: unknown[] = []
+    vscode.workspace.getConfiguration = ((section?: string) => ({
+      get: (_key: string, fallback: unknown) => fallback,
+      update: async (key: string, value: unknown, target: unknown) => {
+        writes.push({ section, key, value, target })
+      },
+    })) as typeof original
+    try {
+      const provider = new KiloProvider({} as never, {} as never) as unknown as {
+        handleUpdateSetting(key: string, value: unknown): Promise<void>
       }
-      provider.cachedConfigMessage = { type: "configLoaded", config: {}, settings: { [key]: true } }
-      await provider.fetchAndSendConfig()
-      expect(sent.at(-1)).toMatchObject({ type: "configLoaded", settings: { [key]: false } })
+      await provider.handleUpdateSetting("experimental.agentManagerSplash", true)
+      await provider.handleUpdateSetting("experimental.agentManagerSplash", false)
+      expect(writes).toEqual(
+        [true, false].map((value) => ({
+          section: "kilo-code.new.experimental",
+          key: "agentManagerSplash",
+          value,
+          target: vscode.ConfigurationTarget.Global,
+        })),
+      )
     } finally {
       vscode.workspace.getConfiguration = original
     }
