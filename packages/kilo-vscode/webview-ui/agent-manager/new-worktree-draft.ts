@@ -51,7 +51,7 @@ function allocation(value: unknown): ModelAllocationEntry | undefined {
     data.count > MAX_MULTI_VERSIONS
   )
     return undefined
-  return copy({ ...(data as unknown as ModelAllocationEntry), variant: text(data.variant) })
+  return copy({ ...data, variant: text(data.variant) } as ModelAllocationEntry)
 }
 
 /** Initial signal values for a restored draft. */

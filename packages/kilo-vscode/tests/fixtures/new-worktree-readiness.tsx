@@ -1,224 +1,29 @@
 import assert from "node:assert/strict"
-import { Window } from "happy-dom"
-import type { Readiness, WebviewMessage } from "../../webview-ui/src/types/messages"
+import type { Readiness } from "../../webview-ui/src/types/messages"
+import { post } from "../../webview-ui/src/utils/webview-message"
+import { newWorktreeHarness } from "./new-worktree-harness"
 
-const window = new Window({ url: "http://localhost" })
-Object.defineProperty(window, "origin", { value: window.location.origin })
-const sent: WebviewMessage[] = []
-// A valid saved model is required, or Create stays disabled regardless of readiness.
-const saved: Record<string, unknown> = {
-  advancedDialogSelections: { model: { providerID: "kilo", modelID: "m1" } },
-  advancedDialogImages: [{ id: "img", filename: "shot.png", mime: "image/png", dataUrl: "data:image/png;base64,AAAA" }],
-}
-const api = {
-  postMessage: (message: WebviewMessage) => sent.push(structuredClone(message)),
-  getState: () => saved,
-  setState: (next: Record<string, unknown>) => {
-    if ("advancedDialogReopen" in next) saved.advancedDialogReopen = next.advancedDialogReopen
-  },
-}
-
-Object.assign(globalThis, {
+const {
   window,
-  document: window.document,
-  navigator: window.navigator,
-  localStorage: window.localStorage,
-  Node: window.Node,
-  NodeFilter: window.NodeFilter,
-  Element: window.Element,
-  HTMLElement: window.HTMLElement,
-  HTMLHeadElement: window.HTMLHeadElement,
-  HTMLButtonElement: window.HTMLButtonElement,
-  HTMLInputElement: window.HTMLInputElement,
-  HTMLTextAreaElement: window.HTMLTextAreaElement,
-  SVGElement: window.SVGElement,
-  MutationObserver: window.MutationObserver,
-  IntersectionObserver: window.IntersectionObserver,
-  ResizeObserver: window.ResizeObserver,
-  CustomEvent: window.CustomEvent,
-  customElements: window.customElements,
-  Event: window.Event,
-  KeyboardEvent: window.KeyboardEvent,
-  MouseEvent: window.MouseEvent,
-  MessageEvent: window.MessageEvent,
-  requestAnimationFrame: window.requestAnimationFrame.bind(window),
-  cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
-  getComputedStyle: window.getComputedStyle.bind(window),
-  acquireVsCodeApi: () => api,
-})
+  sent,
+  features,
+  setFeatures,
+  settle,
+  emit,
+  checks,
+  creates,
+  submit,
+  prompt,
+  readiness,
+  card,
+  reply,
+  shortcut,
+  close,
+  mount,
+  closes,
+  dispose,
+} = await newWorktreeHarness()
 
-const { render } = await import("solid-js/web")
-const { Show, createSignal, onCleanup, onMount } = await import("solid-js")
-const { DialogProvider, useDialog } = await import("@kilocode/kilo-ui/context/dialog")
-const { VSCodeProvider } = await import("../../webview-ui/src/context/vscode")
-const { ServerProvider } = await import("../../webview-ui/src/context/server")
-const { ConfigContext } = await import("../../webview-ui/src/context/config")
-const { LanguageContext } = await import("../../webview-ui/src/context/language")
-const { NotificationsProvider } = await import("../../webview-ui/src/context/notifications")
-const { ProviderProvider } = await import("../../webview-ui/src/context/provider")
-const { SessionProvider } = await import("../../webview-ui/src/context/session")
-const { SpeechToTextModelsProvider } = await import("../../webview-ui/src/context/speech-to-text-models")
-const { NewWorktreeDialog } = await import("../../webview-ui/agent-manager/NewWorktreeDialog")
-const { createModeRouter } = await import("../../webview-ui/agent-manager/mode-router")
-const { post } = await import("../../webview-ui/src/utils/webview-message")
-
-const config = {
-  config: () => ({}),
-  globalConfig: () => ({}),
-  globalDraft: () => ({}),
-  projectConfig: () => ({}),
-  collections: () => ({}),
-  settings: () => ({}),
-  shortcuts: () => ({ bindings: {}, selection: false }),
-  features: () => ({ indexing: false, sandboxControls: false, backgroundSubagents: false, speechToText: false }),
-  loading: () => false,
-  isDirty: () => false,
-  saving: () => false,
-  saveError: () => null,
-  updateConfig: () => {},
-  updateGlobalConfig: () => {},
-  updateProjectConfig: () => {},
-  updateSetting: () => {},
-  applySetting: () => {},
-  saveConfig: () => {},
-  discardConfig: () => {},
-}
-const language = { locale: () => "en", setLocale: () => {}, userOverride: () => "", t: (key: string) => key }
-const project = (id: string) => ({
-  id,
-  root: `/${id}`,
-  label: id,
-  pinned: id === "p1",
-  active: id === "p1",
-  expanded: true,
-  initialized: true,
-  missing: false,
-})
-const projects = () => [project("p1"), project("p2")]
-const closes = { value: 0 }
-const [open, setOpen] = createSignal(false)
-const Opener = () => {
-  const dialog = useDialog()
-  const [closing, setClosing] = createSignal(false)
-  onCleanup(() => dialog.close())
-  onMount(() =>
-    dialog.show(
-      () => (
-        <NewWorktreeDialog
-          closing={closing}
-          mode={createModeRouter()}
-          projectId="p1"
-          activeProjectId="p1"
-          projects={projects}
-          onClose={() => {
-            closes.value++
-            dialog.close()
-          }}
-        />
-      ),
-      () => setClosing(true),
-    ),
-  )
-  return null
-}
-
-const host = document.createElement("div")
-document.body.append(host)
-const dispose = render(
-  () => (
-    <VSCodeProvider>
-      <ServerProvider>
-        <ProviderProvider>
-          <ConfigContext.Provider value={config as never}>
-            <LanguageContext.Provider value={language as never}>
-              <NotificationsProvider>
-                <SessionProvider>
-                  <SpeechToTextModelsProvider>
-                    <DialogProvider>
-                      <Show when={open()}>
-                        <Opener />
-                      </Show>
-                    </DialogProvider>
-                  </SpeechToTextModelsProvider>
-                </SessionProvider>
-              </NotificationsProvider>
-            </LanguageContext.Provider>
-          </ConfigContext.Provider>
-        </ProviderProvider>
-      </ServerProvider>
-    </VSCodeProvider>
-  ),
-  host,
-)
-
-const settle = async () => {
-  await Promise.resolve()
-  await window.happyDOM.waitUntilComplete()
-}
-const emit = async (data: { type: string; [key: string]: unknown }) => {
-  post(structuredClone(data))
-  await settle()
-}
-
-const model = { providerID: "kilo", modelID: "m1" }
-await emit({ type: "agentsLoaded", agents: [{ name: "code" }], defaultAgent: "code" })
-await emit({
-  type: "providersLoaded",
-  organizationId: null,
-  ready: true,
-  providers: { kilo: { id: "kilo", name: "Kilo", models: { m1: { id: "m1", name: "M1" } } } },
-  connected: ["kilo"],
-  defaults: { kilo: "m1" },
-  defaultSelection: model,
-  authMethods: {},
-  authStates: {},
-})
-
-const checks = () =>
-  sent.filter(
-    (item): item is Extract<WebviewMessage, { type: "agentManager.checkReadiness" }> =>
-      item.type === "agentManager.checkReadiness",
-  )
-const creates = () => sent.filter((item) => item.type === "agentManager.createMultiVersion")
-const submit = () => {
-  const button = document.querySelector<HTMLButtonElement>(".am-nv-submit")
-  assert.ok(button, "missing Create button")
-  return button
-}
-const prompt = () => {
-  const area = document.querySelector<HTMLTextAreaElement>(".am-prompt-input")
-  assert.ok(area, "missing prompt")
-  return area
-}
-const readiness = () =>
-  sent.flatMap((item) =>
-    item.type === "telemetry" && item.event === "Agent Manager Worktree Readiness" ? [item.properties] : [],
-  )
-const card = () => document.querySelector<HTMLElement>(".am-readiness")
-const reply = (projectId: string, requestID: string, result: Readiness) =>
-  emit({ type: "agentManager.readiness", projectId, requestID, result })
-const shortcut = () =>
-  prompt().dispatchEvent(
-    new window.KeyboardEvent("keydown", { key: "Enter", metaKey: true, ctrlKey: true, bubbles: true }) as never,
-  )
-// The dialog stack disposes a closed dialog after its 100 ms exit transition.
-const close = async () => {
-  setOpen(false)
-  await new Promise((done) => setTimeout(done, 150))
-  await settle()
-}
-const mount = async () => {
-  if (open()) await close()
-  await new Promise((done) => setTimeout(done, 150))
-  sent.length = 0
-  closes.value = 0
-  setOpen(true)
-  await settle()
-  // Mounting checks the selected project once.
-  assert.equal(checks().length, 1)
-  assert.equal(checks().at(0)?.projectId, "p1")
-  return checks().at(0)!.requestID
-}
 const plain: Readiness = { status: "blocked", code: "not_git_repo", name: "scratch", trusted: true, identity: true }
 
 // Deliver the reply in the same turn as close, while the real dialog is still mounted.
@@ -232,7 +37,12 @@ for (const method of ["escape", "button"]) {
     document.querySelector<HTMLButtonElement>(".am-nv-close")!.click()
   }
   assert.ok(document.querySelector(".am-nv-submit"), "reply must arrive before exit cleanup")
-  post({ type: "agentManager.readiness", projectId: "p1", requestID: id, result: { status: "ready" } })
+  post({
+    type: "agentManager.readiness",
+    projectId: "p1",
+    requestID: checks().at(-1)!.requestID,
+    result: { status: "ready" },
+  })
   // Drain the request's chained continuations, not the 100 ms exit timer.
   for (let turn = 0; turn < 12; turn++) await Promise.resolve()
   assert.equal(creates().length, 0, `${method}: close-start must cancel submit`)
@@ -345,6 +155,8 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
   await reply("p2", id, { status: "ready" })
   await reply("p1", "readiness-stale-check-1", { status: "ready" })
   assert.equal(submit().getAttribute("aria-disabled"), "true")
+  assert.equal(card()?.querySelector("[data-readiness-title]")?.textContent, "agentManager.readiness.plain.title")
+  assert.deepEqual(readiness(), [{ stage: "identified", code: "not_git_repo", entry: "modal" }])
 
   // Check again; reaching ready clears the card but never creates on its own or takes focus.
   const again = Array.from(card()?.querySelectorAll<HTMLButtonElement>("button") ?? []).find(
@@ -491,6 +303,9 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
 {
   const id = await mount()
   await reply("p1", id, { status: "ready" })
+  const area = prompt()
+  area.value = "keep me"
+  area.dispatchEvent(new window.Event("input", { bubbles: true }) as never)
   const branch = document.querySelector<HTMLInputElement>(".am-nv-branch-input")
   assert.ok(branch)
   branch.value = "../escape"
@@ -504,6 +319,10 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
   assert.equal(creates().length, 0)
   assert.equal(closes.value, 0)
   assert.equal(submit().disabled, false)
+  assert.equal(prompt().value, "keep me")
+  assert.ok(
+    document.querySelector("[data-component='toast']")?.textContent?.includes("agentManager.dialog.invalidBranch"),
+  )
   await close()
 }
 
@@ -512,6 +331,10 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
   await mount()
   submit().click()
   await settle()
+  assert.equal(checks().length, 2, "submit sends a verify check")
+  submit().click()
+  await settle()
+  assert.equal(checks().length, 2, "a second activation reuses the in-flight verify")
   assert.equal(creates().length, 0)
   await new Promise((done) => setTimeout(done, 3_200))
   await settle()
@@ -528,6 +351,122 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
   assert.ok(branch.textContent?.includes("agentManager.import.noBranchesFound"))
   assert.equal(branch.querySelector(".am-branch-badge"), null)
   await reply("p1", id, { status: "ready" })
+  await close()
+}
+
+// A re-check that reports the same blocker does not repeat telemetry.
+{
+  const id = await mount()
+  await reply("p1", id, plain)
+  const again = Array.from(card()?.querySelectorAll<HTMLButtonElement>("button") ?? []).find(
+    (item) => item.textContent === "agentManager.readiness.check",
+  )
+  assert.ok(again)
+  again.click()
+  await settle()
+  await reply("p1", checks().at(-1)!.requestID, plain)
+  assert.deepEqual(readiness(), [{ stage: "identified", code: "not_git_repo", entry: "modal" }])
+  await close()
+}
+
+// An invalid projectId is kept, never replaced by the active project.
+{
+  await mount({ projectId: "missing" })
+  assert.equal(checks().at(0)?.projectId, "missing")
+  assert.ok(!document.querySelector(".am-nv-origin-project")?.textContent?.includes("p1"))
+  await close()
+}
+
+// The identity form sends the approved name and email with the fix.
+{
+  const id = await mount()
+  await reply("p1", id, { ...plain, identity: false })
+  card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
+  await settle()
+  const inputs = card()?.querySelectorAll<HTMLInputElement>('[data-slot="input-input"]')
+  assert.equal(inputs?.length, 2)
+  const write = (input: HTMLInputElement, value: string) => {
+    input.value = value
+    input.dispatchEvent(new window.Event("input", { bubbles: true }))
+  }
+  write(inputs![0]!, "Ada Lovelace")
+  write(inputs![1]!, "ada@example.com")
+  await settle()
+  card()?.querySelector<HTMLButtonElement>('form.am-readiness-form button[type="submit"]')?.click()
+  await settle()
+  const fix = sent.find((item) => item.type === "agentManager.fixReadiness")
+  assert.ok(fix && fix.type === "agentManager.fixReadiness")
+  assert.equal(fix.fix, "initGit")
+  assert.deepEqual(fix.identity, { name: "Ada Lovelace", email: "ada@example.com" })
+  await close()
+}
+
+// A fix locks the project picker and the /project slash action.
+{
+  const id = await mount()
+  await reply("p1", id, plain)
+  card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
+  await settle()
+  const fix = sent.find((item) => item.type === "agentManager.fixReadiness")
+  assert.ok(fix && fix.type === "agentManager.fixReadiness")
+  const trigger = document.querySelector<HTMLButtonElement>(".am-nv-origin-project")
+  assert.ok(trigger)
+  assert.equal(trigger.disabled, true)
+  trigger.click()
+  await settle()
+  assert.equal(document.querySelector(".am-nv-origin-projects"), null)
+  const area = prompt()
+  area.value = "/project"
+  area.dispatchEvent(new window.Event("input", { bubbles: true }) as never)
+  await settle()
+  const item = Array.from(document.querySelectorAll<HTMLButtonElement>(".slash-command-item")).find((button) =>
+    button.textContent?.includes("/project"),
+  )
+  assert.ok(item)
+  item.click()
+  await settle()
+  assert.equal(document.querySelector(".am-nv-origin-projects"), null)
+  assert.ok(document.querySelector(".am-nv-origin-project")?.textContent?.includes("p1"))
+  await close()
+}
+
+// A speech submit goes through the same readiness gate.
+{
+  const { speechShortcutValue } = await import("../../webview-ui/src/components/speech-to-text/shortcut")
+  setFeatures({ ...features(), speechToText: true })
+  await emit({
+    type: "providersLoaded",
+    organizationId: null,
+    ready: true,
+    providers: { kilo: { id: "kilo", name: "Kilo", models: { m1: { id: "m1", name: "M1" } } } },
+    connected: ["kilo"],
+    defaults: { kilo: "m1" },
+    defaultSelection: { providerID: "kilo", modelID: "m1" },
+    authMethods: {},
+    authStates: { kilo: "api" },
+  })
+  const id = await mount()
+  await reply("p1", id, plain)
+  const mic = document.querySelector<HTMLButtonElement>(".prompt-speech-button")
+  assert.ok(mic)
+  mic.click()
+  await settle()
+  const start = sent.find((item) => item.type === "speechToTextStart")
+  assert.ok(start && start.type === "speechToTextStart")
+  await emit({ type: "speechToTextStarted", requestId: start.requestId })
+  const mac = speechShortcutValue() === "Meta+K"
+  const down = new window.KeyboardEvent("keydown", { key: "k", metaKey: mac, ctrlKey: !mac, bubbles: true })
+  Object.defineProperty(down, "timeStamp", { value: 0 })
+  prompt().dispatchEvent(down as never)
+  const up = new window.KeyboardEvent("keyup", { key: "k", metaKey: mac, ctrlKey: !mac, bubbles: true })
+  Object.defineProperty(up, "timeStamp", { value: 500 })
+  window.dispatchEvent(up as never)
+  await settle()
+  const stop = sent.find((item) => item.type === "speechToTextStop")
+  assert.ok(stop && stop.type === "speechToTextStop")
+  await emit({ type: "speechToTextResult", requestId: stop.requestId, text: "hello" })
+  assert.equal(creates().length, 0)
+  assert.equal(document.activeElement, card()?.querySelector("[data-readiness-action]"))
   await close()
 }
 
@@ -756,7 +695,6 @@ if (process.env.READINESS_CASE === "install") {
   )
   card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
   await settle()
-  assert.equal(saved.advancedDialogReopen, true)
   assert.equal(
     sent.some((item) => item.type === "agentManager.reloadWindow"),
     true,
@@ -777,7 +715,6 @@ if (process.env.READINESS_CASE === "install") {
   const blocked = checks().length
   await emit({ type: "agentManager.readinessFocus" })
   assert.equal(checks().length, blocked)
-  await close()
 }
 
 dispose()

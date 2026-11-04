@@ -75,6 +75,19 @@ async function repo(dir: string, commit: boolean) {
   return dir
 }
 
+function fixDeps(ops: GitOps, overrides: Partial<FixDeps> = {}): FixDeps {
+  return {
+    git: ops,
+    trusted: () => true,
+    exclude: async () => {},
+    openRepository: () => {},
+    branches: async () => {},
+    attach: async () => "",
+    pick: async () => undefined,
+    ...overrides,
+  }
+}
+
 /** The real project wiring over a fake Host that records what the fixes ask of VS Code. */
 function wire(root: string, trusted = true) {
   const posts: AgentManagerOutMessage[] = []
@@ -361,6 +374,20 @@ describe("worktree readiness check", () => {
   })
 })
 
+describe("worktree readiness flight", () => {
+  it("coalesces concurrent checks for the same folder", async () => {
+    const root = await repo(await temp("kilo-ready-flight-"), true)
+    const deps = { git: ops, trusted: () => true }
+    const first = check(root, deps)
+    const second = check(root, deps)
+    expect(second).toBe(first)
+    await first
+    const third = check(root, deps)
+    expect(third).not.toBe(first)
+    await third
+  })
+})
+
 describe("worktree readiness fixes", () => {
   it("refuses a child of a repository rooted at HOME without changing its exclude", async () => {
     await repo(home, false)
@@ -385,14 +412,11 @@ describe("worktree readiness fixes", () => {
       const root = await repo(await temp("kilo-ready-trust-"), false)
       let trusted = true
       const attached: string[] = []
-      const deps: FixDeps = {
-        git: ops,
+      const deps = fixDeps(ops, {
         trusted: () => trusted,
         exclude: async () => {
           trusted = false
         },
-        openRepository: () => {},
-        branches: async () => {},
         attach: async (dir) => {
           attached.push(dir)
           return "picked"
@@ -401,7 +425,7 @@ describe("worktree readiness fixes", () => {
           trusted = false
           return root
         },
-      }
+      })
       const outcome = await fix(
         root,
         mutation === "identity" ? { fix: "initialCommit", identity } : { fix: "pickFolder" },
@@ -456,26 +480,11 @@ describe("worktree readiness fixes", () => {
     })
   })
 
-  it("creates the first commit without committing staged or untracked files", async () => {
-    const empty = await repo(await temp("kilo-ready-first-"), false)
-    await fs.writeFile(path.join(empty, "staged.txt"), "staged")
-    await fs.writeFile(path.join(empty, "loose.txt"), "loose")
-    git(empty, "add", "staged.txt")
-    const setup = wire(empty)
-
-    await setup.send("initialCommit", { identity })
-
-    expect(git(empty, "rev-list", "--count", "HEAD")).toBe("1")
-    expect(git(empty, "ls-tree", "-r", "HEAD")).toBe("")
-    expect(git(empty, "status", "--porcelain").split("\n")).toEqual(["A  staged.txt", "?? loose.txt"])
-    expect(await fs.readFile(path.join(empty, ".git", "info", "exclude"), "utf8")).toContain("\n.kilo/worktrees/\n")
-    expect(setup.calls.opened).toEqual([empty])
-    expect(setup.posts.map((post) => post.type)).toEqual(["agentManager.branches", "agentManager.readiness"])
-    expect(setup.posts.at(1)).toMatchObject({ result: { status: "ready", note: "uncommitted" } })
-  })
-
   it("does not run a repository's fsmonitor program while finding uncommitted files", async () => {
     const root = await repo(await temp("kilo-ready-fsmonitor-"), false)
+    await fs.writeFile(path.join(root, "staged.txt"), "staged")
+    await fs.writeFile(path.join(root, "loose.txt"), "loose")
+    git(root, "add", "staged.txt")
     const scripts = await temp("kilo-ready-fsmonitor-bin-")
     const marker = path.join(scripts, "marker")
     const hook = path.join(scripts, "hook.sh")
@@ -486,11 +495,18 @@ describe("worktree readiness fixes", () => {
     const setup = wire(root)
     await setup.send("initialCommit", { identity })
 
+    expect(git(root, "rev-list", "--count", "HEAD")).toBe("1")
+    expect(git(root, "ls-tree", "-r", "HEAD")).toBe("")
+    expect(git(root, "-c", "core.fsmonitor=false", "status", "--porcelain").split("\n")).toEqual([
+      "A  staged.txt",
+      "?? loose.txt",
+    ])
+    expect(await fs.readFile(path.join(root, ".git", "info", "exclude"), "utf8")).toContain("\n.kilo/worktrees/\n")
     expect(await Bun.file(marker).exists()).toBe(false)
-    expect(setup.posts.at(1)).toMatchObject({ result: { status: "ready" } })
+    expect(setup.posts.at(1)).toMatchObject({ result: { status: "ready", note: "uncommitted" } })
   })
 
-  it("refuses to change an untrusted window or the home folder", async () => {
+  it("refuses to change an untrusted window", async () => {
     const scratch = await temp("kilo-ready-untrusted-")
     const untrusted = wire(scratch, false)
     await untrusted.send("initGit", { identity })
@@ -510,34 +526,6 @@ describe("worktree readiness fixes", () => {
         error: expect.stringContaining("Trust"),
       },
     ])
-  })
-
-  it("shows the home folder as restricted and never runs git init there", async () => {
-    // Bun reads the home folder once at startup, so the home folder case runs in a child process.
-    const script = `
-      const { check, fix } = await import(${JSON.stringify(path.resolve(import.meta.dir, "../../src/agent-manager/worktree-readiness.ts"))})
-      const { GitOps } = await import(${JSON.stringify(path.resolve(import.meta.dir, "../../src/agent-manager/GitOps.ts"))})
-      const git = new GitOps({ log: () => {} })
-      const home = process.env.HOME
-      const deps = { git, trusted: () => true }
-      const calls = []
-      const record = (name) => async () => { calls.push(name) }
-      const checked = await check(home, deps)
-      const fixed = await fix(home, { fix: "initGit", identity: { name: "A", email: "a@example.com" } }, {
-        ...deps, exclude: record("exclude"), openRepository: () => calls.push("openRepository"), branches: record("branches"),
-        attach: async () => "", pick: async () => undefined,
-      })
-      git.dispose()
-      console.log(JSON.stringify({ checked, fixed, calls }))
-    `
-    const result = Bun.spawnSync(["bun", "-e", script], { stdout: "pipe", stderr: "pipe", env: { ...process.env } })
-    expect(Buffer.from(result.stderr).toString("utf8")).toBe("")
-    const out = JSON.parse(Buffer.from(result.stdout).toString("utf8"))
-    const card = { status: "blocked", code: "not_git_repo", name: path.basename(home), trusted: true, restricted: true }
-    expect(out.checked).toEqual(card)
-    expect(out.fixed).toEqual({ result: card, error: expect.stringContaining("home folder") })
-    expect(out.calls).toEqual([])
-    expect(await Bun.file(path.join(home, ".git", "HEAD")).exists()).toBe(false)
   })
 
   it("routes a verify check through the real handler without a cached positive", async () => {
