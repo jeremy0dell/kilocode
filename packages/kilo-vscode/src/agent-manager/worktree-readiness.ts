@@ -28,6 +28,14 @@ const LIMIT = 3
 const UNTRUSTED = "Trust this VS Code window before Kilo changes the project."
 const RESTRICTED = "Choose a project folder, not your home folder or a filesystem root."
 
+function trust(deps: ReadinessDeps) {
+  if (!deps.trusted()) throw new Error(UNTRUSTED)
+}
+
+function allow(dir: string | undefined) {
+  if (isRestrictedRoot(dir)) throw new Error(RESTRICTED)
+}
+
 export interface ReadinessDeps {
   git: Git
   trusted: () => boolean
@@ -101,6 +109,15 @@ async function inspect(root: string, deps: ReadinessDeps): Promise<Readiness> {
   // Git: not checked yet.
   // Repository and commits.
   const state = await prepare.inspect(root, deps.git)
+  if (isRestrictedRoot(state.root ?? root)) {
+    return {
+      status: "blocked",
+      code: "not_git_repo",
+      name: path.basename(state.root ?? root),
+      trusted: deps.trusted(),
+      restricted: true,
+    }
+  }
   if (!state.root) return folder(root, deps)
   if (state.empty) {
     return {
@@ -156,7 +173,7 @@ async function apply(
   request: Pick<FixReadinessRequest, "fix" | "target" | "identity">,
   deps: FixDeps,
 ): Promise<{ root: string; selected?: string; note: boolean }> {
-  if (!deps.trusted()) throw new Error(UNTRUSTED)
+  trust(deps)
   if (request.fix === "useProject") {
     const target = request.target ? canonicalizePath(request.target) : ""
     if (!target || !samePath(path.dirname(target), root) || !(await exists(path.join(target, ".git"))))
@@ -168,15 +185,19 @@ async function apply(
     if (!dir) return { root, note: false }
     return select(dir, deps)
   }
-  if (isRestrictedRoot(root)) throw new Error(RESTRICTED)
+  allow(root)
   const state = await prepare.inspect(root, deps.git)
+  allow(state.root ?? root)
   if (request.fix === "initialCommit" && !state.root) throw new Error(`Not a Git repository: ${root}`)
   if (!request.identity && !(await prepare.identity(root, deps.git)))
     throw new Error("Git needs a name and email before Kilo can create the first commit.")
+  trust(deps)
   const repo = state.root ?? (await prepare.initialize(root, deps.git))
+  trust(deps)
   await deps.exclude()
+  trust(deps)
   if (request.identity) await prepare.configure(repo, deps.git, request.identity)
-  if (!deps.trusted()) throw new Error(UNTRUSTED)
+  trust(deps)
   await prepare.commit(repo, deps.git)
   deps.refresh()
   await deps.branches()
@@ -188,6 +209,7 @@ async function apply(
 async function select(dir: string, deps: FixDeps): Promise<{ root: string; selected: string; note: boolean }> {
   const state = await prepare.inspect(dir, deps.git)
   const root = state.root ?? canonicalizePath(dir)
-  if (isRestrictedRoot(root)) throw new Error(RESTRICTED)
+  allow(root)
+  trust(deps)
   return { root, selected: await deps.attach(root), note: false }
 }
