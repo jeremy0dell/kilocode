@@ -4229,6 +4229,7 @@ body.am-wt-dragging-active * {
 
 /* Keep the re-check action apart from the folder/action links, even when the row wraps. */
 .am-readiness-check {
+  flex: 0 0 auto;
   margin-left: auto;
 }
 
