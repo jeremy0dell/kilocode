@@ -51,15 +51,13 @@ function allocation(value: unknown): ModelAllocationEntry | undefined {
     data.count > MAX_MULTI_VERSIONS
   )
     return undefined
-  const item: ModelAllocationEntry = {
+  return copy({
     providerID: data.providerID,
     modelID: data.modelID,
     name: data.name,
     count: data.count,
-  }
-  const variant = text(data.variant)
-  if (variant) item.variant = variant
-  return item
+    variant: text(data.variant),
+  })
 }
 
 /** Initial signal values for a restored draft. */
@@ -76,14 +74,20 @@ export function draftValues(draft: WorktreeDraft) {
   }
 }
 
-/** Keep a saved project only while it still exists; otherwise use today's default. */
-export function restoreProject(
+/**
+ * The project to open on. An explicit row click that differs from the active
+ * project wins; otherwise restore a saved project only while it still exists,
+ * and fall back to today's default.
+ */
+export function initialProject(
   draft: WorktreeDraft,
   list: Array<{ id: string }>,
-  fallback: string | undefined,
+  explicit: string | undefined,
+  active: string | undefined,
 ): string | undefined {
+  if (explicit != null && explicit !== active) return explicit
   if (draft.project && list.some((item) => item.id === draft.project)) return draft.project
-  return fallback
+  return explicit ?? active
 }
 
 /** Read the draft from cached webview state. */

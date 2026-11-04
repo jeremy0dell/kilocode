@@ -69,7 +69,7 @@ import { ReadinessCard } from "./ReadinessCard"
 import {
   draftValues,
   readCached,
-  restoreProject,
+  initialProject,
   writeAllocations,
   writeDraft,
   type VersionCount,
@@ -215,7 +215,7 @@ export const NewWorktreeDialog: Component<{
   const projects = () => props.projects?.() ?? []
   const fallback = props.projectId ?? props.activeProjectId
   // A saved project that no longer exists falls back to today's default; never pick another one.
-  const [project, setProject] = createSignal(restoreProject(draft, projects(), fallback))
+  const [project, setProject] = createSignal(initialProject(draft, projects(), props.projectId, props.activeProjectId))
   const [projectOpen, setProjectOpen] = createSignal(false)
   const showProject = () => projects().length > 0
   let submitted = false

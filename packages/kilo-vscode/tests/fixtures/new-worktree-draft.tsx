@@ -17,6 +17,10 @@ if (scenario === "missing") {
   state.advancedDialogDraft = { project: "gone", name: "carried" }
   state.advancedDialogSelections = { model }
 }
+if (scenario === "explicit") {
+  state.advancedDialogDraft = { project: "p2" }
+  state.advancedDialogSelections = { model }
+}
 if (scenario === "catalog") {
   state.advancedDialogSelections = { model }
   state.advancedDialogDraft = {
@@ -105,6 +109,7 @@ const config = {
 }
 const language = { locale: () => "en", setLocale: () => {}, userOverride: () => "", t: (key: string) => key }
 const [active, setActive] = createSignal("p1")
+const [row, setRow] = createSignal<string | undefined>(undefined)
 const project = (id: string) => ({
   id,
   root: `/${id}`,
@@ -115,7 +120,7 @@ const project = (id: string) => ({
   initialized: true,
   missing: false,
 })
-const projects = () => [project("p1"), project("p2")]
+const projects = () => [project("p1"), project("p2"), project("p3")]
 const closes = { value: 0 }
 const [open, setOpen] = createSignal(false)
 const Opener = () => {
@@ -128,7 +133,7 @@ const Opener = () => {
         <NewWorktreeDialog
           closing={closing}
           mode={createModeRouter()}
-          projectId={active()}
+          projectId={row() ?? active()}
           activeProjectId={active()}
           projects={projects}
           onClose={() => {
@@ -448,6 +453,18 @@ if (scenario === "sticky") {
   assert.equal(checks().at(0)?.projectId, "p2")
   assert.equal(document.querySelector<HTMLElement>(".am-nv-origin-project")?.textContent?.trim(), "p2")
   await reply("p2", second, { status: "ready" })
+  await close()
+}
+
+if (scenario === "explicit") {
+  await loadAgents()
+  await loadModels()
+  // A "+" click on a non-active project row must beat the saved draft project.
+  setRow("p3")
+  const id = await mount()
+  assert.equal(checks().at(0)?.projectId, "p3")
+  assert.equal(document.querySelector<HTMLElement>(".am-nv-origin-project")?.textContent?.trim(), "p3")
+  await reply("p3", id, { status: "ready" })
   await close()
 }
 
