@@ -1,4 +1,99 @@
-import { expect, test } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
+import type { WebviewMessage } from "../webview-ui/src/types/messages"
+
+async function preferences(page: Page, initial: { folded?: boolean; dismissed?: boolean } = {}) {
+  await page.addInitScript((initial) => {
+    const saved = JSON.parse(sessionStorage.getItem("splash") ?? JSON.stringify(initial)) as typeof initial
+    const posted: WebviewMessage[] = []
+    Object.assign(window, {
+      KILO_AGENT_MANAGER_SPLASH_FOLDED: saved.folded,
+      KILO_AGENT_MANAGER_INTRO_DISMISSED: saved.dismissed,
+      splashPreferences: posted,
+      acquireVsCodeApi: () => ({
+        getState: () => undefined,
+        setState: () => {},
+        postMessage: (message: WebviewMessage) => {
+          if (message.type === "agentManager.setSplashFolded") saved.folded = message.folded
+          if (message.type === "agentManager.setIntroDismissed") saved.dismissed = message.dismissed
+          if (message.type !== "agentManager.setSplashFolded" && message.type !== "agentManager.setIntroDismissed")
+            return
+          posted.push(message)
+          sessionStorage.setItem("splash", JSON.stringify(saved))
+        },
+      }),
+    })
+  }, initial)
+  await page.setViewportSize({ width: 900, height: 700 })
+  await page.goto("/iframe.html?id=agentmanager--splash-folded-story&viewMode=story&args=automatic:true")
+}
+
+const messages = (page: Page) => page.evaluate(() => Reflect.get(window, "splashPreferences") as WebviewMessage[])
+
+test("Hide persists dismissal and legacy reopen keeps later sessions expanded", async ({ page }) => {
+  await preferences(page)
+  await page.locator(".am-splash-hide").click()
+  const reopen = page.getByRole("button", { name: "How Agent Manager works" })
+  await expect(reopen).toBeVisible()
+  await expect(page.locator(".am-splash, .am-splash-folded")).toHaveCount(0)
+  await expect.poll(() => messages(page)).toEqual([{ type: "agentManager.setIntroDismissed", dismissed: true }])
+  await page.reload()
+  await expect(reopen).toBeVisible()
+  await page.getByRole("button", { name: "Accept session" }).click()
+  await expect(reopen).toBeVisible()
+  expect(await messages(page)).toEqual([])
+  await reopen.click()
+  await expect(page.locator(".am-splash-hero")).toBeVisible()
+  await expect
+    .poll(() => messages(page))
+    .toEqual([
+      { type: "agentManager.setSplashFolded", folded: false },
+      { type: "agentManager.setIntroDismissed", dismissed: false },
+    ])
+  await page.getByRole("button", { name: "Accept session" }).click()
+  await page.reload()
+  await expect(page.locator(".am-splash-hero")).toBeVisible()
+  await expect(page.locator(".am-splash-folded")).toHaveCount(0)
+})
+
+test("automatic folding happens once and Show examples preserves the explicit preference", async ({ page }) => {
+  await preferences(page)
+  const accept = page.getByRole("button", { name: "Accept session" })
+  const bar = page.locator(".am-splash-folded")
+  const host = page.locator('.am-chat-wrapper [data-slot="message-list"]').locator("..")
+  await expect(page.locator(".am-splash-hero")).toBeVisible()
+  await expect(host).toHaveClass(/am-intro-layout/)
+  await accept.click()
+  await expect(bar).toBeVisible()
+  await expect(host).not.toHaveClass(/am-intro-layout/)
+  await accept.click()
+  await expect.poll(() => messages(page)).toEqual([{ type: "agentManager.setSplashFolded", folded: true }])
+  await page.reload()
+  await expect(bar).toBeVisible()
+  await bar.getByRole("button", { name: "Show examples" }).click()
+  await expect(page.locator(".am-splash-hero")).toBeVisible()
+  await expect
+    .poll(() => messages(page))
+    .toEqual([
+      { type: "agentManager.setSplashFolded", folded: false },
+      { type: "agentManager.setIntroDismissed", dismissed: false },
+    ])
+  await accept.click()
+  await expect(bar).toHaveCount(0)
+  await page.reload()
+  await expect(page.locator(".am-splash-hero")).toBeVisible()
+})
+
+for (const folded of [undefined, true]) {
+  test(`legacy Skip wins over the ${String(folded)} fold preference`, async ({ page }) => {
+    await preferences(page, { folded, dismissed: true })
+    const reopen = page.getByRole("button", { name: "How Agent Manager works" })
+    await expect(reopen).toBeVisible()
+    await expect(page.locator(".am-splash, .am-splash-folded")).toHaveCount(0)
+    await page.getByRole("button", { name: "Accept session" }).click()
+    await expect(reopen).toBeVisible()
+    expect(await messages(page)).toEqual([])
+  })
+}
 
 test("splash primary CTA requests a worktree", async ({ page }) => {
   await page.goto("/iframe.html?id=agentmanager--splash-expanded-story&viewMode=story")
@@ -42,6 +137,7 @@ test("folded bar takes the welcome header's place in the chat host", async ({ pa
   const list = page.locator('.am-chat-wrapper [data-slot="message-list"]')
   const bar = page.locator(".am-splash-folded")
   await expect(bar).toBeVisible()
+  await expect(list.locator("..")).not.toHaveClass(/am-intro-layout/)
   await expect(header).toHaveCSS("position", "static")
   await expect(header).toHaveCSS("padding-top", "12px")
   await expect(list.locator("..")).toHaveCSS("flex-direction", "column")
@@ -56,7 +152,13 @@ test("folded bar takes the welcome header's place in the chat host", async ({ pa
   await expect(page.locator(".am-splash-hero")).toBeVisible()
   await expect(list.locator("..")).toHaveClass(/am-intro-layout/)
   await page.locator(".am-splash-hide").click()
-  await expect(bar).toBeVisible()
+  await expect(bar).toBeHidden()
+  await expect(page.locator(".am-splash-hero")).toBeHidden()
+  await expect(list.locator("..")).not.toHaveClass(/am-intro-layout/)
+  const reopen = page.getByRole("button", { name: "How Agent Manager works" })
+  await expect(reopen).toBeVisible()
+  await reopen.click()
+  await expect(page.locator(".am-splash-hero")).toBeVisible()
   await expect(header).toHaveCSS("position", "static")
 })
 
@@ -104,6 +206,7 @@ for (const width of [300, 440, 599, 600, 720, 1010, 1400]) {
     await bar.getByRole("button", { name: "Show examples" }).click()
     await expect(page.locator(".am-splash-hero")).toBeVisible()
     await page.locator(".am-splash-hide").click()
-    await expect(bar).toBeVisible()
+    await expect(bar).toBeHidden()
+    await expect(page.getByRole("button", { name: "How Agent Manager works" })).toBeVisible()
   })
 }

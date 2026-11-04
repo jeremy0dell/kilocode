@@ -96,19 +96,15 @@ describe("Agent Manager splash fold", () => {
     return { posted, postMessage: (message: WebviewMessage) => posted.push(message) }
   }
   const fold = (value: boolean) => ({ type: "agentManager.setSplashFolded", folded: value })
+  const intro = (value: boolean) => ({ type: "agentManager.setIntroDismissed", dismissed: value })
 
-  it("starts expanded with no preference and posts each explicit change", () => {
-    const vscode = poster()
+  it("starts expanded with no preference", () => {
     createRoot((dispose) => {
-      const state = createFold(vscode)
-      expect(state.folded()).toBe(false)
-      state.fold()
-      expect(state.folded()).toBe(true)
-      state.unfold()
+      const state = createFold(poster())
+      expect(state.hidden()).toBe(false)
       expect(state.folded()).toBe(false)
       dispose()
     })
-    expect(vscode.posted).toEqual([fold(true), fold(false)])
   })
 
   it("restores a folded preference", () => {
@@ -118,45 +114,83 @@ describe("Agent Manager splash fold", () => {
     })
   })
 
-  it("folds once on the first session while no preference exists", () => {
+  it("folds once on the first session while no preference exists, until Show examples makes it explicit", () => {
     const vscode = poster()
     createRoot((dispose) => {
       const state = createFold(vscode)
       state.started()
       expect(state.folded()).toBe(true)
       state.started()
-      state.unfold()
+      state.show()
       state.started()
       expect(state.folded()).toBe(false)
       dispose()
     })
-    expect(vscode.posted).toEqual([fold(true), fold(false)])
+    expect(vscode.posted).toEqual([fold(true), fold(false), intro(false)])
   })
 
   it("leaves a stored preference alone on session start, across reloads", () => {
-    for (const value of [true, false]) {
+    for (const [value, dismissed] of [
+      [true, false],
+      [false, false],
+      [true, true],
+    ] as const) {
       const vscode = poster()
       createRoot((dispose) => {
-        const state = createFold(vscode, value)
+        const state = createFold(vscode, value, dismissed)
         state.started()
-        expect(state.folded()).toBe(value)
+        expect(state.folded()).toBe(value && !dismissed)
         dispose()
       })
       expect(vscode.posted).toEqual([])
     }
   })
 
-  it("does not auto-fold after Hide and Show examples before any session", () => {
+  it("seeds the hidden state from a previous intro Skip", () => {
+    const vscode = poster()
+    createRoot((dispose) => {
+      const state = createFold(vscode, undefined, true)
+      expect(state.hidden()).toBe(true)
+      expect(state.folded()).toBe(false)
+      state.started()
+      expect(state.hidden()).toBe(true)
+      dispose()
+    })
+    expect(vscode.posted).toEqual([])
+  })
+
+  it("treats a legacy folded preference as the automatic fold, unless a Hide also exists", () => {
+    createRoot((dispose) => {
+      const folded = createFold(poster(), true, false)
+      expect(folded.folded()).toBe(true)
+      expect(folded.hidden()).toBe(false)
+      dispose()
+    })
+    createRoot((dispose) => {
+      const hidden = createFold(poster(), true, true)
+      expect(hidden.hidden()).toBe(true)
+      expect(hidden.folded()).toBe(false)
+      dispose()
+    })
+  })
+
+  it("hides explicitly, reopens, and never auto-folds over either choice", () => {
     const vscode = poster()
     createRoot((dispose) => {
       const state = createFold(vscode)
-      state.fold()
-      state.unfold()
+      state.hide()
+      expect(state.hidden()).toBe(true)
+      expect(state.folded()).toBe(false)
+      state.started()
+      expect(state.hidden()).toBe(true)
+      state.show()
+      expect(state.hidden()).toBe(false)
+      expect(state.folded()).toBe(false)
       state.started()
       expect(state.folded()).toBe(false)
       dispose()
     })
-    expect(vscode.posted).toEqual([fold(true), fold(false)])
+    expect(vscode.posted).toEqual([intro(true), fold(false), intro(false)])
   })
 })
 

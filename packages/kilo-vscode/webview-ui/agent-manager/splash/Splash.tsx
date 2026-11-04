@@ -117,6 +117,37 @@ export function SplashExpanded(props: {
   )
 }
 
+export function SplashHidden(props: {
+  sessions?: () => SessionInfo[]
+  onSelectSession?: (id: string) => void
+  onShowHistory?: () => void
+  hints?: () => JSX.Element
+  onShowExamples: () => void
+}) {
+  const { t } = useLanguage()
+  return (
+    <WelcomeEmptyState
+      sessions={props.sessions}
+      onSelectSession={props.onSelectSession}
+      onShowHistory={props.onShowHistory}
+      footer={
+        <>
+          {props.hints?.()}
+          <Button
+            variant="ghost"
+            size="small"
+            icon="help"
+            data-action="agent-manager-intro"
+            onClick={props.onShowExamples}
+          >
+            {t("agentManager.intro.reopen")}
+          </Button>
+        </>
+      }
+    />
+  )
+}
+
 export function SplashFolded(props: {
   sessions?: () => SessionInfo[]
   onSelectSession?: (id: string) => void
