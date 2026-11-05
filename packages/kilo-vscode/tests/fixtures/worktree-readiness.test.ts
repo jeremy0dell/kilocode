@@ -273,6 +273,34 @@ describe("worktree readiness tool checks", () => {
     expect(outcome.result.status).toBe("blocked")
   })
 
+  it("re-checks fresh after an install so a visible tool goes straight to ready", async () => {
+    const root = await repo(await temp("kilo-ready-installed-"), true)
+    const probes: boolean[] = []
+    const tools: ReadinessTools = {
+      ...fake().tools,
+      git: async () => ({ ok: true }),
+      usesLfs: async () => true,
+      lfs: async (_root, fresh) => {
+        probes.push(fresh)
+        return fresh ? { ok: true } : { ok: false, code: "missing", detail: "cached" }
+      },
+      install: async (kind) => ({ kind, mode: "terminal", ok: true }),
+    }
+    const deps: FixDeps = {
+      git: ops,
+      trusted: () => true,
+      tools,
+      exclude: async () => {},
+      openRepository: () => {},
+      branches: async () => {},
+      attach: async () => "p",
+      pick: async () => undefined,
+    }
+    const outcome = await fix(root, { fix: "installLfs" }, deps)
+    expect(outcome.result).toEqual({ status: "ready" })
+    expect(probes.at(-1)).toBe(true)
+  })
+
   it("routes install and download fixes before inspecting the repository", async () => {
     const root = await temp("kilo-ready-install-")
     const calls: string[] = []
@@ -593,7 +621,6 @@ describe("worktree readiness fixes", () => {
     clearShellEnvCache()
     // Warm the login-env cache without the managers, then refresh it to `bin`.
     await toolEnvironment(true)
-    await new Promise((done) => setTimeout(done, 1_100))
     await fs.writeFile(current, bin)
     const probes: string[] = []
     const commands: import("../../src/agent-manager/worktree-install").InstallCommand[] = []

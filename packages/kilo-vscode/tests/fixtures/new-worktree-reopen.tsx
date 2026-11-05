@@ -21,11 +21,11 @@ const { createReopen } = await import("../../webview-ui/agent-manager/new-worktr
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 20))
 
-function mount(start: Record<string, unknown>) {
+function mount(start: Record<string, unknown>, ready = false) {
   let state = start
   let opens = 0
-  const [loaded, setLoaded] = createSignal(false)
-  const [arrived, setArrived] = createSignal(false)
+  const [loaded, setLoaded] = createSignal(ready)
+  const [arrived, setArrived] = createSignal(ready)
   const host = document.createElement("div")
   document.body.append(host)
   const dispose = render(() => {
@@ -79,6 +79,13 @@ await flush()
 assert.equal(next.open(), 1)
 assert.deepEqual(next.state(), { advancedDialogDraft: { project: "p1" } })
 next.dispose()
+
+// A reload with a warm state can already have loaded+arrived at mount; it still opens once.
+const warm = mount({ advancedDialogReopen: true, advancedDialogDraft: { project: "p1" } }, true)
+await flush()
+assert.equal(warm.open(), 1)
+assert.deepEqual(warm.state(), { advancedDialogDraft: { project: "p1" } })
+warm.dispose()
 
 await window.happyDOM.abort()
 window.close()

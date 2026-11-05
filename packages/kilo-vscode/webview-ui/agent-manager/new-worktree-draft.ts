@@ -161,5 +161,5 @@ export function createReopen(opts: ReopenOptions) {
     opts.save(next.state)
     opts.open()
   }
-  createEffect(on([opts.loaded, opts.arrived], () => run(), { defer: true }))
+  createEffect(on([opts.loaded, opts.arrived], () => run()))
 }

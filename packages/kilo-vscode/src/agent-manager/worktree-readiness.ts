@@ -89,7 +89,8 @@ export async function fix(
     root,
     error: err instanceof Error ? err.message : String(err),
   }))
-  const result = await probe(done.root, deps, false)
+  // A fresh check makes an install visible immediately; only a truly invisible tool stays stale.
+  const result = await probe(done.root, deps, done.install !== undefined)
   return {
     result: result.status === "ready" && done.note ? { status: "ready", note: "uncommitted" } : result,
     ...(done.selected ? { selected: done.selected } : {}),
