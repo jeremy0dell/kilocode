@@ -278,7 +278,7 @@ describe("LFS filters", () => {
     }
     process.env.HOME = home
     delete process.env.GIT_CONFIG_GLOBAL
-    delete process.env.GIT_CONFIG_NOSYSTEM
+    process.env.GIT_CONFIG_NOSYSTEM = "1"
     try {
       const mgr = manager(root, real, "linux")
       expect(await mgr.checkLfsFilters()).toBe(false)
