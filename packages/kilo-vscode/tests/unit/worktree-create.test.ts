@@ -158,7 +158,7 @@ describe("Agent Manager create routing", () => {
   it.each([
     { type: "agentManager.createMultiVersion", entry: "modal" },
     { type: "agentManager.createWorktree", entry: "quick" },
-  ])("reports a $type for an unknown project as not_git_repo and dispatches nothing", async (input) => {
+  ])("reports a $type for an unknown project as project_unavailable and dispatches nothing", async (input) => {
     const events: Array<{ event: string; props?: Record<string, unknown> }> = []
     const dispatched: unknown[] = []
     const provider = Object.assign(Object.create(AgentManagerProvider.prototype), {
@@ -181,7 +181,7 @@ describe("Agent Manager create routing", () => {
           source: "agent-manager",
           error: "Open a folder that contains a git repository to use worktrees",
           context: "createWorktree",
-          errorCode: "not_git_repo",
+          errorCode: "project_unavailable",
           entry: input.entry,
         },
       },

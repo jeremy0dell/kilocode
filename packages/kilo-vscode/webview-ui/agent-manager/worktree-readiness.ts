@@ -251,9 +251,18 @@ export function createReadiness(opts: {
     else setState({ status: "fixing", project, result: current.result, fix: kind })
     track({ stage: "fix_started", code: current.result.code, fix: kind })
     const pool = installKind ? installs : fixes
+    // A card for the folder the user just picked sets up that folder, not the selected project.
+    const picked = current.result.picked && kind === "initGit" ? { target: "picked" } : {}
     const reply = await pool
       .request((requestID) =>
-        vscode.postMessage({ type: "agentManager.fixReadiness", projectId: project, requestID, fix: kind, ...extra }),
+        vscode.postMessage({
+          type: "agentManager.fixReadiness",
+          projectId: project,
+          requestID,
+          fix: kind,
+          ...picked,
+          ...extra,
+        }),
       )
       .catch((err: unknown) => ({
         selected: undefined,

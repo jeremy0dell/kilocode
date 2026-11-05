@@ -31,6 +31,8 @@ import type { InstallOutcome, Tool, ToolProbe } from "./worktree-install"
 type Git = Pick<GitOps, "execGit">
 
 const MAX_PROJECT_CHOICES = 3
+const PROBE = 16
+const SCAN = 2000
 const UNTRUSTED = "Trust this VS Code window before Kilo changes the project."
 const RESTRICTED = "Choose a project folder, not your home folder or a filesystem root."
 
@@ -64,11 +66,21 @@ export interface ReadinessDeps {
 }
 
 export interface FixDeps extends ReadinessDeps {
-  exclude: () => Promise<void>
+  /** Write Kilo's entries to the given repository's `.git/info/exclude`. */
+  exclude: (root: string) => Promise<void>
+  /** Open the repository in VS Code's Source Control view. */
   openRepository: (root: string) => void
-  branches: () => Promise<void>
+  /** Post the given repository's refreshed branch list. */
+  branches: (root: string) => Promise<void>
+  /** Register a repository as a project and resolve its project ID. */
   attach: (root: string) => Promise<string>
   pick: () => Promise<string | undefined>
+  /** The folder the user just picked through {@link pick}, until the next picked fix. */
+  picked: () => string | undefined
+  /** Remember a folder the user just picked. */
+  remember: (root: string) => void
+  /** Forget the remembered pick. */
+  forget: () => void
 }
 
 export type FixOutcome = Omit<ReadinessMessage, "type" | "projectId" | "requestID">
@@ -102,7 +114,9 @@ export async function applyWorktreeFix(
     error: errorText(err),
   }))
   // A fresh check makes an install visible immediately; only a truly invisible tool stays stale.
-  const result = await readReadiness(applied.root, deps, applied.install !== undefined)
+  const probed = await readReadiness(applied.root, deps, applied.install !== undefined)
+  const result =
+    "picked" in applied && applied.picked && probed.status === "blocked" ? { ...probed, picked: true } : probed
   return {
     result: result.status === "ready" && applied.note ? { status: "ready", note: "uncommitted" } : result,
     ...(applied.selected ? { selected: applied.selected } : {}),
@@ -111,7 +125,14 @@ export async function applyWorktreeFix(
   }
 }
 
-type FixResult = { root: string; selected?: string; note?: boolean; install?: InstallOutcome; error?: string }
+type FixResult = {
+  root: string
+  selected?: string
+  picked?: boolean
+  note?: boolean
+  install?: InstallOutcome
+  error?: string
+}
 
 async function readReadiness(root: string, deps: ReadinessDeps, fresh = false, verify = false): Promise<Readiness> {
   return inspectProject(root, deps, fresh, verify).catch((err: unknown) => ({
@@ -191,17 +212,22 @@ async function projectChoices(root: string, deps: ReadinessDeps): Promise<Readin
   return { ...base, trusted: deps.trusted(), identity: await prepare.identity(root, deps.git) }
 }
 
-/** Direct child folders that contain `.git`, one level deep, stopping after one more than shown. */
+/** Direct child folders that contain `.git`, probed with bounded concurrency. */
 async function childProjects(root: string): Promise<ReadinessProject[]> {
   const entries = await fs.readdir(root, { withFileTypes: true })
+  const scanned = entries.sort((a, b) => a.name.localeCompare(b.name)).slice(0, SCAN)
+  const dirs = scanned.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
   const found: ReadinessProject[] = []
-  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-    if (found.length > MAX_PROJECT_CHOICES) break
-    if (!entry.isDirectory()) continue
-    const dir = path.join(root, entry.name)
-    if (await fileExists(path.join(dir, ".git"))) found.push({ root: dir, label: entry.name })
+  let index = 0
+  const worker = async () => {
+    while (found.length <= MAX_PROJECT_CHOICES && index < dirs.length) {
+      const name = dirs[index++]!
+      const dir = path.join(root, name)
+      if (await fileExists(path.join(dir, ".git"))) found.push({ root: dir, label: name })
+    }
   }
-  return found
+  await Promise.all(Array.from({ length: Math.min(PROBE, dirs.length) }, worker))
+  return found.sort((a, b) => a.label.localeCompare(b.label))
 }
 
 function fileExists(file: string) {
@@ -218,18 +244,11 @@ async function runFix(
 ): Promise<FixResult> {
   const toolFix = await runToolFix(root, request, deps)
   if (toolFix) return toolFix
-  ensureTrusted(deps)
-  if (request.fix === "useProject") {
-    const target = request.target ? canonicalizePath(request.target) : ""
-    if (!target || !samePath(path.dirname(target), root) || !(await fileExists(path.join(target, ".git"))))
-      throw new Error(`Not a Git project inside ${root}: ${request.target ?? ""}`)
-    return registerProject(target, deps)
-  }
-  if (request.fix === "pickFolder") {
-    const dir = await deps.pick()
-    if (!dir) return { root }
-    return registerProject(dir, deps)
-  }
+  if (request.fix === "useProject") return nested(root, request.target, deps)
+  if (request.fix === "pickFolder") return choose(root, deps)
+  if (request.fix !== "initGit" && request.fix !== "initialCommit")
+    throw new Error(`Unknown readiness fix: ${String(request.fix)}`)
+  if (request.target !== undefined) return usePick(request.target, request, deps)
   const state = await prepare.inspect(root, deps.git)
   ensureAllowed(state.root ?? root)
   if (request.fix === "initialCommit" && !state.root) throw new Error(`Not a Git repository: ${root}`)
@@ -238,13 +257,13 @@ async function runFix(
   ensureTrusted(deps)
   const repo = state.root ?? (await prepare.initialize(root, deps.git))
   ensureTrusted(deps)
-  await deps.exclude()
+  await deps.exclude(repo)
   ensureTrusted(deps)
   if (request.identity) await prepare.configure(repo, deps.git, request.identity)
   ensureTrusted(deps)
   await prepare.commit(repo, deps.git)
   deps.openRepository(repo)
-  await deps.branches()
+  await deps.branches(repo)
   const status = await deps.git.execGit(["-c", "core.fsmonitor=false", "status", "--porcelain"], repo)
   return { root, note: status.code === 0 && status.stdout.trim().length > 0 }
 }
@@ -270,10 +289,68 @@ async function runToolFix(
   return { root, install: await deps.tools.install(tool, root) }
 }
 
+/** Select a Git project nested directly inside the current folder. */
+async function nested(root: string, value: string | undefined, deps: FixDeps): Promise<FixResult> {
+  const target = value ? canonicalizePath(value) : ""
+  if (!target || !samePath(path.dirname(target), root) || !(await fileExists(path.join(target, ".git"))))
+    throw new Error(`Not a Git project inside ${root}: ${value ?? ""}`)
+  return registerProject(target, deps)
+}
+
+/** Use the folder the user just picked: attach it when it is a repository, otherwise remember it for setup. */
+async function choose(root: string, deps: FixDeps): Promise<FixResult> {
+  const dir = await deps.pick()
+  if (!dir) return { root }
+  const state = await prepare.inspect(dir, deps.git)
+  const picked = state.root ?? canonicalizePath(dir)
+  ensureAllowed(picked)
+  ensureTrusted(deps)
+  if (state.root) {
+    deps.forget()
+    return { root: picked, selected: await deps.attach(picked) }
+  }
+  deps.remember(picked)
+  return { root: picked, picked: true }
+}
+
+/** Set up Git in the folder the user just picked, then attach and select it. */
+async function usePick(
+  value: string,
+  request: Pick<FixReadinessRequest, "fix" | "identity">,
+  deps: FixDeps,
+): Promise<FixResult> {
+  const remembered = deps.picked()
+  const target = value === "picked" ? remembered : canonicalizePath(value)
+  if (!remembered || !target || !samePath(target, remembered))
+    throw new Error("That folder is no longer the one you picked. Pick it again.")
+  deps.forget()
+  ensureAllowed(remembered)
+  ensureTrusted(deps)
+  const state = await prepare.inspect(remembered, deps.git)
+  ensureAllowed(state.root ?? remembered)
+  if (!request.identity && !(await prepare.identity(remembered, deps.git)))
+    throw new Error("Git needs a name and email before Kilo can create the first commit.")
+  ensureTrusted(deps)
+  const repo = state.root ?? (await prepare.initialize(remembered, deps.git))
+  ensureTrusted(deps)
+  await deps.exclude(repo)
+  ensureTrusted(deps)
+  if (request.identity) await prepare.configure(repo, deps.git, request.identity)
+  ensureTrusted(deps)
+  await prepare.commit(repo, deps.git)
+  deps.openRepository(repo)
+  const selected = await deps.attach(repo)
+  await deps.branches(repo)
+  const status = await deps.git.execGit(["-c", "core.fsmonitor=false", "status", "--porcelain"], repo)
+  return { root: repo, selected, note: status.code === 0 && status.stdout.trim().length > 0 }
+}
+
+/** Register a repository as a project and select it. A non-repository folder is not attached yet. */
 async function registerProject(dir: string, deps: FixDeps): Promise<FixResult> {
   const state = await prepare.inspect(dir, deps.git)
   const root = state.root ?? canonicalizePath(dir)
   ensureAllowed(root)
   ensureTrusted(deps)
+  if (!state.root) return { root }
   return { root, selected: await deps.attach(root) }
 }

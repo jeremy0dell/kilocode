@@ -574,7 +574,7 @@ export const dict = {
   "agentManager.readiness.plain.other": "Вибрати іншу теку",
   "agentManager.readiness.identity.title": "Яке ім’я вказувати у ваших змінах?",
   "agentManager.readiness.identity.body":
-    "Git позначає кожну зміну ім’ям та адресою пошти. Kilo збереже їх лише для цього проєкту.",
+    "Git позначає кожну зміну ім’ям та адресою пошти. Kilo збереже їх для вашого користувача Git.",
   "agentManager.readiness.identity.name": "Ім’я",
   "agentManager.readiness.identity.email": "Пошта",
   "agentManager.readiness.identity.saveInit": "Зберегти й налаштувати Git",
