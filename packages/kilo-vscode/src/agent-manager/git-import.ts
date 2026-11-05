@@ -42,6 +42,7 @@ export type PRErrorKind = "not_found" | "gh_missing" | "gh_auth" | "gh_timeout" 
 export type WorktreeSetupErrorCode =
   | "git_not_found"
   | "not_git_repo"
+  | "project_unavailable"
   | "lfs_missing"
   | "no_commits"
   | "worktree_missing"
