@@ -199,34 +199,37 @@ async function blockedTool(
 /** A folder that is not a Git project: offer the projects inside it, or setting up Git. */
 async function projectChoices(root: string, deps: ReadinessDeps): Promise<Readiness> {
   const base = { status: "blocked" as const, code: "not_git_repo" as const, name: path.basename(root) }
-  const found = await childProjects(root)
+  const { projects: found, truncated } = await childProjects(root)
   if (found.length > 0) {
     return {
       ...base,
       trusted: deps.trusted(),
       projects: found.slice(0, MAX_PROJECT_CHOICES),
-      ...(found.length > MAX_PROJECT_CHOICES ? { more: true } : {}),
+      ...(found.length > MAX_PROJECT_CHOICES || truncated ? { more: true } : {}),
     }
   }
   return { ...base, trusted: deps.trusted(), identity: await prepare.identity(root, deps.git) }
 }
 
 /** Direct child folders that contain `.git`, probed with bounded concurrency. */
-async function childProjects(root: string): Promise<ReadinessProject[]> {
+async function childProjects(root: string): Promise<{ projects: ReadinessProject[]; truncated: boolean }> {
   const entries = await fs.readdir(root, { withFileTypes: true })
-  const scanned = entries.sort((a, b) => a.name.localeCompare(b.name)).slice(0, SCAN)
-  const dirs = scanned.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
+  const dirs = entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort((a, b) => a.localeCompare(b))
+  const scanned = dirs.slice(0, SCAN)
   const found: ReadinessProject[] = []
   let index = 0
   const worker = async () => {
-    while (found.length <= MAX_PROJECT_CHOICES && index < dirs.length) {
-      const name = dirs[index++]!
+    while (found.length <= MAX_PROJECT_CHOICES && index < scanned.length) {
+      const name = scanned[index++]!
       const dir = path.join(root, name)
       if (await fileExists(path.join(dir, ".git"))) found.push({ root: dir, label: name })
     }
   }
-  await Promise.all(Array.from({ length: Math.min(PROBE, dirs.length) }, worker))
-  return found.sort((a, b) => a.label.localeCompare(b.label))
+  await Promise.all(Array.from({ length: Math.min(PROBE, scanned.length) }, worker))
+  return { projects: found.sort((a, b) => a.label.localeCompare(b.label)), truncated: dirs.length > SCAN }
 }
 
 function fileExists(file: string) {
