@@ -2,6 +2,7 @@ import type { Worktree, WorktreeStateManager } from "./WorktreeStateManager"
 import type { WorktreeManager, CreateWorktreeResult } from "./WorktreeManager"
 import { chooseBaseBranch } from "./base-branch"
 import { classifyWorktreeError, type WorktreeSetupErrorCode } from "./git-import"
+import { NO_GIT_REPO } from "./git-errors"
 import { PLATFORM } from "./constants"
 import type { AgentManagerInMessage, AgentManagerOutMessage } from "./types"
 
@@ -9,8 +10,6 @@ import type { AgentManagerInMessage, AgentManagerOutMessage } from "./types"
 export type WorktreeEntry = "modal" | "quick" | "other"
 
 type Capture = (event: string, properties?: Record<string, unknown>) => void
-
-const NO_REPO = "Open a folder that contains a git repository to use worktrees"
 
 export type CreateWorktreeOnDiskOptions = {
   entry: WorktreeEntry
@@ -56,7 +55,7 @@ function fail(capture: Capture, entry: WorktreeEntry, error: string, errorCode?:
 
 /** Report a creation that cannot start because no project context exists. Returns null for early returns. */
 export function reportNoRepo(capture: Capture, entry: WorktreeEntry): null {
-  fail(capture, entry, NO_REPO, "not_git_repo")
+  fail(capture, entry, NO_GIT_REPO, "not_git_repo")
   return null
 }
 
@@ -78,11 +77,11 @@ export async function createWorktreeOnDisk(
   const manager = ctx.getWorktreeManager()
   const state = ctx.getStateManager()
   if (!manager || !state) {
-    report(opts, { message: NO_REPO, code: "not_git_repo" })
+    report(opts, { message: NO_GIT_REPO, code: "not_git_repo" })
     ctx.postToWebview({
       type: "agentManager.worktreeSetup",
       status: "error",
-      message: NO_REPO,
+      message: NO_GIT_REPO,
       errorCode: "not_git_repo",
     })
     return reportNoRepo(ctx.capture, opts.entry)
