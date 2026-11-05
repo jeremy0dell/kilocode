@@ -81,6 +81,7 @@ import type {
   WorktreeFileDiff,
   WorktreeGitStats,
   WorktreeState,
+  ReadinessFocusMessage,
 } from "./agent-manager"
 import type {
   MigrationCompleteMessage,
@@ -1945,6 +1946,7 @@ export type ExtensionMessage =
   | SelectKiloModelMessage
   | AgentManagerBranchesMessage
   | import("./agent-manager").ReadinessMessage
+  | ReadinessFocusMessage
   | AgentManagerImportResultMessage
   | WorkspaceDirectoryChangedMessage
   | AgentManagerWorktreeDiffMessage
