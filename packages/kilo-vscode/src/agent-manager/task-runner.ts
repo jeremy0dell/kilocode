@@ -3,13 +3,13 @@
  */
 
 import * as vscode from "vscode"
+import { SETUP_TIMEOUT_MS } from "../shared/readiness-timeouts"
 import { setupTaskIdentity, type SetupTaskConfig } from "./SetupScriptRunner"
 
 const GRACE_MS = 250
-const TIMEOUT_MS = 5 * 60 * 1000
+const TIMEOUT_MS = SETUP_TIMEOUT_MS
 
 export interface TaskOptions {
-  /** Override the task name shown in the terminal and task list. */
   name?: string
   /** Wall-clock budget; the default matches the setup script's five minutes. */
   timeout?: number

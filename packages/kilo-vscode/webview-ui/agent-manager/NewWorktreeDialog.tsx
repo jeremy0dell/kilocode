@@ -64,7 +64,7 @@ import { createDialogPreferences } from "./new-worktree-models"
 import { validBranch } from "./new-worktree-branch"
 import { sanitizeBranchName } from "../../src/shared/branch-slug"
 import { shouldComposeGoal, submitPayload } from "./new-worktree-command"
-import { createReadiness, toolName } from "./worktree-readiness"
+import { createReadiness, tooltip } from "./worktree-readiness"
 import { ReadinessCard } from "./ReadinessCard"
 import {
   draftValues,
@@ -243,19 +243,8 @@ export const NewWorktreeDialog: Component<{
     return status === "fixing" || status === "installing"
   }
   const blockedTooltip = () => {
-    const state = readiness.state()
-    if (state.status === "stale") return t("agentManager.readiness.install.reload")
-    if (state.status === "installing")
-      return state.mode === "apple"
-        ? t("agentManager.readiness.install.apple.title")
-        : t("agentManager.readiness.install.terminal.title", {
-            tool: toolName(state.fix),
-          })
-    if (state.status === "blocked" || state.status === "fixing") {
-      if (state.result.code === "git_not_found") return t("agentManager.readiness.blockedGit")
-      if (state.result.code === "lfs_missing") return t("agentManager.readiness.blockedLfs")
-    }
-    return t("agentManager.readiness.blocked")
+    const info = tooltip(readiness.state())
+    return t(info.key, info.params)
   }
   // Create stays focusable while blocked so its tooltip works on hover and keyboard focus.
   const blocked = () => (readiness.blocked() ? true : undefined)

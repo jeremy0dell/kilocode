@@ -74,6 +74,17 @@ export function createProjectWiring(opts: {
       sized: (ctx) => opts.pushState(ctx),
     },
   })
+  const branches = (ctx: ProjectContext) =>
+    postBranches(
+      {
+        manager: () => ctx.worktreeManager(),
+        state: () => ctx.peekState(),
+        post: opts.post,
+        push: () => opts.pushState(ctx),
+        log: opts.log,
+      },
+      ctx.id,
+    )
   const messages: ProjectMessageDeps = {
     registry,
     contexts,
@@ -89,17 +100,7 @@ export function createProjectWiring(opts: {
     post: opts.post,
     routeSession: opts.routeSession,
     openRepository: (root) => opts.host.openRepository(root),
-    branches: (ctx) =>
-      postBranches(
-        {
-          manager: () => ctx.worktreeManager(),
-          state: () => ctx.peekState(),
-          post: opts.post,
-          push: () => opts.pushState(ctx),
-          log: opts.log,
-        },
-        ctx.id,
-      ),
+    branches,
     install: (name, command) => opts.host.runInstall(name, command),
     openExternal: (url) => opts.host.openExternal(url),
     reloadWindow: () => opts.host.reloadWindow(),

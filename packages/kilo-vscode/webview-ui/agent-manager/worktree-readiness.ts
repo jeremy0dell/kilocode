@@ -8,34 +8,31 @@
  */
 
 import { createComputed, createSignal, on, onCleanup, type Accessor } from "solid-js"
-import type { Readiness, ReadinessFix, ReadinessInstall, ReadinessMessage, WorktreeEntry } from "../src/types/messages"
+import {
+  TOOL_LABELS,
+  codeForTool,
+  labelForFix,
+  installFix,
+  isDownload,
+  isInstall,
+  toolFor,
+  toolForCode,
+  type InstallFix,
+  type Readiness,
+  type ReadinessFix,
+  type ReadinessInstall,
+  type ReadinessMessage,
+  type Tool,
+  type WorktreeEntry,
+} from "../src/types/messages"
 import { createContextRequests } from "../src/hooks/context-requests"
 import { useVSCode } from "../src/context/vscode"
 import { useLanguage } from "../src/context/language"
 import { TelemetryEventName } from "../../src/services/telemetry/types"
 
-/** How long a check may take before creation proceeds as if it had not run. */
-const DEADLINE = 3_000
-/** Fixes can wait on a folder picker, so they get a much longer deadline. */
-const FIX_DEADLINE = 10 * 60_000
-/** Longer than LFS's two chained 30-minute tasks so the task's own error wins. */
-const INSTALL_DEADLINE = 65 * 60_000
+import { FIX_DEADLINE_MS, INSTALL_DEADLINE_MS, READINESS_DEADLINE_MS } from "../../src/shared/readiness-timeouts"
 
 type Blocked = Extract<Readiness, { status: "blocked" }>
-type InstallFix = "installGit" | "installLfs"
-
-/** Card label and fix names for the two installable tools. */
-export const TOOLS = {
-  git: { label: "Git", fix: "installGit", other: "downloadGit" },
-  lfs: { label: "Git LFS", fix: "installLfs", other: "downloadLfs" },
-} as const
-
-export type Tool = keyof typeof TOOLS
-
-/** Label for an install or download fix. */
-export function toolName(fix: ReadinessFix | undefined) {
-  return TOOLS[fix === "installGit" || fix === "downloadGit" ? "git" : "lfs"].label
-}
 
 export type ReadinessState =
   | { status: "checking"; project?: string }
@@ -51,8 +48,6 @@ export type ReadinessState =
   | { status: "stale"; project: string; result: Blocked; fix: InstallFix }
   | { status: "ready"; project: string; note?: "uncommitted"; fixed?: ReadinessFix }
   | { status: "unknown"; project: string; detail: string }
-
-const install = (fix: ReadinessFix): fix is InstallFix => fix === "installGit" || fix === "installLfs"
 
 /** The settled state for one reply. */
 function settle(project: string, result: Readiness, fixed?: ReadinessFix, error?: string): ReadinessState {
@@ -81,9 +76,27 @@ function stage(prev: ReadinessState, next: ReadinessState) {
 function installed(state: ReadinessState): InstallFix | undefined {
   if (state.status === "installing" || state.status === "stale") return state.fix
   if (state.status !== "blocked") return undefined
-  if (state.result.code === "git_not_found") return "installGit"
-  if (state.result.code === "lfs_missing") return "installLfs"
-  return undefined
+  const tool = toolForCode(state.result.code)
+  return tool ? installFix(tool) : undefined
+}
+
+const CODE_TIPS: Partial<Record<Blocked["code"], string>> = {
+  git_not_found: "agentManager.readiness.blockedGit",
+  lfs_missing: "agentManager.readiness.blockedLfs",
+}
+
+/** Create-button tooltip for the current card. */
+export function tooltip(state: ReadinessState): { key: string; params?: { tool: string } } {
+  if (state.status === "stale") return { key: "agentManager.readiness.install.reload" }
+  if (state.status === "installing") {
+    if (state.mode === "apple") return { key: "agentManager.readiness.install.apple.title" }
+    return { key: "agentManager.readiness.install.terminal.title", params: { tool: labelForFix(state.fix) } }
+  }
+  if ("result" in state) {
+    const key = CODE_TIPS[state.result.code]
+    if (key) return { key }
+  }
+  return { key: "agentManager.readiness.blocked" }
 }
 
 export function createReadiness(opts: {
@@ -95,11 +108,15 @@ export function createReadiness(opts: {
   const vscode = useVSCode()
   const { t } = useLanguage()
   const scope = `readiness-${crypto.randomUUID()}`
-  const checks = createContextRequests<ReadinessMessage>(`${scope}-check`, DEADLINE, "Readiness check timed out")
-  const fixes = createContextRequests<ReadinessMessage>(`${scope}-fix`, FIX_DEADLINE, "Readiness fix timed out")
+  const checks = createContextRequests<ReadinessMessage>(
+    `${scope}-check`,
+    READINESS_DEADLINE_MS,
+    "Readiness check timed out",
+  )
+  const fixes = createContextRequests<ReadinessMessage>(`${scope}-fix`, FIX_DEADLINE_MS, "Readiness fix timed out")
   const installs = createContextRequests<ReadinessMessage>(
     `${scope}-install`,
-    INSTALL_DEADLINE,
+    INSTALL_DEADLINE_MS,
     "Readiness install timed out",
   )
   const [state, setState] = createSignal<ReadinessState>({ status: "checking", project: opts.project() })
@@ -223,7 +240,7 @@ export function createReadiness(opts: {
     const current = state()
     const project = opts.project()
     // Downloads only open a page, so they are also valid from the Apple and stale cards.
-    if (kind === "downloadGit" || kind === "downloadLfs") {
+    if (isDownload(kind)) {
       if (!project || !installed(current) || current.project !== project) return undefined
       await fixes
         .request((requestID) =>
@@ -234,11 +251,12 @@ export function createReadiness(opts: {
     }
     if (current.status !== "blocked" || current.project !== project) return undefined
     revision++
-    const installFix = install(kind)
-    if (installFix) setState({ status: "installing", project, result: current.result, fix: kind, mode: "pending" })
+    const installKind = isInstall(kind) ? kind : undefined
+    if (installKind)
+      setState({ status: "installing", project, result: current.result, fix: installKind, mode: "pending" })
     else setState({ status: "fixing", project, result: current.result, fix: kind })
     track({ stage: "fix_started", code: current.result.code, fix: kind })
-    const pool = installFix ? installs : fixes
+    const pool = installKind ? installs : fixes
     const reply = await pool
       .request((requestID) =>
         vscode.postMessage({ type: "agentManager.fixReadiness", projectId: project, requestID, fix: kind, ...extra }),
@@ -250,8 +268,8 @@ export function createReadiness(opts: {
         install: undefined,
       }))
     if (disposed || opts.project() !== project) return undefined
-    if (installFix) {
-      applyInstall(project, kind, reply.result, reply.install, reply.error)
+    if (installKind) {
+      applyInstall(project, installKind, reply.result, reply.install, reply.error)
       return undefined
     }
     apply(settle(reply.selected ?? project, reply.result, kind, reply.error), kind)
@@ -267,7 +285,7 @@ export function createReadiness(opts: {
   ) => {
     if (result.status === "ready") return apply(settle(project, result, kind), kind)
     if (result.status === "unknown") return apply(settle(project, result))
-    const expected = kind === "installGit" ? "git_not_found" : "lfs_missing"
+    const expected = codeForTool(toolFor(kind) ?? "git")
     if (outcome?.mode === "apple" && !outcome.error && result.code === expected) {
       return apply({ status: "installing", project, result, fix: kind, mode: "apple" })
     }

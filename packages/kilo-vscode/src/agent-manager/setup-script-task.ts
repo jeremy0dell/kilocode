@@ -12,6 +12,7 @@
  */
 
 import { getShellEnvironment } from "./shell-env"
+import { SETUP_TIMEOUT_MS } from "../shared/readiness-timeouts"
 import { SetupScriptRunner, type RunTask } from "./SetupScriptRunner"
 import type { SetupScriptService } from "./SetupScriptService"
 import type { RunHandle } from "./run/manager"
@@ -19,7 +20,7 @@ import type { ScriptTerminalManager } from "./ScriptTerminalManager"
 import type { TerminalDestination } from "./terminal-destination"
 import type { AgentManagerOutMessage } from "./types"
 
-const TIMEOUT_MS = 5 * 60 * 1000
+const TIMEOUT_MS = SETUP_TIMEOUT_MS
 
 /** Reconcile cadence while a script runs: a lost exit event otherwise
  *  stalls the awaited setup (and its tab) until the full timeout. */

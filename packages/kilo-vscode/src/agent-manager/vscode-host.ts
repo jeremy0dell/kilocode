@@ -13,6 +13,8 @@ import type { Host, PanelContext, OutputHandle, SessionProvider, Disposable } fr
 import type { PRMergeMethod } from "./types"
 import type { InstallCommand } from "./worktree-install"
 import { executeVscodeTask } from "./task-runner"
+import { INSTALL_TIMEOUT_MS } from "../shared/readiness-timeouts"
+import { stderrText } from "./git-errors"
 import { exec } from "../util/process"
 import { ProjectRouteService } from "./project/route"
 import { repoName, validateCloneUrl } from "./project/clone"
@@ -32,8 +34,7 @@ import type { CaffeinationService } from "../services/caffeination"
 
 const INTRO_KEY = "kilo.agentManager.introDismissed"
 const PR_MERGE_METHODS_KEY = "agentManager.prMergeMethod"
-/** Installing a package can exceed the setup script's five-minute budget. */
-const INSTALL_TIMEOUT = 30 * 60 * 1000
+const INSTALL_TIMEOUT = INSTALL_TIMEOUT_MS
 
 export class VscodeHost implements Host {
   private diffVirtual: DiffVirtualProvider | undefined
@@ -587,9 +588,9 @@ export class VscodeHost implements Host {
       }).then(
         () => 0,
         (error: unknown) => {
-          const data = error as { code?: unknown; stderr?: unknown }
-          if (typeof data.stderr === "string" && data.stderr.trim()) throw new Error(data.stderr.trim())
-          if (typeof data.code === "number") return data.code
+          const stderr = stderrText(error)
+          if (stderr) throw new Error(stderr)
+          if (typeof (error as { code?: unknown }).code === "number") return (error as { code: number }).code
           throw error
         },
       )

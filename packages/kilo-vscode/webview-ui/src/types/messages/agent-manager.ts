@@ -336,3 +336,56 @@ export type ContinueInWorktreeStatus =
   | "forking"
   | "done"
   | "error"
+
+/** The two installable tools and their fix names. */
+export const TOOL_FIXES = {
+  git: { install: "installGit", download: "downloadGit" },
+  lfs: { install: "installLfs", download: "downloadLfs" },
+} as const
+
+export type Tool = keyof typeof TOOL_FIXES
+export type InstallFix = (typeof TOOL_FIXES)[Tool]["install"]
+export type DownloadFix = (typeof TOOL_FIXES)[Tool]["download"]
+
+export const TOOL_LABELS: Record<Tool, string> = { git: "Git", lfs: "Git LFS" }
+
+/** Tool a fix belongs to. */
+export function toolFor(fix: ReadinessFix | undefined): Tool | undefined {
+  if (fix === "installGit" || fix === "downloadGit") return "git"
+  if (fix === "installLfs" || fix === "downloadLfs") return "lfs"
+  return undefined
+}
+
+/** Tool a blocked result's code belongs to. */
+export function toolForCode(code: string | undefined): Tool | undefined {
+  if (code === "git_not_found") return "git"
+  if (code === "lfs_missing") return "lfs"
+  return undefined
+}
+
+export function isInstall(fix: ReadinessFix | undefined): fix is InstallFix {
+  return fix === "installGit" || fix === "installLfs"
+}
+
+export function isDownload(fix: ReadinessFix | undefined): fix is DownloadFix {
+  return fix === "downloadGit" || fix === "downloadLfs"
+}
+
+export function installFix(tool: Tool): InstallFix {
+  return TOOL_FIXES[tool].install
+}
+
+export function downloadFix(tool: Tool): DownloadFix {
+  return TOOL_FIXES[tool].download
+}
+
+export const TOOL_CODES = { git: "git_not_found", lfs: "lfs_missing" } as const
+
+export function codeForTool(tool: Tool) {
+  return TOOL_CODES[tool]
+}
+
+export function labelForFix(fix: ReadinessFix | undefined) {
+  const tool = toolFor(fix)
+  return tool ? TOOL_LABELS[tool] : TOOL_LABELS.lfs
+}

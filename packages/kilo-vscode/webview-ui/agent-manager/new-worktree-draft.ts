@@ -2,6 +2,7 @@
 // Both live in webview state, which the Agent Manager serializer keeps across a Reload window.
 
 import { createEffect, on, type Accessor } from "solid-js"
+import { z } from "zod"
 import {
   MAX_MULTI_VERSIONS,
   allocationKey,
@@ -9,7 +10,7 @@ import {
   type ModelAllocations,
 } from "./multi-model-utils"
 
-export type VersionCount = 1 | 2 | 3 | 4
+export type VersionCount = number
 
 export interface WorktreeDraft {
   project?: string
@@ -21,15 +22,25 @@ export interface WorktreeDraft {
   goal?: boolean
 }
 
-function text(value: unknown): string | undefined {
-  return typeof value === "string" && value.length > 0 ? value : undefined
-}
+const allocationSchema = z.object({
+  providerID: z.string(),
+  modelID: z.string(),
+  name: z.string(),
+  count: z.number().int().min(1).max(MAX_MULTI_VERSIONS),
+  variant: z.string().min(1).optional().catch(undefined),
+})
 
-function version(value: unknown): VersionCount | undefined {
-  return value === 1 || value === 2 || value === 3 || value === 4 ? value : undefined
-}
+const draftSchema = z.object({
+  project: z.string().min(1).optional().catch(undefined),
+  name: z.string().min(1).optional().catch(undefined),
+  branch: z.string().min(1).optional().catch(undefined),
+  versions: z.number().int().min(1).max(MAX_MULTI_VERSIONS).optional().catch(undefined),
+  compare: z.literal(true).optional().catch(undefined),
+  allocations: z.array(z.unknown()).optional().catch(undefined),
+  goal: z.literal(true).optional().catch(undefined),
+})
 
-function copy(data: ModelAllocationEntry): ModelAllocationEntry {
+function copyAllocation(data: ModelAllocationEntry): ModelAllocationEntry {
   const item: ModelAllocationEntry = {
     providerID: data.providerID,
     modelID: data.modelID,
@@ -40,25 +51,21 @@ function copy(data: ModelAllocationEntry): ModelAllocationEntry {
   return item
 }
 
-function allocation(value: unknown): ModelAllocationEntry | undefined {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined
-  const data = value as Record<string, unknown>
-  if (typeof data.providerID !== "string" || typeof data.modelID !== "string" || typeof data.name !== "string")
-    return undefined
-  if (
-    typeof data.count !== "number" ||
-    !Number.isInteger(data.count) ||
-    data.count < 1 ||
-    data.count > MAX_MULTI_VERSIONS
-  )
-    return undefined
-  return copy({ ...data, variant: text(data.variant) } as ModelAllocationEntry)
+function validAllocations(values: unknown[] | undefined): ModelAllocationEntry[] {
+  if (!values) return []
+  const items: ModelAllocationEntry[] = []
+  for (const value of values) {
+    const parsed = allocationSchema.safeParse(value)
+    if (parsed.success) items.push(parsed.data)
+  }
+  return items
 }
 
 /** Initial signal values for a restored draft. */
 export function draftValues(draft: WorktreeDraft) {
   const allocations: ModelAllocations = new Map()
-  for (const item of draft.allocations ?? []) allocations.set(allocationKey(item.providerID, item.modelID), copy(item))
+  for (const item of draft.allocations ?? [])
+    allocations.set(allocationKey(item.providerID, item.modelID), copyAllocation(item))
   return {
     name: draft.name ?? "",
     branch: draft.branch ?? "",
@@ -87,20 +94,18 @@ export function initialProject(
 
 /** Read the draft from cached webview state. */
 export function readCached(state: Record<string, unknown> | undefined): WorktreeDraft {
-  const value = state?.advancedDialogDraft
-  if (!value || typeof value !== "object" || Array.isArray(value)) return {}
-  const data = value as Record<string, unknown>
-  const list = Array.isArray(data.allocations)
-    ? data.allocations.map(allocation).filter((item): item is ModelAllocationEntry => item !== undefined)
-    : []
+  const parsed = draftSchema.safeParse(state?.advancedDialogDraft)
+  if (!parsed.success) return {}
+  const data = parsed.data
+  const allocations = validAllocations(data.allocations)
   return {
-    project: text(data.project),
-    name: text(data.name),
-    branch: text(data.branch),
-    versions: version(data.versions),
-    compare: data.compare === true ? true : undefined,
-    allocations: list.length > 0 ? list : undefined,
-    goal: data.goal === true ? true : undefined,
+    project: data.project,
+    name: data.name,
+    branch: data.branch,
+    versions: data.versions,
+    compare: data.compare,
+    allocations: allocations.length > 0 ? allocations : undefined,
+    goal: data.goal,
   }
 }
 
@@ -119,7 +124,7 @@ export function writeDraft(draft: WorktreeDraft): WorktreeDraft | undefined {
 
 export function writeAllocations(map: ModelAllocations): ModelAllocationEntry[] | undefined {
   if (map.size === 0) return undefined
-  return [...map.values()].map(copy)
+  return [...map.values()].map(copyAllocation)
 }
 
 const REOPEN_KEY = "advancedDialogReopen"
@@ -129,13 +134,18 @@ export function markReopen(state: Record<string, unknown>): Record<string, unkno
   return { ...state, [REOPEN_KEY]: true }
 }
 
+/** Whether the persisted state asks the next load to reopen the dialog. */
+export function readReopen(state: Record<string, unknown> | undefined): boolean {
+  return state?.[REOPEN_KEY] === true
+}
+
 /** Remove the reopen flag and report whether it was set. */
 function takeReopen(state: Record<string, unknown> | undefined): {
   reopen: boolean
   state: Record<string, unknown>
 } {
   const next = { ...(state ?? {}) }
-  const reopen = next[REOPEN_KEY] === true
+  const reopen = readReopen(next)
   delete next[REOPEN_KEY]
   return { reopen, state: next }
 }

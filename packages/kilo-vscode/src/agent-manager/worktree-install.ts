@@ -8,13 +8,15 @@
 
 import { tmpdir } from "node:os"
 import { lookup } from "./path-lookup"
+import { errorText } from "./git-errors"
 import type {
   ReadinessInstall as InstallOutcome,
   ReadinessInstaller,
+  Tool as ToolKind,
 } from "../../webview-ui/src/types/messages/agent-manager"
 
 export type { ReadinessInstall as InstallOutcome } from "../../webview-ui/src/types/messages/agent-manager"
-export type ToolKind = InstallOutcome["kind"]
+export type { Tool as ToolKind } from "../../webview-ui/src/types/messages/agent-manager"
 export type ToolProbe = { ok: true } | { ok: false; code: "missing" | "unknown"; detail: string }
 type Installer = ReadinessInstaller
 
@@ -76,21 +78,64 @@ export async function detectInstaller(
 }
 
 /**
- * Run one terminal step. The tool's availability afterwards wins; otherwise keep the launch error,
- * exit code, or stopped state. `zero` also counts a clean exit as success.
+ * Run one terminal step. Availability afterwards wins; otherwise keep the launch error,
+ * exit code, or stopped state. A clean exit also counts when the installer says so.
  */
-async function step(deps: InstallDeps, kind: ToolKind, name: string, command: InstallCommand, zero: boolean) {
-  const exit = await deps.run(name, command).catch((err: unknown) => (err instanceof Error ? err.message : String(err)))
+async function runInstallStep(
+  deps: InstallDeps,
+  kind: ToolKind,
+  label: string,
+  command: InstallCommand,
+  cleanExitIsSuccess: boolean,
+) {
+  const exit = await deps.run(label, command).catch((err: unknown) => errorText(err))
   const present = (await deps.probe(kind, true)).ok
-  const ok = present || (zero && exit === 0)
-  const outcome = ok
-    ? ({ kind, mode: "terminal", ok } satisfies InstallOutcome)
-    : typeof exit === "string"
-      ? ({ kind, mode: "terminal", ok, error: exit } satisfies InstallOutcome)
-      : exit === undefined
-        ? ({ kind, mode: "terminal", ok, stopped: true } satisfies InstallOutcome)
-        : ({ kind, mode: "terminal", ok, code: exit } satisfies InstallOutcome)
-  return { outcome, present }
+  const ok = present || (cleanExitIsSuccess && exit === 0)
+  if (ok) return { outcome: { kind, mode: "terminal" as const, ok }, present }
+  if (typeof exit === "string") return { outcome: { kind, mode: "terminal" as const, ok, error: exit }, present }
+  if (exit === undefined) return { outcome: { kind, mode: "terminal" as const, ok, stopped: true }, present }
+  return { outcome: { kind, mode: "terminal" as const, ok, code: exit }, present }
+}
+
+function stringEnv(env: NodeJS.ProcessEnv): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(env).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
+  )
+}
+
+async function launchAppleInstaller(
+  kind: ToolKind,
+  root: string,
+  env: Record<string, string>,
+  deps: InstallDeps,
+): Promise<InstallOutcome> {
+  const command: InstallCommand = { command: "xcode-select", args: ["--install"], cwd: root, env, mode: "launcher" }
+  const exit = await deps.run("Install Git", command).catch((err: unknown) => errorText(err))
+  if (typeof exit === "string") return { kind, mode: "apple", ok: false, error: exit }
+  const ok = exit === 0 || (await deps.probe("git", false)).ok
+  if (ok) return { kind, mode: "apple", ok }
+  return { kind, mode: "apple", ok, error: `xcode-select exited with code ${exit}` }
+}
+
+async function installWithManager(
+  kind: ToolKind,
+  installer: Exclude<Installer, "apple">,
+  root: string,
+  env: Record<string, string>,
+  deps: InstallDeps,
+): Promise<InstallOutcome> {
+  const manager = MANAGERS[installer]
+  const args = manager.sudo ? [manager.bin, ...manager[kind]] : manager[kind]
+  const command = manager.sudo ? "sudo" : manager.bin
+  const label = kind === "git" ? "Install Git" : "Install Git LFS"
+  // A clean package exit means the installer succeeded even if VS Code cannot see the tool yet.
+  const installed = await runInstallStep(deps, kind, label, { command, args, cwd: root, env, mode: "task" }, true)
+  if (kind === "git" || !installed.outcome.ok) return installed.outcome
+  if (!installed.present) return installed.outcome
+  // Best-effort registration once the package is visible. Global registration works outside the
+  // repository, so a repo alias must not hijack it.
+  const lfs: InstallCommand = { command: deps.git, args: ["lfs", "install"], cwd: tmpdir(), env, mode: "task" }
+  return (await runInstallStep(deps, "lfs", "Set up Git LFS", lfs, true)).outcome
 }
 
 export async function installTool(kind: ToolKind, root: string, deps: InstallDeps): Promise<InstallOutcome> {
@@ -99,30 +144,7 @@ export async function installTool(kind: ToolKind, root: string, deps: InstallDep
     deps.open(DOWNLOAD[kind])
     return { kind, mode: "external", ok: false }
   }
-  const env = Object.fromEntries(
-    Object.entries(deps.env).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
-  )
-
-  if (installer === "apple") {
-    const command: InstallCommand = { command: "xcode-select", args: ["--install"], cwd: root, env, mode: "launcher" }
-    const exit = await deps
-      .run("Install Git", command)
-      .catch((err: unknown) => (err instanceof Error ? err.message : String(err)))
-    if (typeof exit === "string") return { kind, mode: "apple", ok: false, error: exit }
-    const ok = exit === 0 || (await deps.probe("git", false)).ok
-    return { kind, mode: "apple", ok, ...(ok ? {} : { error: `xcode-select exited with code ${exit}` }) }
-  }
-
-  const manager = MANAGERS[installer]
-  const args = manager.sudo ? [manager.bin, ...manager[kind]] : manager[kind]
-  const command = manager.sudo ? "sudo" : manager.bin
-  const name = kind === "git" ? "Install Git" : "Install Git LFS"
-  // A clean package exit means the installer succeeded even if VS Code cannot see the tool yet.
-  const installed = await step(deps, kind, name, { command, args, cwd: root, env, mode: "task" }, true)
-  if (kind === "git" || !installed.outcome.ok) return installed.outcome
-  if (!installed.present) return installed.outcome
-  // Best-effort registration once the package is visible. Global registration works outside the
-  // repository, so a repo alias must not hijack it.
-  const lfs: InstallCommand = { command: deps.git, args: ["lfs", "install"], cwd: tmpdir(), env, mode: "task" }
-  return (await step(deps, "lfs", "Set up Git LFS", lfs, true)).outcome
+  const env = stringEnv(deps.env)
+  if (installer === "apple") return await launchAppleInstaller(kind, root, env, deps)
+  return await installWithManager(kind, installer, root, env, deps)
 }

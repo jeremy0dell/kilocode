@@ -36,28 +36,12 @@ import {
   type BranchListItem,
 } from "./git-import"
 import { pathKey } from "./project/paths"
-import { MISSING_GIT, missingDeveloperTools } from "./git-errors"
+import { MISSING_GIT, errorText, toolAbsent } from "./git-errors"
 import { Semaphore } from "./semaphore"
 
 const TEMP_PREFIX = ".kilo-delete-"
 const RM_OPTS: fs.RmOptions = { recursive: true, force: true, maxRetries: 3, retryDelay: 200 }
 const NO_COMMITS_MESSAGE = "This repository has no commits yet. Create an initial commit before using worktrees."
-
-/** Raw error text for Show details, preferring the child's stderr. */
-function text(error: unknown): string {
-  if (error && typeof error === "object") {
-    const data = error as { stderr?: unknown; message?: unknown }
-    if (typeof data.stderr === "string" && data.stderr.trim()) return data.stderr.trim()
-    if (typeof data.message === "string" && data.message.trim()) return data.message.trim()
-  }
-  return String(error)
-}
-
-/** Whether a probe failure confirms the tool is absent rather than failing for another reason. */
-function absent(error: unknown, detail: string): boolean {
-  if (error && typeof error === "object" && (error as NodeJS.ErrnoException).code === "ENOENT") return true
-  return missingDeveloperTools(detail)
-}
 
 function directory(branch: string): string {
   // Keep ordinary directory names, but isolate refs that need filesystem escaping.
@@ -153,7 +137,6 @@ export class WorktreeManager {
   private readonly dir: string
   private readonly git: SimpleGit
   private readonly ops: GitOps | undefined
-  /** The Git executable this manager runs (selected path, or PATH). */
   readonly binary: string
   private readonly log: (msg: string) => void
   private readonly pool: WorktreePool
@@ -225,6 +208,10 @@ export class WorktreeManager {
   private static fetchCache = new Map<string, number>()
   private static readonly FETCH_CACHE_TTL = 60_000 // 1 minute
   private gitAvailable = false
+  /**
+   * True only when a `git --version` probe failed to spawn. Callers use this to decide whether a
+   * downstream `ENOENT` really means "git is missing" instead of "that directory is gone".
+   */
   private probeFailed = false
   private lfsAvailable: boolean | undefined
   /** When the last negative git-lfs probe ran, so a later install is picked up. */
@@ -410,6 +397,7 @@ export class WorktreeManager {
     this.gitAvailable = false
     this.probeFailed = false
     try {
+      // Bounded: an unbounded probe turns a wedged git into a hang with no error to report.
       await execWithShellEnv(this.binary, ["--version"], {
         timeout: BUDGET.probe,
         ...(env ? { env } : {}),
@@ -417,8 +405,9 @@ export class WorktreeManager {
       this.gitAvailable = true
       return { ok: true }
     } catch (error) {
-      const detail = text(error)
-      if (absent(error, detail)) {
+      const detail = errorText(error)
+      // The probe runs without a cwd, so ENOENT here can only mean the binary is missing.
+      if (toolAbsent(error, detail)) {
         this.probeFailed = true
         return { ok: false, code: "missing", detail }
       }
@@ -434,12 +423,14 @@ export class WorktreeManager {
    */
   async probeLfs(fresh = false, verify = false): Promise<ToolProbe> {
     if (!fresh && !verify && this.lfsAvailable === true) return { ok: true }
+    // A negative verdict expires: installing git-lfs mid-session used to require a window reload.
     if (
       !fresh &&
       !verify &&
       this.lfsAvailable === false &&
       Date.now() - this.lfsProbed < WorktreeManager.LFS_PROBE_TTL
     ) {
+      // git-lfs not installed
       return { ok: false, code: "missing", detail: "git-lfs is not installed." }
     }
     const env = fresh ? await toolEnvironment(true) : undefined
@@ -453,7 +444,7 @@ export class WorktreeManager {
       this.lfsAvailable = true
       return { ok: true }
     } catch (error) {
-      const detail = text(error)
+      const detail = errorText(error)
       const absent = /is not a git command/i.test(detail)
       // A timeout, deleted cwd or permission error is not proof git-lfs is missing:
       // do not let it poison the negative cache for the next five minutes.
@@ -475,7 +466,7 @@ export class WorktreeManager {
     if (!file || (await fs.promises.realpath(file).catch(() => undefined)) !== "/usr/bin/git") return undefined
     return exec("xcode-select", ["-p"], { timeout: BUDGET.probe, ...(env ? { env } : {}) }).then(
       () => undefined,
-      (error: unknown) => ({ missing: (error as { code?: unknown }).code === 2, detail: text(error) }),
+      (error: unknown) => ({ missing: (error as { code?: unknown }).code === 2, detail: errorText(error) }),
     )
   }
 

@@ -16,12 +16,16 @@ import type { GitOps } from "./GitOps"
 import { isRestrictedRoot } from "./home-workspace"
 import { canonicalizePath, samePath } from "./project/paths"
 import * as prepare from "./project/prepare"
-import type {
-  Readiness,
-  ReadinessInstaller,
-  ReadinessMessage,
-  ReadinessProject,
-  FixReadinessRequest,
+import { errorText } from "./git-errors"
+import {
+  type Readiness,
+  type ReadinessInstaller,
+  type ReadinessMessage,
+  type ReadinessProject,
+  type FixReadinessRequest,
+  isDownload,
+  isInstall,
+  toolFor,
 } from "../../webview-ui/src/types/messages/agent-manager"
 import type { InstallOutcome, ToolKind, ToolProbe } from "./worktree-install"
 
@@ -31,11 +35,11 @@ const LIMIT = 3
 const UNTRUSTED = "Trust this VS Code window before Kilo changes the project."
 const RESTRICTED = "Choose a project folder, not your home folder or a filesystem root."
 
-function trust(deps: ReadinessDeps) {
+function ensureTrusted(deps: ReadinessDeps) {
   if (!deps.trusted()) throw new Error(UNTRUSTED)
 }
 
-function allow(dir: string | undefined) {
+function ensureAllowed(dir: string | undefined) {
   if (isRestrictedRoot(dir)) throw new Error(RESTRICTED)
 }
 
@@ -85,9 +89,9 @@ export async function fix(
   request: Pick<FixReadinessRequest, "fix" | "target" | "identity">,
   deps: FixDeps,
 ): Promise<FixOutcome> {
-  const done: Applied = await apply(root, request, deps).catch((err: unknown) => ({
+  const done: Applied = await runFix(root, request, deps).catch((err: unknown) => ({
     root,
-    error: err instanceof Error ? err.message : String(err),
+    error: errorText(err),
   }))
   // A fresh check makes an install visible immediately; only a truly invisible tool stays stale.
   const result = await probe(done.root, deps, done.install !== undefined)
@@ -102,15 +106,15 @@ export async function fix(
 type Applied = { root: string; selected?: string; note?: boolean; install?: InstallOutcome; error?: string }
 
 async function probe(root: string, deps: ReadinessDeps, fresh = false, verify = false): Promise<Readiness> {
-  return inspect(root, deps, fresh, verify).catch((err: unknown) => ({
+  return inspectProject(root, deps, fresh, verify).catch((err: unknown) => ({
     status: "unknown" as const,
-    detail: err instanceof Error ? err.message : String(err),
+    detail: errorText(err),
   }))
 }
 
-async function inspect(root: string, deps: ReadinessDeps, fresh: boolean, verify: boolean): Promise<Readiness> {
+async function inspectProject(root: string, deps: ReadinessDeps, fresh: boolean, verify: boolean): Promise<Readiness> {
   const git = await deps.tools.git(fresh, verify)
-  if (!git.ok) return missing("git", git, root, deps)
+  if (!git.ok) return blockedTool("git", git, root, deps)
   // Repository and commits.
   const state = await prepare.inspect(root, deps.git)
   if (isRestrictedRoot(state.root ?? root)) {
@@ -122,7 +126,7 @@ async function inspect(root: string, deps: ReadinessDeps, fresh: boolean, verify
       restricted: true,
     }
   }
-  if (!state.root) return folder(root, deps)
+  if (!state.root) return projectChoices(root, deps)
   if (state.empty) {
     return {
       status: "blocked",
@@ -134,13 +138,13 @@ async function inspect(root: string, deps: ReadinessDeps, fresh: boolean, verify
   }
   if (await deps.tools.usesLfs(state.root)) {
     const lfs = await deps.tools.lfs(state.root, fresh, verify)
-    if (!lfs.ok) return missing("lfs", lfs, state.root, deps)
+    if (!lfs.ok) return blockedTool("lfs", lfs, state.root, deps)
   }
   return { status: "ready" }
 }
 
 /** A confirmed missing tool becomes a blocker; any other probe failure stays advisory. */
-async function missing(
+async function blockedTool(
   kind: ToolKind,
   probe: Extract<ToolProbe, { ok: false }>,
   root: string,
@@ -158,9 +162,9 @@ async function missing(
 }
 
 /** A folder that is not a Git project: offer the projects inside it, or setting up Git. */
-async function folder(root: string, deps: ReadinessDeps): Promise<Readiness> {
+async function projectChoices(root: string, deps: ReadinessDeps): Promise<Readiness> {
   const base = { status: "blocked" as const, code: "not_git_repo" as const, name: path.basename(root) }
-  const found = await children(root)
+  const found = await childProjects(root)
   if (found.length > 0) {
     return {
       ...base,
@@ -173,56 +177,56 @@ async function folder(root: string, deps: ReadinessDeps): Promise<Readiness> {
 }
 
 /** Direct child folders that contain `.git`, one level deep, stopping after one more than shown. */
-async function children(root: string): Promise<ReadinessProject[]> {
+async function childProjects(root: string): Promise<ReadinessProject[]> {
   const entries = await fs.readdir(root, { withFileTypes: true })
   const found: ReadinessProject[] = []
   for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     if (found.length > LIMIT) break
     if (!entry.isDirectory()) continue
     const dir = path.join(root, entry.name)
-    if (await exists(path.join(dir, ".git"))) found.push({ root: dir, label: entry.name })
+    if (await fileExists(path.join(dir, ".git"))) found.push({ root: dir, label: entry.name })
   }
   return found
 }
 
-function exists(file: string) {
+function fileExists(file: string) {
   return fs.access(file).then(
     () => true,
     () => false,
   )
 }
 
-async function apply(
+async function runFix(
   root: string,
   request: Pick<FixReadinessRequest, "fix" | "target" | "identity">,
   deps: FixDeps,
 ): Promise<Applied> {
-  const quick = await external(root, request, deps)
+  const quick = await runToolFix(root, request, deps)
   if (quick) return quick
-  trust(deps)
+  ensureTrusted(deps)
   if (request.fix === "useProject") {
     const target = request.target ? canonicalizePath(request.target) : ""
-    if (!target || !samePath(path.dirname(target), root) || !(await exists(path.join(target, ".git"))))
+    if (!target || !samePath(path.dirname(target), root) || !(await fileExists(path.join(target, ".git"))))
       throw new Error(`Not a Git project inside ${root}: ${request.target ?? ""}`)
-    return select(target, deps)
+    return registerProject(target, deps)
   }
   if (request.fix === "pickFolder") {
     const dir = await deps.pick()
     if (!dir) return { root }
-    return select(dir, deps)
+    return registerProject(dir, deps)
   }
   const state = await prepare.inspect(root, deps.git)
-  allow(state.root ?? root)
+  ensureAllowed(state.root ?? root)
   if (request.fix === "initialCommit" && !state.root) throw new Error(`Not a Git repository: ${root}`)
   if (!request.identity && !(await prepare.identity(root, deps.git)))
     throw new Error("Git needs a name and email before Kilo can create the first commit.")
-  trust(deps)
+  ensureTrusted(deps)
   const repo = state.root ?? (await prepare.initialize(root, deps.git))
-  trust(deps)
+  ensureTrusted(deps)
   await deps.exclude()
-  trust(deps)
+  ensureTrusted(deps)
   if (request.identity) await prepare.configure(repo, deps.git, request.identity)
-  trust(deps)
+  ensureTrusted(deps)
   await prepare.commit(repo, deps.git)
   deps.openRepository(repo)
   await deps.branches()
@@ -231,25 +235,27 @@ async function apply(
 }
 
 /** Downloads and installs need no repository inspection. */
-async function external(
+async function runToolFix(
   root: string,
   request: Pick<FixReadinessRequest, "fix">,
   deps: FixDeps,
 ): Promise<Applied | undefined> {
-  if (request.fix === "downloadGit" || request.fix === "downloadLfs") {
-    deps.tools.download(request.fix === "downloadGit" ? "git" : "lfs")
+  const tool = toolFor(request.fix)
+  if (!tool) return undefined
+  if (isDownload(request.fix)) {
+    deps.tools.download(tool)
     return { root }
   }
-  if (request.fix !== "installGit" && request.fix !== "installLfs") return undefined
-  trust(deps)
-  return { root, install: await deps.tools.install(request.fix === "installGit" ? "git" : "lfs", root) }
+  if (!isInstall(request.fix)) return undefined
+  ensureTrusted(deps)
+  return { root, install: await deps.tools.install(tool, root) }
 }
 
 /** Register a folder's project and select it. */
-async function select(dir: string, deps: FixDeps): Promise<Applied> {
+async function registerProject(dir: string, deps: FixDeps): Promise<Applied> {
   const state = await prepare.inspect(dir, deps.git)
   const root = state.root ?? canonicalizePath(dir)
-  allow(root)
-  trust(deps)
+  ensureAllowed(root)
+  ensureTrusted(deps)
   return { root, selected: await deps.attach(root) }
 }

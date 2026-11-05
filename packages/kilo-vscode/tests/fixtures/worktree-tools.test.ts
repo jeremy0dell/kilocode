@@ -225,8 +225,15 @@ describe("LFS alias safety", () => {
     const seeded = Bun.spawnSync([real, "-C", root, "config", "alias.lfs", `!touch ${mark}`])
     expect(seeded.exitCode).toBe(0)
 
+    const tools = await temp("kilo-tools-path-")
+    for (const [name, target] of [
+      ["sh", "/bin/sh"],
+      ["touch", "/usr/bin/touch"],
+    ] as const) {
+      await fs.symlink(target, path.join(tools, name))
+    }
     const previous = process.env.PATH
-    process.env.PATH = "/usr/bin:/bin"
+    process.env.PATH = tools
     try {
       const binary = await fs.access("/usr/bin/git").then(
         () => "/usr/bin/git",
@@ -256,7 +263,7 @@ describe("fresh tool checks", () => {
     const shell = await script(
       state,
       "shell",
-      `echo x >> "${shellCalls}"\necho "PATH=$(cat "${path.join(state, "path")}")"`,
+      `echo x >> "${shellCalls}"\necho "PATH=$(/bin/cat "${path.join(state, "path")}")"`,
     )
     const git = await script(
       bin,
@@ -267,7 +274,7 @@ describe("fresh tool checks", () => {
 
     const previous = { PATH: process.env.PATH, SHELL: process.env.SHELL }
     process.env.SHELL = shell
-    process.env.PATH = [bin, process.env.PATH].join(path.delimiter)
+    process.env.PATH = bin
     await fs.writeFile(path.join(state, "path"), process.env.PATH)
 
     try {
@@ -276,7 +283,7 @@ describe("fresh tool checks", () => {
       expect(await mgr.probeLfs()).toMatchObject({ ok: false, code: "missing" })
       expect((await calls()).filter((line) => line.startsWith("git lfs version"))).toHaveLength(1)
 
-      await fs.writeFile(path.join(state, "path"), [later, bin, previous.PATH].join(path.delimiter))
+      await fs.writeFile(path.join(state, "path"), [later, bin].join(path.delimiter))
       expect(await mgr.probeLfs()).toMatchObject({ ok: false, code: "missing" })
       expect((await fs.readFile(shellCalls, "utf8")).trim()).toBe("")
 

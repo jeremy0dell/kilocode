@@ -12,10 +12,12 @@ import { Spinner } from "@kilocode/kilo-ui/spinner"
 import { TextField } from "@kilocode/kilo-ui/text-field"
 import type { Readiness, ReadinessFix, ReadinessInstaller } from "../src/types/messages"
 import { useLanguage } from "../src/context/language"
-import { TOOLS, toolName, type ReadinessState, type Tool } from "./worktree-readiness"
+import { TOOL_LABELS, downloadFix, installFix, toolForCode, type Tool } from "../src/types/messages"
+import type { ReadinessState } from "./worktree-readiness"
 
 type Blocked = Extract<Readiness, { status: "blocked" }>
 type Identity = { name: string; email: string }
+type Kind = "restricted" | "git" | "lfs" | "projects" | "commit" | "plain"
 type ReadyFixed = "initGit" | "initialCommit" | "installGit" | "installLfs"
 const READY = (value: string | undefined): value is ReadyFixed =>
   value === "initGit" || value === "initialCommit" || value === "installGit" || value === "installLfs"
@@ -110,7 +112,7 @@ function BlockedCard(props: {
   const locked = () => !props.result.trusted
   const projects = () => props.result.projects ?? []
   const install = (): ReadinessInstaller | undefined => props.result.installer
-  const kind = () => {
+  const kind = (): Kind => {
     if (props.result.restricted) return "restricted"
     if (props.result.code === "git_not_found") return "git"
     if (props.result.code === "lfs_missing") return "lfs"
@@ -119,8 +121,9 @@ function BlockedCard(props: {
     return "plain"
   }
   const tool = (): Tool | undefined => {
-    const value = kind()
-    return value === "git" || value === "lfs" ? value : undefined
+    if (kind() === "git") return "git"
+    if (kind() === "lfs") return "lfs"
+    return undefined
   }
   const start = () => {
     if (props.result.identity === false) {
@@ -134,39 +137,121 @@ function BlockedCard(props: {
     setForm(false)
     props.onFix(fix(), { name: name().trim(), email: email().trim() })
   }
-  const title = () => {
-    if (form() && !props.fixing) return t("agentManager.readiness.identity.title")
-    if (kind() === "restricted") return t("agentManager.readiness.restricted.title")
-    if (kind() === "git") return t("agentManager.readiness.git.title")
-    if (kind() === "lfs") return t("agentManager.readiness.lfs.title", { name: props.result.name })
-    if (kind() === "projects") return t("agentManager.readiness.projects.title", { name: props.result.name })
-    if (kind() === "commit") return t("agentManager.readiness.commit.title", { name: props.result.name })
-    return t("agentManager.readiness.plain.title", { name: props.result.name })
+  const copy: Record<Kind, { title: () => string; body: () => string }> = {
+    restricted: {
+      title: () => t("agentManager.readiness.restricted.title"),
+      body: () => t("agentManager.readiness.restricted.body"),
+    },
+    git: {
+      title: () => t("agentManager.readiness.git.title"),
+      body: () =>
+        t(
+          props.result.platform === "darwin" ? "agentManager.readiness.git.bodyMac" : "agentManager.readiness.git.body",
+        ),
+    },
+    lfs: {
+      title: () => t("agentManager.readiness.lfs.title", { name: props.result.name }),
+      body: () => t("agentManager.readiness.lfs.body"),
+    },
+    projects: {
+      title: () => t("agentManager.readiness.projects.title", { name: props.result.name }),
+      body: () => {
+        const count = projects().length
+        if (count === 1 && !props.result.more)
+          return t("agentManager.readiness.projects.bodyOne", { name: props.result.name })
+        return t("agentManager.readiness.projects.body", {
+          name: props.result.name,
+          count: props.result.more ? `${count}+` : String(count),
+        })
+      },
+    },
+    commit: {
+      title: () => t("agentManager.readiness.commit.title", { name: props.result.name }),
+      body: () => t("agentManager.readiness.commit.body"),
+    },
+    plain: {
+      title: () => t("agentManager.readiness.plain.title", { name: props.result.name }),
+      body: () => t("agentManager.readiness.plain.body"),
+    },
   }
-  const body = () => {
-    if (form() && !props.fixing) return t("agentManager.readiness.identity.body")
-    if (kind() === "restricted") return t("agentManager.readiness.restricted.body")
-    if (kind() === "git")
-      return t(
-        props.result.platform === "darwin" ? "agentManager.readiness.git.bodyMac" : "agentManager.readiness.git.body",
-      )
-    if (kind() === "lfs") return t("agentManager.readiness.lfs.body")
-    if (kind() === "projects") {
-      const count = projects().length
-      if (count === 1 && !props.result.more)
-        return t("agentManager.readiness.projects.bodyOne", { name: props.result.name })
-      return t("agentManager.readiness.projects.body", {
-        name: props.result.name,
-        count: props.result.more ? `${count}+` : String(count),
-      })
-    }
-    if (kind() === "commit") return t("agentManager.readiness.commit.body")
-    return t("agentManager.readiness.plain.body")
-  }
+  const title = () => (form() && !props.fixing ? t("agentManager.readiness.identity.title") : copy[kind()].title())
+  const body = () => (form() && !props.fixing ? t("agentManager.readiness.identity.body") : copy[kind()].body())
   const working = () => {
     if (props.fixing === "initGit") return t("agentManager.readiness.working.initGit")
     if (props.fixing === "initialCommit") return t("agentManager.readiness.working.initialCommit")
     return t("agentManager.readiness.working.project")
+  }
+
+  const actions = () => {
+    const value = kind()
+    switch (value) {
+      case "restricted":
+        return (
+          <Button size="small" variant="secondary" disabled={locked()} onClick={props.onFolder} data-readiness-action>
+            {t("agentManager.readiness.restricted.action")}
+          </Button>
+        )
+      case "git":
+      case "lfs":
+        return (
+          <>
+            <Button
+              size="small"
+              variant="secondary"
+              disabled={locked()}
+              onClick={() => props.onFix(installFix(value))}
+              data-readiness-action
+            >
+              {t(install() ? "agentManager.readiness.tool.install" : "agentManager.readiness.tool.get", {
+                tool: TOOL_LABELS[value],
+              })}
+            </Button>
+            <Show when={install()}>
+              <button class="am-readiness-link" type="button" onClick={() => props.onFix(downloadFix(value))}>
+                {t("agentManager.readiness.tool.other")}
+              </button>
+            </Show>
+          </>
+        )
+      case "projects":
+        return (
+          <>
+            <For each={projects()}>
+              {(project, index) => (
+                <Button
+                  size="small"
+                  variant="secondary"
+                  disabled={locked()}
+                  onClick={() => props.onProject(project.root)}
+                  data-readiness-action={index() === 0 ? "" : undefined}
+                >
+                  {t("agentManager.readiness.projects.use", { name: project.label })}
+                </Button>
+              )}
+            </For>
+            <button class="am-readiness-link" type="button" disabled={locked()} onClick={props.onFolder}>
+              {t("agentManager.readiness.projects.other")}
+            </button>
+          </>
+        )
+      case "commit":
+        return (
+          <Button size="small" variant="secondary" disabled={locked()} onClick={start} data-readiness-action>
+            {t("agentManager.readiness.commit.action")}
+          </Button>
+        )
+      case "plain":
+        return (
+          <>
+            <Button size="small" variant="secondary" disabled={locked()} onClick={start} data-readiness-action>
+              {t("agentManager.readiness.plain.action")}
+            </Button>
+            <button class="am-readiness-link" type="button" disabled={locked()} onClick={props.onFolder}>
+              {t("agentManager.readiness.plain.other")}
+            </button>
+          </>
+        )
+    }
   }
 
   return (
@@ -243,72 +328,7 @@ function BlockedCard(props: {
         </Show>
         <Show when={!form()}>
           <CardActions>
-            <Switch>
-              <Match when={kind() === "restricted"}>
-                <Button
-                  size="small"
-                  variant="secondary"
-                  disabled={locked()}
-                  onClick={props.onFolder}
-                  data-readiness-action
-                >
-                  {t("agentManager.readiness.restricted.action")}
-                </Button>
-              </Match>
-              <Match when={tool()}>
-                {(value) => (
-                  <>
-                    <Button
-                      size="small"
-                      variant="secondary"
-                      disabled={locked()}
-                      onClick={() => props.onFix(TOOLS[value()].fix)}
-                      data-readiness-action
-                    >
-                      {t(install() ? "agentManager.readiness.tool.install" : "agentManager.readiness.tool.get", {
-                        tool: TOOLS[value()].label,
-                      })}
-                    </Button>
-                    <Show when={install()}>
-                      <button class="am-readiness-link" type="button" onClick={() => props.onFix(TOOLS[value()].other)}>
-                        {t("agentManager.readiness.tool.other")}
-                      </button>
-                    </Show>
-                  </>
-                )}
-              </Match>
-              <Match when={kind() === "projects"}>
-                <For each={projects()}>
-                  {(project, index) => (
-                    <Button
-                      size="small"
-                      variant="secondary"
-                      disabled={locked()}
-                      onClick={() => props.onProject(project.root)}
-                      data-readiness-action={index() === 0 ? "" : undefined}
-                    >
-                      {t("agentManager.readiness.projects.use", { name: project.label })}
-                    </Button>
-                  )}
-                </For>
-                <button class="am-readiness-link" type="button" disabled={locked()} onClick={props.onFolder}>
-                  {t("agentManager.readiness.projects.other")}
-                </button>
-              </Match>
-              <Match when={kind() === "commit"}>
-                <Button size="small" variant="secondary" disabled={locked()} onClick={start} data-readiness-action>
-                  {t("agentManager.readiness.commit.action")}
-                </Button>
-              </Match>
-              <Match when={kind() === "plain"}>
-                <Button size="small" variant="secondary" disabled={locked()} onClick={start} data-readiness-action>
-                  {t("agentManager.readiness.plain.action")}
-                </Button>
-                <button class="am-readiness-link" type="button" disabled={locked()} onClick={props.onFolder}>
-                  {t("agentManager.readiness.plain.other")}
-                </button>
-              </Match>
-            </Switch>
+            {actions()}
             <button class="am-readiness-link am-readiness-check" type="button" onClick={props.onCheck}>
               {t("agentManager.readiness.check")}
             </button>
@@ -326,7 +346,8 @@ function InstallingCard(props: {
 }) {
   const { t } = useLanguage()
   const apple = () => props.state.mode === "apple"
-  const name = () => toolName(props.state.fix)
+  const name = () =>
+    TOOL_LABELS[toolForCode(props.state.fix === "installGit" ? "git_not_found" : "lfs_missing") ?? "lfs"]
   return (
     <Card>
       <div class="am-readiness-working" role="status">
@@ -364,7 +385,8 @@ function StaleCard(props: {
   onReload: () => void
 }) {
   const { t } = useLanguage()
-  const name = () => toolName(props.state.fix)
+  const name = () =>
+    TOOL_LABELS[toolForCode(props.state.fix === "installGit" ? "git_not_found" : "lfs_missing") ?? "lfs"]
   return (
     <Card variant="warning">
       <CardTitle variant="warning" tabIndex={-1} data-readiness-title>

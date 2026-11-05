@@ -58,7 +58,7 @@ describe("installer detection", () => {
     const dnf = await dir()
     await bin(dnf, "dnf")
     expect(await detectInstaller("git", "linux", { PATH: dnf })).toBe("dnf")
-    expect(await detectInstaller("git", "linux", { PATH: "/usr/bin:/bin" })).toBeUndefined()
+    expect(await detectInstaller("git", "linux", { PATH: await dir() })).toBeUndefined()
   })
 
   it("ignores a directory named like the tool on PATH", async () => {

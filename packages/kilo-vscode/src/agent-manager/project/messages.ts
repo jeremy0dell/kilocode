@@ -54,12 +54,17 @@ export interface ProjectMessageDeps {
   empty?: () => void
   /** Initialize an expanded background context and push its state. */
   expand: (ctx: ProjectContext) => void
+  /** Push the current project snapshots to the webview. */
   push: () => void
+  /** Push one project's managed state to the webview. */
   pushState?: (ctx: ProjectContext) => void
   /** Acknowledge an atomically validated sidebar selection. */
   selected: (target: SidebarTarget) => void
+  /** Post an outbound message to the webview. */
   post: (message: AgentManagerOutMessage) => void
+  /** Show a user-facing error. */
   error: (message: string) => void
+  /** Open the Kilo Settings editor, optionally on a tab and project. */
   openSettings: (tab?: string, projectId?: string) => void
   /** Ensure a context's repository state is ready (no-op once initialized). */
   ready: (ctx: ProjectContext, options?: { warm?: boolean }) => Promise<ProjectInitResult>
