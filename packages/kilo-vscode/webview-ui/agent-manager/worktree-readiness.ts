@@ -8,29 +8,25 @@
  */
 
 import { createComputed, createSignal, on, onCleanup, type Accessor } from "solid-js"
+import type { Readiness, ReadinessFix, ReadinessInstall, ReadinessMessage, WorktreeEntry } from "../src/types/messages"
 import {
-  TOOL_LABELS,
   codeForTool,
-  labelForFix,
+  errorText,
   installFix,
   isDownload,
   isInstall,
+  labelForFix,
   toolFor,
   toolForCode,
+  toolForInstall,
   type InstallFix,
-  type Readiness,
-  type ReadinessFix,
-  type ReadinessInstall,
-  type ReadinessMessage,
-  type Tool,
-  type WorktreeEntry,
-} from "../src/types/messages"
+} from "../../src/shared/worktree-readiness"
 import { createContextRequests } from "../src/hooks/context-requests"
 import { useVSCode } from "../src/context/vscode"
 import { useLanguage } from "../src/context/language"
 import { TelemetryEventName } from "../../src/services/telemetry/types"
 
-import { FIX_DEADLINE_MS, INSTALL_DEADLINE_MS, READINESS_DEADLINE_MS } from "../../src/shared/readiness-timeouts"
+import { FIX_DEADLINE_MS, INSTALL_DEADLINE_MS, READINESS_DEADLINE_MS } from "../../src/shared/worktree-readiness"
 
 type Blocked = Extract<Readiness, { status: "blocked" }>
 
@@ -49,14 +45,12 @@ export type ReadinessState =
   | { status: "ready"; project: string; note?: "uncommitted"; fixed?: ReadinessFix }
   | { status: "unknown"; project: string; detail: string }
 
-/** The settled state for one reply. */
 function settle(project: string, result: Readiness, fixed?: ReadinessFix, error?: string): ReadinessState {
   if (result.status === "blocked") return { status: "blocked", project, result, ...(error ? { error } : {}) }
   if (result.status === "unknown") return { status: "unknown", project, detail: result.detail }
   return { status: "ready", project, ...(result.note ? { note: result.note } : {}), ...(fixed ? { fixed } : {}) }
 }
 
-/** Telemetry code for a state that has one. */
 function code(state: ReadinessState) {
   if ("result" in state) return state.result.code
   if (state.status === "unknown") return "unknown"
@@ -73,7 +67,7 @@ function stage(prev: ReadinessState, next: ReadinessState) {
 }
 
 /** The install a Git or Git LFS card represents; such a card re-checks fresh and on window return. */
-function installed(state: ReadinessState): InstallFix | undefined {
+function installFixFor(state: ReadinessState): InstallFix | undefined {
   if (state.status === "installing" || state.status === "stale") return state.fix
   if (state.status !== "blocked") return undefined
   const tool = toolForCode(state.result.code)
@@ -85,7 +79,7 @@ const CODE_TIPS: Partial<Record<Blocked["code"], string>> = {
   lfs_missing: "agentManager.readiness.blockedLfs",
 }
 
-/** Create-button tooltip for the current card. */
+/** Why Create is disabled, and what unblocks it. */
 export function tooltip(state: ReadinessState): { key: string; params?: { tool: string } } {
   if (state.status === "stale") return { key: "agentManager.readiness.install.reload" }
   if (state.status === "installing") {
@@ -148,7 +142,7 @@ export function createReadiness(opts: {
       properties: { ...props, entry: opts.entry },
     })
 
-  const apply = (next: ReadinessState, fix?: ReadinessFix) => {
+  const commitState = (next: ReadinessState, fix?: ReadinessFix) => {
     const event = stage(state(), next)
     setState(next)
     if (event) track({ ...event, ...(fix && event.stage === "resolved" ? { fix } : {}) })
@@ -156,7 +150,7 @@ export function createReadiness(opts: {
 
   const unsub = vscode.onMessage((msg) => {
     if (msg.type === "agentManager.readinessFocus") {
-      if (!installed(state()) || watching) return
+      if (!installFixFor(state()) || watching) return
       watching = check(true, true)
         .then((next) => {
           if (next?.status === "ready") opts.onRecovered?.()
@@ -205,9 +199,8 @@ export function createReadiness(opts: {
         vscode.postMessage({ type: "agentManager.checkReadiness", projectId: project, requestID, fresh, verify }),
       )
       .then(
-        (msg) => settle(project, msg.result, installed(state())),
-        (err: unknown) =>
-          settle(project, { status: "unknown", detail: err instanceof Error ? err.message : String(err) }),
+        (msg) => settle(project, msg.result, installFixFor(state())),
+        (err: unknown) => settle(project, { status: "unknown", detail: errorText(err) }),
       )
       .then((next) => {
         if (disposed || opts.project() !== project) return undefined
@@ -222,7 +215,7 @@ export function createReadiness(opts: {
         // the same blocker. A different blocker (e.g. no_commits) must win.
         const same = next.status === "blocked" && "result" in current && next.result.code === current.result.code
         if (keep && next.status !== "ready" && (next.status === "unknown" || same)) return current
-        apply(next, installed(state()))
+        commitState(next, installFixFor(state()))
         return next
       })
       .finally(() => {
@@ -233,7 +226,7 @@ export function createReadiness(opts: {
   }
 
   /** Run a fix for the current blocker. Resolves the project a switch fix selected. */
-  const run = async (
+  const runFix = async (
     kind: ReadinessFix,
     extra: { target?: string; identity?: { name: string; email: string } } = {},
   ): Promise<string | undefined> => {
@@ -241,7 +234,7 @@ export function createReadiness(opts: {
     const project = opts.project()
     // Downloads only open a page, so they are also valid from the Apple and stale cards.
     if (isDownload(kind)) {
-      if (!project || !installed(current) || current.project !== project) return undefined
+      if (!project || !installFixFor(current) || current.project !== project) return undefined
       await fixes
         .request((requestID) =>
           vscode.postMessage({ type: "agentManager.fixReadiness", projectId: project, requestID, fix: kind, ...extra }),
@@ -264,7 +257,7 @@ export function createReadiness(opts: {
       .catch((err: unknown) => ({
         selected: undefined,
         result: current.result,
-        error: err instanceof Error ? err.message : String(err),
+        error: errorText(err),
         install: undefined,
       }))
     if (disposed || opts.project() !== project) return undefined
@@ -272,7 +265,7 @@ export function createReadiness(opts: {
       applyInstall(project, installKind, reply.result, reply.install, reply.error)
       return undefined
     }
-    apply(settle(reply.selected ?? project, reply.result, kind, reply.error), kind)
+    commitState(settle(reply.selected ?? project, reply.result, kind, reply.error), kind)
     return reply.selected
   }
 
@@ -283,16 +276,16 @@ export function createReadiness(opts: {
     outcome: ReadinessInstall | undefined,
     error: string | undefined,
   ) => {
-    if (result.status === "ready") return apply(settle(project, result, kind), kind)
-    if (result.status === "unknown") return apply(settle(project, result))
-    const expected = codeForTool(toolFor(kind) ?? "git")
+    if (result.status === "ready") return commitState(settle(project, result, kind), kind)
+    if (result.status === "unknown") return commitState(settle(project, result))
+    const expected = codeForTool(toolForInstall(kind))
     if (outcome?.mode === "apple" && !outcome.error && result.code === expected) {
-      return apply({ status: "installing", project, result, fix: kind, mode: "apple" })
+      return commitState({ status: "installing", project, result, fix: kind, mode: "apple" })
     }
     if (outcome?.ok && result.code === expected) {
-      return apply({ status: "stale", project, result, fix: kind })
+      return commitState({ status: "stale", project, result, fix: kind })
     }
-    apply(settle(project, result, kind, error ?? failure(outcome)))
+    commitState(settle(project, result, kind, error ?? failure(outcome)))
   }
 
   /** Translate a terminal install's exit state for Show details. */
@@ -310,7 +303,7 @@ export function createReadiness(opts: {
   }
 
   /** Check again from the card: a Git or Git LFS card refreshes the tool caches and PATH. */
-  const recheck = () => void check(installed(state()) !== undefined)
+  const recheck = () => void check(installFixFor(state()) !== undefined)
 
-  return { state, blocked, check, recheck, fix: run, revision: () => revision }
+  return { state, blocked, check, recheck, fix: runFix, revision: () => revision }
 }

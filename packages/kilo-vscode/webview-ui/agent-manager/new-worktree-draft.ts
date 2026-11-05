@@ -9,8 +9,9 @@ import {
   type ModelAllocationEntry,
   type ModelAllocations,
 } from "./multi-model-utils"
+import { VERSION_OPTIONS, type VersionCount } from "../../src/shared/worktree-readiness"
 
-export type VersionCount = number
+export type { VersionCount } from "../../src/shared/worktree-readiness"
 
 export interface WorktreeDraft {
   project?: string
@@ -34,7 +35,14 @@ const draftSchema = z.object({
   project: z.string().min(1).optional().catch(undefined),
   name: z.string().min(1).optional().catch(undefined),
   branch: z.string().min(1).optional().catch(undefined),
-  versions: z.number().int().min(1).max(MAX_MULTI_VERSIONS).optional().catch(undefined),
+  versions: z
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_MULTI_VERSIONS)
+    .refine((value) => VERSION_OPTIONS.some((item) => item === value))
+    .optional()
+    .catch(undefined),
   compare: z.literal(true).optional().catch(undefined),
   allocations: z.array(z.unknown()).optional().catch(undefined),
   goal: z.literal(true).optional().catch(undefined),
@@ -61,7 +69,6 @@ function validAllocations(values: unknown[] | undefined): ModelAllocationEntry[]
   return items
 }
 
-/** Initial signal values for a restored draft. */
 export function draftValues(draft: WorktreeDraft) {
   const allocations: ModelAllocations = new Map()
   for (const item of draft.allocations ?? [])
@@ -92,9 +99,15 @@ export function initialProject(
   return explicit ?? active
 }
 
-/** Read the draft from cached webview state. */
+const DRAFT_KEY = "advancedDialogDraft"
+
+/** Write the draft into the persisted webview state. */
+export function saveDraft(state: Record<string, unknown>, draft: WorktreeDraft): Record<string, unknown> {
+  return { ...state, [DRAFT_KEY]: writeDraft(draft) }
+}
+
 export function readCached(state: Record<string, unknown> | undefined): WorktreeDraft {
-  const parsed = draftSchema.safeParse(state?.advancedDialogDraft)
+  const parsed = draftSchema.safeParse(state?.[DRAFT_KEY])
   if (!parsed.success) return {}
   const data = parsed.data
   const allocations = validAllocations(data.allocations)
@@ -102,7 +115,7 @@ export function readCached(state: Record<string, unknown> | undefined): Worktree
     project: data.project,
     name: data.name,
     branch: data.branch,
-    versions: data.versions,
+    versions: VERSION_OPTIONS.find((value) => value === data.versions),
     compare: data.compare,
     allocations: allocations.length > 0 ? allocations : undefined,
     goal: data.goal,
@@ -129,17 +142,14 @@ export function writeAllocations(map: ModelAllocations): ModelAllocationEntry[] 
 
 const REOPEN_KEY = "advancedDialogReopen"
 
-/** Mark the persisted webview state so the next load reopens the dialog. */
 export function markReopen(state: Record<string, unknown>): Record<string, unknown> {
   return { ...state, [REOPEN_KEY]: true }
 }
 
-/** Whether the persisted state asks the next load to reopen the dialog. */
-export function readReopen(state: Record<string, unknown> | undefined): boolean {
+function readReopen(state: Record<string, unknown> | undefined): boolean {
   return state?.[REOPEN_KEY] === true
 }
 
-/** Remove the reopen flag and report whether it was set. */
 function takeReopen(state: Record<string, unknown> | undefined): {
   reopen: boolean
   state: Record<string, unknown>
@@ -158,7 +168,6 @@ interface ReopenOptions {
   open: () => void
 }
 
-/** Wire the one-shot flag to the dialog opener. */
 export function createReopen(opts: ReopenOptions) {
   let done = false
   const run = () => {

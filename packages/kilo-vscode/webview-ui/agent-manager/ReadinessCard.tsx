@@ -12,14 +12,21 @@ import { Spinner } from "@kilocode/kilo-ui/spinner"
 import { TextField } from "@kilocode/kilo-ui/text-field"
 import type { Readiness, ReadinessFix, ReadinessInstaller } from "../src/types/messages"
 import { useLanguage } from "../src/context/language"
-import { TOOL_LABELS, downloadFix, installFix, toolForCode, type Tool } from "../src/types/messages"
+import {
+  TOOL_LABELS,
+  downloadFix,
+  installFix,
+  labelForFix,
+  toolForCode,
+  type Tool,
+} from "../../src/shared/worktree-readiness"
 import type { ReadinessState } from "./worktree-readiness"
 
 type Blocked = Extract<Readiness, { status: "blocked" }>
 type Identity = { name: string; email: string }
 type Kind = "restricted" | "git" | "lfs" | "projects" | "commit" | "plain"
 type ReadyFixed = "initGit" | "initialCommit" | "installGit" | "installLfs"
-const READY = (value: string | undefined): value is ReadyFixed =>
+const isReadyFixed = (value: string | undefined): value is ReadyFixed =>
   value === "initGit" || value === "initialCommit" || value === "installGit" || value === "installLfs"
 
 export const ReadinessCard: Component<{
@@ -39,7 +46,7 @@ export const ReadinessCard: Component<{
   }
   const ready = () => {
     const state = props.state
-    if (state.status !== "ready" || !READY(state.fixed)) return undefined
+    if (state.status !== "ready" || !isReadyFixed(state.fixed)) return undefined
     return { fixed: state.fixed, note: state.note }
   }
   const installing = () => (props.state.status === "installing" ? props.state : undefined)
@@ -103,27 +110,22 @@ function BlockedCard(props: {
   const [form, setForm] = createSignal(false)
   const [name, setName] = createSignal("")
   const [email, setEmail] = createSignal("")
+  const tool = (): Tool | undefined => toolForCode(props.result.code)
   const fix = (): ReadinessFix => {
     if (props.result.code === "no_commits") return "initialCommit"
-    if (props.result.code === "git_not_found") return "installGit"
-    if (props.result.code === "lfs_missing") return "installLfs"
-    return "initGit"
+    const kind = tool()
+    return kind ? installFix(kind) : "initGit"
   }
   const locked = () => !props.result.trusted
   const projects = () => props.result.projects ?? []
   const install = (): ReadinessInstaller | undefined => props.result.installer
   const kind = (): Kind => {
     if (props.result.restricted) return "restricted"
-    if (props.result.code === "git_not_found") return "git"
-    if (props.result.code === "lfs_missing") return "lfs"
+    const installable = tool()
+    if (installable) return installable
     if (projects().length > 0) return "projects"
     if (props.result.code === "no_commits") return "commit"
     return "plain"
-  }
-  const tool = (): Tool | undefined => {
-    if (kind() === "git") return "git"
-    if (kind() === "lfs") return "lfs"
-    return undefined
   }
   const start = () => {
     if (props.result.identity === false) {
@@ -137,7 +139,7 @@ function BlockedCard(props: {
     setForm(false)
     props.onFix(fix(), { name: name().trim(), email: email().trim() })
   }
-  const copy: Record<Kind, { title: () => string; body: () => string }> = {
+  const cardCopy: Record<Kind, { title: () => string; body: () => string }> = {
     restricted: {
       title: () => t("agentManager.readiness.restricted.title"),
       body: () => t("agentManager.readiness.restricted.body"),
@@ -174,8 +176,8 @@ function BlockedCard(props: {
       body: () => t("agentManager.readiness.plain.body"),
     },
   }
-  const title = () => (form() && !props.fixing ? t("agentManager.readiness.identity.title") : copy[kind()].title())
-  const body = () => (form() && !props.fixing ? t("agentManager.readiness.identity.body") : copy[kind()].body())
+  const title = () => (form() && !props.fixing ? t("agentManager.readiness.identity.title") : cardCopy[kind()].title())
+  const body = () => (form() && !props.fixing ? t("agentManager.readiness.identity.body") : cardCopy[kind()].body())
   const working = () => {
     if (props.fixing === "initGit") return t("agentManager.readiness.working.initGit")
     if (props.fixing === "initialCommit") return t("agentManager.readiness.working.initialCommit")
@@ -346,8 +348,7 @@ function InstallingCard(props: {
 }) {
   const { t } = useLanguage()
   const apple = () => props.state.mode === "apple"
-  const name = () =>
-    TOOL_LABELS[toolForCode(props.state.fix === "installGit" ? "git_not_found" : "lfs_missing") ?? "lfs"]
+  const name = () => labelForFix(props.state.fix)
   return (
     <Card>
       <div class="am-readiness-working" role="status">
@@ -385,8 +386,7 @@ function StaleCard(props: {
   onReload: () => void
 }) {
   const { t } = useLanguage()
-  const name = () =>
-    TOOL_LABELS[toolForCode(props.state.fix === "installGit" ? "git_not_found" : "lfs_missing") ?? "lfs"]
+  const name = () => labelForFix(props.state.fix)
   return (
     <Card variant="warning">
       <CardTitle variant="warning" tabIndex={-1} data-readiness-title>

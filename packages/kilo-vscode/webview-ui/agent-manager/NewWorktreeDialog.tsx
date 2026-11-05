@@ -72,7 +72,7 @@ import {
   initialProject,
   markReopen,
   writeAllocations,
-  writeDraft,
+  saveDraft,
   type VersionCount,
   type WorktreeDraft,
 } from "./new-worktree-draft"
@@ -418,7 +418,7 @@ export const NewWorktreeDialog: Component<{
   // state so the other persisted keys are never overwritten.
   const persistDraft = (value: WorktreeDraft) => {
     const state = vscode.getState<Record<string, unknown>>() ?? {}
-    vscode.setState({ ...state, advancedDialogDraft: writeDraft(value) })
+    vscode.setState(saveDraft(state, value))
   }
 
   createEffect(() => {

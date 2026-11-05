@@ -3,12 +3,10 @@
  */
 
 import * as vscode from "vscode"
-import { SETUP_TIMEOUT_MS } from "../shared/readiness-timeouts"
+import { SETUP_TIMEOUT_MS } from "../shared/worktree-readiness"
 import { setupTaskIdentity, type SetupTaskConfig } from "./SetupScriptRunner"
 
 const GRACE_MS = 250
-const TIMEOUT_MS = SETUP_TIMEOUT_MS
-
 export interface TaskOptions {
   name?: string
   /** Wall-clock budget; the default matches the setup script's five minutes. */
@@ -76,7 +74,7 @@ export async function executeVscodeTask(
       grace = setTimeout(() => finish(undefined), GRACE_MS)
     })
 
-    const budget = options.timeout ?? TIMEOUT_MS
+    const budget = options.timeout ?? SETUP_TIMEOUT_MS
     timeout = setTimeout(() => {
       if (options.stop) void Promise.resolve(started.terminate()).catch(() => undefined)
       const message = options.stop

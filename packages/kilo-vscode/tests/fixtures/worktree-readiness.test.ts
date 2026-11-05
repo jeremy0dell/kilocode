@@ -4,7 +4,12 @@ import path from "node:path"
 import fs from "node:fs/promises"
 import { GitOps } from "../../src/agent-manager/GitOps"
 import { clearShellEnvCache, toolEnvironment } from "../../src/agent-manager/shell-env"
-import { check, fix, type FixDeps, type ReadinessTools } from "../../src/agent-manager/worktree-readiness"
+import {
+  applyWorktreeFix,
+  checkWorktreeReadiness,
+  type FixDeps,
+  type ReadinessTools,
+} from "../../src/agent-manager/worktree-readiness"
 import { createProjectWiring } from "../../src/agent-manager/project/wiring"
 import { handleProjectMessage } from "../../src/agent-manager/project/messages"
 import { canonicalizePath, projectIdFor } from "../../src/agent-manager/project/paths"
@@ -194,7 +199,12 @@ describe("worktree readiness tool checks", () => {
   it("reports missing Git before touching the repository", async () => {
     const root = await temp("kilo-ready-git-")
     const probe = fake({ git: async () => ({ ok: false, code: "missing", detail: "spawn git ENOENT" }) })
-    const result = await check(root, { git: ops, trusted: () => true, tools: probe.tools, platform: "linux" })
+    const result = await checkWorktreeReadiness(root, {
+      git: ops,
+      trusted: () => true,
+      tools: probe.tools,
+      platform: "linux",
+    })
     expect(result).toEqual({
       status: "blocked",
       code: "git_not_found",
@@ -209,7 +219,7 @@ describe("worktree readiness tool checks", () => {
   it("keeps an ambiguous Git failure advisory", async () => {
     const root = await temp("kilo-ready-git-unknown-")
     const probe = fake({ git: async () => ({ ok: false, code: "unknown", detail: "permission denied" }) })
-    const result = await check(root, { git: ops, trusted: () => true, tools: probe.tools })
+    const result = await checkWorktreeReadiness(root, { git: ops, trusted: () => true, tools: probe.tools })
     expect(result).toEqual({ status: "unknown", detail: "permission denied" })
     expect(probe.calls).toEqual([])
   })
@@ -227,7 +237,12 @@ describe("worktree readiness tool checks", () => {
       },
     })
     const calls: string[] = used.calls
-    const blocked = await check(lfsRepo, { git: ops, trusted: () => true, tools: used.tools, platform: "darwin" })
+    const blocked = await checkWorktreeReadiness(lfsRepo, {
+      git: ops,
+      trusted: () => true,
+      tools: used.tools,
+      platform: "darwin",
+    })
     expect(blocked).toEqual({
       status: "blocked",
       code: "lfs_missing",
@@ -241,7 +256,7 @@ describe("worktree readiness tool checks", () => {
 
     const plainRepo = await repo(await temp("kilo-ready-no-lfs-"), true)
     const plain = fake()
-    expect(await check(plainRepo, { git: ops, trusted: () => true, tools: plain.tools })).toEqual({
+    expect(await checkWorktreeReadiness(plainRepo, { git: ops, trusted: () => true, tools: plain.tools })).toEqual({
       status: "ready",
     })
     expect(plain.calls).toEqual(["git:false", `uses:${path.basename(plainRepo)}`])
@@ -267,10 +282,30 @@ describe("worktree readiness tool checks", () => {
       attach: async () => "p",
       pick: async () => undefined,
     }
-    const outcome = await fix(root, { fix: "installGit" }, deps)
+    const outcome = await applyWorktreeFix(root, { fix: "installGit" }, deps)
     expect(called).toBe(0)
     expect(outcome.error).toBe("Trust this VS Code window before Kilo changes the project.")
     expect(outcome.result.status).toBe("blocked")
+  })
+
+  it("refuses to register a restricted root", async () => {
+    let attached = 0
+    const deps: FixDeps = {
+      git: ops,
+      trusted: () => true,
+      tools: present,
+      exclude: async () => {},
+      openRepository: () => {},
+      branches: async () => {},
+      attach: async () => {
+        attached++
+        return "p"
+      },
+      pick: async () => home,
+    }
+    const outcome = await applyWorktreeFix(home, { fix: "pickFolder" }, deps)
+    expect(outcome.error).toContain("home folder")
+    expect(attached).toBe(0)
   })
 
   it("re-checks fresh after an install so a visible tool goes straight to ready", async () => {
@@ -296,7 +331,7 @@ describe("worktree readiness tool checks", () => {
       attach: async () => "p",
       pick: async () => undefined,
     }
-    const outcome = await fix(root, { fix: "installLfs" }, deps)
+    const outcome = await applyWorktreeFix(root, { fix: "installLfs" }, deps)
     expect(outcome.result).toEqual({ status: "ready" })
     expect(probes.at(-1)).toBe(true)
   })
@@ -326,10 +361,10 @@ describe("worktree readiness tool checks", () => {
       pick: async () => undefined,
     }
 
-    const installed = await fix(root, { fix: "installGit" }, deps)
+    const installed = await applyWorktreeFix(root, { fix: "installGit" }, deps)
     expect(installed.install).toEqual({ kind: "git", mode: "terminal", ok: true })
     expect(installed.result).toMatchObject({ status: "blocked", code: "not_git_repo" })
-    await fix(root, { fix: "downloadLfs" }, deps)
+    await applyWorktreeFix(root, { fix: "downloadLfs" }, deps)
     expect(calls).toEqual([`install:git:${root}`, "download:lfs"])
   })
 })
@@ -347,14 +382,14 @@ describe("worktree readiness check", () => {
     await fs.mkdir(path.join(broken, ".git"))
 
     const deps = { git: ops, trusted: () => true, tools: present }
-    expect(await check(plain, deps)).toEqual({
+    expect(await checkWorktreeReadiness(plain, deps)).toEqual({
       status: "blocked",
       code: "not_git_repo",
       name: path.basename(plain),
       trusted: true,
       identity: false,
     })
-    expect(await check(parent, deps)).toEqual({
+    expect(await checkWorktreeReadiness(parent, deps)).toEqual({
       status: "blocked",
       code: "not_git_repo",
       name: path.basename(parent),
@@ -363,22 +398,22 @@ describe("worktree readiness check", () => {
       more: true,
     })
     const root = path.parse(plain).root
-    expect(await check(root, deps)).toEqual({
+    expect(await checkWorktreeReadiness(root, deps)).toEqual({
       status: "blocked",
       code: "not_git_repo",
       name: path.basename(root),
       trusted: true,
       restricted: true,
     })
-    expect(await check(empty, deps)).toEqual({
+    expect(await checkWorktreeReadiness(empty, deps)).toEqual({
       status: "blocked",
       code: "no_commits",
       name: path.basename(empty),
       trusted: true,
       identity: false,
     })
-    expect(await check(healthy, deps)).toEqual({ status: "ready" })
-    const result = await check(broken, deps)
+    expect(await checkWorktreeReadiness(healthy, deps)).toEqual({ status: "ready" })
+    const result = await checkWorktreeReadiness(broken, deps)
     expect(result.status).toBe("unknown")
     expect(result.status === "unknown" && result.detail).toContain(broken)
   })
@@ -388,11 +423,11 @@ describe("worktree readiness flight", () => {
   it("coalesces concurrent checks for the same folder", async () => {
     const root = await repo(await temp("kilo-ready-flight-"), true)
     const deps = { git: ops, trusted: () => true, tools: present }
-    const first = check(root, deps)
-    const second = check(root, deps)
+    const first = checkWorktreeReadiness(root, deps)
+    const second = checkWorktreeReadiness(root, deps)
     expect(second).toBe(first)
     await first
-    const third = check(root, deps)
+    const third = checkWorktreeReadiness(root, deps)
     expect(third).not.toBe(first)
     await third
   })
@@ -408,7 +443,7 @@ describe("worktree readiness fixes", () => {
     const setup = wire(child)
     await setup.send("initialCommit", { identity })
     expect(Buffer.compare(await fs.readFile(file), before)).toBe(0)
-    expect(await check(child, { git: ops, trusted: () => true, tools: present })).toMatchObject({
+    expect(await checkWorktreeReadiness(child, { git: ops, trusted: () => true, tools: present })).toMatchObject({
       status: "blocked",
       code: "not_git_repo",
       restricted: true,
@@ -436,7 +471,7 @@ describe("worktree readiness fixes", () => {
           return root
         },
       })
-      const outcome = await fix(
+      const outcome = await applyWorktreeFix(
         root,
         mutation === "identity" ? { fix: "initialCommit", identity } : { fix: "pickFolder" },
         deps,

@@ -9,9 +9,10 @@ import {
   installTool,
   type InstallCommand,
   type InstallDeps,
-  type ToolKind,
+  type Tool,
   type ToolProbe,
 } from "../../src/agent-manager/worktree-install"
+import { INSTALL_DEADLINE_MS, INSTALL_TIMEOUT_MS } from "../../src/shared/worktree-readiness"
 
 const dirs: string[] = []
 
@@ -36,7 +37,7 @@ function deps(
   platform: NodeJS.Platform,
   envPath: string,
   run: (name: string, command: InstallCommand) => Promise<number | undefined>,
-  options: { probe?: (kind: ToolKind, fresh: boolean) => Promise<ToolProbe>; open?: (url: string) => void } = {},
+  options: { probe?: (kind: Tool, fresh: boolean) => Promise<ToolProbe>; open?: (url: string) => void } = {},
 ): InstallDeps {
   return {
     platform,
@@ -286,4 +287,8 @@ describe("install outcomes", () => {
     }
     expect(opened).toEqual([DOWNLOAD.git, DOWNLOAD.lfs])
   })
+})
+
+it("keeps the webview install deadline above two chained host tasks", () => {
+  expect(INSTALL_DEADLINE_MS).toBeGreaterThanOrEqual(INSTALL_TIMEOUT_MS * 2)
 })

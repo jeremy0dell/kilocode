@@ -208,10 +208,6 @@ export class WorktreeManager {
   private static fetchCache = new Map<string, number>()
   private static readonly FETCH_CACHE_TTL = 60_000 // 1 minute
   private gitAvailable = false
-  /**
-   * True only when a `git --version` probe failed to spawn. Callers use this to decide whether a
-   * downstream `ENOENT` really means "git is missing" instead of "that directory is gone".
-   */
   private probeFailed = false
   private lfsAvailable: boolean | undefined
   /** When the last negative git-lfs probe ran, so a later install is picked up. */
@@ -230,9 +226,9 @@ export class WorktreeManager {
   }
 
   /**
-   * True only when a `git --version` probe failed to spawn or reported missing macOS developer tools. Callers
-   * use this to decide whether a downstream `ENOENT` really means "git is missing" instead of "that directory
-   * is gone".
+   * True only when a `git --version` probe failed to spawn. Callers use this to decide whether a
+   * downstream `ENOENT` really means "git is missing" instead of "that directory is gone".
+   * A failed Apple `xcode-select -p` check also counts as missing.
    */
   get gitProbeFailed(): boolean {
     return this.probeFailed

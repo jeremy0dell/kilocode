@@ -13,7 +13,7 @@ import type { Host, PanelContext, OutputHandle, SessionProvider, Disposable } fr
 import type { PRMergeMethod } from "./types"
 import type { InstallCommand } from "./worktree-install"
 import { executeVscodeTask } from "./task-runner"
-import { INSTALL_TIMEOUT_MS } from "../shared/readiness-timeouts"
+import { APPLE_LAUNCH_TIMEOUT_MS, INSTALL_TIMEOUT_MS } from "../shared/worktree-readiness"
 import { stderrText } from "./git-errors"
 import { exec } from "../util/process"
 import { ProjectRouteService } from "./project/route"
@@ -34,8 +34,6 @@ import type { CaffeinationService } from "../services/caffeination"
 
 const INTRO_KEY = "kilo.agentManager.introDismissed"
 const PR_MERGE_METHODS_KEY = "agentManager.prMergeMethod"
-const INSTALL_TIMEOUT = INSTALL_TIMEOUT_MS
-
 export class VscodeHost implements Host {
   private diffVirtual: DiffVirtualProvider | undefined
   private autoApprove: AutoApproveController | undefined
@@ -584,20 +582,21 @@ export class VscodeHost implements Host {
       return await exec(command.command, command.args, {
         cwd: command.cwd,
         env: command.env,
-        timeout: 60_000,
+        timeout: APPLE_LAUNCH_TIMEOUT_MS,
       }).then(
         () => 0,
         (error: unknown) => {
           const stderr = stderrText(error)
           if (stderr) throw new Error(stderr)
-          if (typeof (error as { code?: unknown }).code === "number") return (error as { code: number }).code
+          const code = (error as { code?: unknown }).code
+          if (typeof code === "number") return code
           throw error
         },
       )
     }
     return await executeVscodeTask(
       { command: command.command, args: command.args, cwd: command.cwd, env: command.env },
-      { timeout: INSTALL_TIMEOUT, name, stop: true },
+      { timeout: INSTALL_TIMEOUT_MS, name, stop: true },
     )
   }
 

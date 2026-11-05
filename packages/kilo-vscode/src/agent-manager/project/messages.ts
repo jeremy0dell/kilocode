@@ -16,7 +16,7 @@ import { canonicalizePath, projectIdFor, resolveProjectRoot, samePath } from "./
 import type { SidebarTarget, SessionRef } from "./route"
 import { cloneProject, createProject, defaultParent, onboard, type Onboarding } from "./onboarding"
 import { runner } from "./prepare"
-import { check, fix, type FixOutcome, type ReadinessTools } from "../worktree-readiness"
+import { applyWorktreeFix, checkWorktreeReadiness, type FixOutcome, type ReadinessTools } from "../worktree-readiness"
 import { DOWNLOAD, detectInstaller, installTool } from "../worktree-install"
 import { toolEnvironment } from "../shell-env"
 import type { CheckReadinessRequest, FixReadinessRequest } from "../../../webview-ui/src/types/messages/agent-manager"
@@ -378,9 +378,9 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
   const base = { git, trusted: () => deps.onboarding.isTrusted(), tools }
   try {
     if (m.type === "agentManager.checkReadiness")
-      return reply({ result: await check(ctx.root, base, m.fresh === true, m.verify === true) })
+      return reply({ result: await checkWorktreeReadiness(ctx.root, base, m.fresh === true, m.verify === true) })
     reply(
-      await fix(ctx.root, m, {
+      await applyWorktreeFix(ctx.root, m, {
         ...base,
         exclude: () => ctx.worktreeManager().ensureGitExclude(),
         openRepository: (root) => deps.openRepository(root),

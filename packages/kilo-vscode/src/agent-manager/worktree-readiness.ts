@@ -17,21 +17,19 @@ import { isRestrictedRoot } from "./home-workspace"
 import { canonicalizePath, samePath } from "./project/paths"
 import * as prepare from "./project/prepare"
 import { errorText } from "./git-errors"
-import {
-  type Readiness,
-  type ReadinessInstaller,
-  type ReadinessMessage,
-  type ReadinessProject,
-  type FixReadinessRequest,
-  isDownload,
-  isInstall,
-  toolFor,
+import type {
+  Readiness,
+  ReadinessInstaller,
+  ReadinessMessage,
+  ReadinessProject,
+  FixReadinessRequest,
 } from "../../webview-ui/src/types/messages/agent-manager"
-import type { InstallOutcome, ToolKind, ToolProbe } from "./worktree-install"
+import { codeForTool, isDownload, isInstall, toolFor } from "../shared/worktree-readiness"
+import type { InstallOutcome, Tool, ToolProbe } from "./worktree-install"
 
 type Git = Pick<GitOps, "execGit">
 
-const LIMIT = 3
+const MAX_PROJECT_CHOICES = 3
 const UNTRUSTED = "Trust this VS Code window before Kilo changes the project."
 const RESTRICTED = "Choose a project folder, not your home folder or a filesystem root."
 
@@ -47,9 +45,9 @@ export interface ReadinessTools {
   git(fresh: boolean, verify?: boolean): Promise<ToolProbe>
   usesLfs(root: string): Promise<boolean>
   lfs(root: string, fresh: boolean, verify?: boolean): Promise<ToolProbe>
-  installer(kind: ToolKind): Promise<ReadinessInstaller | undefined>
-  install(kind: ToolKind, root: string): Promise<InstallOutcome>
-  download(kind: ToolKind): void
+  installer(kind: Tool): Promise<ReadinessInstaller | undefined>
+  install(kind: Tool, root: string): Promise<InstallOutcome>
+  download(kind: Tool): void
 }
 
 export interface ReadinessDeps {
@@ -73,39 +71,44 @@ export type FixOutcome = Omit<ReadinessMessage, "type" | "projectId" | "requestI
 /** One check per folder at a time; concurrent callers share it. A fresh check always bypasses it. */
 const flight = new Map<string, Promise<Readiness>>()
 
-export function check(root: string, deps: ReadinessDeps, fresh = false, verify = false): Promise<Readiness> {
-  if (fresh || verify) return probe(root, deps, fresh, verify)
+export function checkWorktreeReadiness(
+  root: string,
+  deps: ReadinessDeps,
+  fresh = false,
+  verify = false,
+): Promise<Readiness> {
+  if (fresh || verify) return readReadiness(root, deps, fresh, verify)
   const key = canonicalizePath(root)
   const running = flight.get(key)
   if (running) return running
-  const next = probe(root, deps, false, false).finally(() => flight.delete(key))
+  const next = readReadiness(root, deps, false, false).finally(() => flight.delete(key))
   flight.set(key, next)
   return next
 }
 
 /** Run one fix, then re-check (bypassing any check in flight) and report the new state. */
-export async function fix(
+export async function applyWorktreeFix(
   root: string,
   request: Pick<FixReadinessRequest, "fix" | "target" | "identity">,
   deps: FixDeps,
 ): Promise<FixOutcome> {
-  const done: Applied = await runFix(root, request, deps).catch((err: unknown) => ({
+  const applied: FixResult = await runFix(root, request, deps).catch((err: unknown) => ({
     root,
     error: errorText(err),
   }))
   // A fresh check makes an install visible immediately; only a truly invisible tool stays stale.
-  const result = await probe(done.root, deps, done.install !== undefined)
+  const result = await readReadiness(applied.root, deps, applied.install !== undefined)
   return {
-    result: result.status === "ready" && done.note ? { status: "ready", note: "uncommitted" } : result,
-    ...(done.selected ? { selected: done.selected } : {}),
-    ...(done.error ? { error: done.error } : {}),
-    ...(done.install ? { install: done.install } : {}),
+    result: result.status === "ready" && applied.note ? { status: "ready", note: "uncommitted" } : result,
+    ...(applied.selected ? { selected: applied.selected } : {}),
+    ...(applied.error ? { error: applied.error } : {}),
+    ...(applied.install ? { install: applied.install } : {}),
   }
 }
 
-type Applied = { root: string; selected?: string; note?: boolean; install?: InstallOutcome; error?: string }
+type FixResult = { root: string; selected?: string; note?: boolean; install?: InstallOutcome; error?: string }
 
-async function probe(root: string, deps: ReadinessDeps, fresh = false, verify = false): Promise<Readiness> {
+async function readReadiness(root: string, deps: ReadinessDeps, fresh = false, verify = false): Promise<Readiness> {
   return inspectProject(root, deps, fresh, verify).catch((err: unknown) => ({
     status: "unknown" as const,
     detail: errorText(err),
@@ -115,7 +118,6 @@ async function probe(root: string, deps: ReadinessDeps, fresh = false, verify = 
 async function inspectProject(root: string, deps: ReadinessDeps, fresh: boolean, verify: boolean): Promise<Readiness> {
   const git = await deps.tools.git(fresh, verify)
   if (!git.ok) return blockedTool("git", git, root, deps)
-  // Repository and commits.
   const state = await prepare.inspect(root, deps.git)
   if (isRestrictedRoot(state.root ?? root)) {
     return {
@@ -145,12 +147,12 @@ async function inspectProject(root: string, deps: ReadinessDeps, fresh: boolean,
 
 /** A confirmed missing tool becomes a blocker; any other probe failure stays advisory. */
 async function blockedTool(
-  kind: ToolKind,
-  probe: Extract<ToolProbe, { ok: false }>,
+  kind: Tool,
+  failure: Extract<ToolProbe, { ok: false }>,
   root: string,
   deps: ReadinessDeps,
 ): Promise<Readiness> {
-  if (probe.code === "unknown") return { status: "unknown", detail: probe.detail }
+  if (failure.code === "unknown") return { status: "unknown", detail: failure.detail }
   return {
     status: "blocked",
     code: kind === "git" ? "git_not_found" : "lfs_missing",
@@ -169,8 +171,8 @@ async function projectChoices(root: string, deps: ReadinessDeps): Promise<Readin
     return {
       ...base,
       trusted: deps.trusted(),
-      projects: found.slice(0, LIMIT),
-      ...(found.length > LIMIT ? { more: true } : {}),
+      projects: found.slice(0, MAX_PROJECT_CHOICES),
+      ...(found.length > MAX_PROJECT_CHOICES ? { more: true } : {}),
     }
   }
   return { ...base, trusted: deps.trusted(), identity: await prepare.identity(root, deps.git) }
@@ -181,7 +183,7 @@ async function childProjects(root: string): Promise<ReadinessProject[]> {
   const entries = await fs.readdir(root, { withFileTypes: true })
   const found: ReadinessProject[] = []
   for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-    if (found.length > LIMIT) break
+    if (found.length > MAX_PROJECT_CHOICES) break
     if (!entry.isDirectory()) continue
     const dir = path.join(root, entry.name)
     if (await fileExists(path.join(dir, ".git"))) found.push({ root: dir, label: entry.name })
@@ -200,9 +202,9 @@ async function runFix(
   root: string,
   request: Pick<FixReadinessRequest, "fix" | "target" | "identity">,
   deps: FixDeps,
-): Promise<Applied> {
-  const quick = await runToolFix(root, request, deps)
-  if (quick) return quick
+): Promise<FixResult> {
+  const toolFix = await runToolFix(root, request, deps)
+  if (toolFix) return toolFix
   ensureTrusted(deps)
   if (request.fix === "useProject") {
     const target = request.target ? canonicalizePath(request.target) : ""
@@ -239,20 +241,18 @@ async function runToolFix(
   root: string,
   request: Pick<FixReadinessRequest, "fix">,
   deps: FixDeps,
-): Promise<Applied | undefined> {
+): Promise<FixResult | undefined> {
   const tool = toolFor(request.fix)
   if (!tool) return undefined
   if (isDownload(request.fix)) {
     deps.tools.download(tool)
     return { root }
   }
-  if (!isInstall(request.fix)) return undefined
   ensureTrusted(deps)
   return { root, install: await deps.tools.install(tool, root) }
 }
 
-/** Register a folder's project and select it. */
-async function registerProject(dir: string, deps: FixDeps): Promise<Applied> {
+async function registerProject(dir: string, deps: FixDeps): Promise<FixResult> {
   const state = await prepare.inspect(dir, deps.git)
   const root = state.root ?? canonicalizePath(dir)
   ensureAllowed(root)

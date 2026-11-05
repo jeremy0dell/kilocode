@@ -12,11 +12,11 @@ import { errorText } from "./git-errors"
 import type {
   ReadinessInstall as InstallOutcome,
   ReadinessInstaller,
-  Tool as ToolKind,
 } from "../../webview-ui/src/types/messages/agent-manager"
+import { TOOL_LABELS, type Tool } from "../shared/worktree-readiness"
 
 export type { ReadinessInstall as InstallOutcome } from "../../webview-ui/src/types/messages/agent-manager"
-export type { Tool as ToolKind } from "../../webview-ui/src/types/messages/agent-manager"
+export type { Tool } from "../shared/worktree-readiness"
 export type ToolProbe = { ok: true } | { ok: false; code: "missing" | "unknown"; detail: string }
 type Installer = ReadinessInstaller
 
@@ -35,7 +35,7 @@ export interface InstallDeps {
   git: string
   run: (name: string, command: InstallCommand) => Promise<number | undefined>
   open: (url: string) => void
-  probe: (kind: ToolKind, fresh: boolean) => Promise<ToolProbe>
+  probe: (kind: Tool, fresh: boolean) => Promise<ToolProbe>
 }
 
 export const DOWNLOAD = {
@@ -54,7 +54,7 @@ const MANAGERS = {
   },
   apt: { bin: "apt-get", sudo: true, git: ["install", "-y", "git"], lfs: ["install", "-y", "git-lfs"] },
   dnf: { bin: "dnf", sudo: true, git: ["install", "-y", "git"], lfs: ["install", "-y", "git-lfs"] },
-} satisfies Record<Exclude<Installer, "apple">, { bin: string; sudo: boolean } & Record<ToolKind, string[]>>
+} satisfies Record<Exclude<Installer, "apple">, { bin: string; sudo: boolean } & Record<Tool, string[]>>
 
 /** Managers in the order each platform should try them. */
 function order(platform: NodeJS.Platform): (keyof typeof MANAGERS)[] {
@@ -64,7 +64,7 @@ function order(platform: NodeJS.Platform): (keyof typeof MANAGERS)[] {
 }
 
 export async function detectInstaller(
-  kind: ToolKind,
+  kind: Tool,
   platform: NodeJS.Platform,
   env: NodeJS.ProcessEnv,
 ): Promise<Installer | undefined> {
@@ -77,20 +77,11 @@ export async function detectInstaller(
   return undefined
 }
 
-/**
- * Run one terminal step. Availability afterwards wins; otherwise keep the launch error,
- * exit code, or stopped state. A clean exit also counts when the installer says so.
- */
-async function runInstallStep(
-  deps: InstallDeps,
-  kind: ToolKind,
-  label: string,
-  command: InstallCommand,
-  cleanExitIsSuccess: boolean,
-) {
+/** Availability after the step wins; otherwise keep the launch error, exit code, or stop. */
+async function runInstallStep(deps: InstallDeps, kind: Tool, label: string, command: InstallCommand) {
   const exit = await deps.run(label, command).catch((err: unknown) => errorText(err))
   const present = (await deps.probe(kind, true)).ok
-  const ok = present || (cleanExitIsSuccess && exit === 0)
+  const ok = present || exit === 0
   if (ok) return { outcome: { kind, mode: "terminal" as const, ok }, present }
   if (typeof exit === "string") return { outcome: { kind, mode: "terminal" as const, ok, error: exit }, present }
   if (exit === undefined) return { outcome: { kind, mode: "terminal" as const, ok, stopped: true }, present }
@@ -104,7 +95,7 @@ function stringEnv(env: NodeJS.ProcessEnv): Record<string, string> {
 }
 
 async function launchAppleInstaller(
-  kind: ToolKind,
+  kind: Tool,
   root: string,
   env: Record<string, string>,
   deps: InstallDeps,
@@ -118,7 +109,7 @@ async function launchAppleInstaller(
 }
 
 async function installWithManager(
-  kind: ToolKind,
+  kind: Tool,
   installer: Exclude<Installer, "apple">,
   root: string,
   env: Record<string, string>,
@@ -127,18 +118,18 @@ async function installWithManager(
   const manager = MANAGERS[installer]
   const args = manager.sudo ? [manager.bin, ...manager[kind]] : manager[kind]
   const command = manager.sudo ? "sudo" : manager.bin
-  const label = kind === "git" ? "Install Git" : "Install Git LFS"
+  const label = `Install ${TOOL_LABELS[kind]}`
   // A clean package exit means the installer succeeded even if VS Code cannot see the tool yet.
-  const installed = await runInstallStep(deps, kind, label, { command, args, cwd: root, env, mode: "task" }, true)
+  const installed = await runInstallStep(deps, kind, label, { command, args, cwd: root, env, mode: "task" })
   if (kind === "git" || !installed.outcome.ok) return installed.outcome
   if (!installed.present) return installed.outcome
   // Best-effort registration once the package is visible. Global registration works outside the
   // repository, so a repo alias must not hijack it.
   const lfs: InstallCommand = { command: deps.git, args: ["lfs", "install"], cwd: tmpdir(), env, mode: "task" }
-  return (await runInstallStep(deps, "lfs", "Set up Git LFS", lfs, true)).outcome
+  return (await runInstallStep(deps, "lfs", "Set up Git LFS", lfs)).outcome
 }
 
-export async function installTool(kind: ToolKind, root: string, deps: InstallDeps): Promise<InstallOutcome> {
+export async function installTool(kind: Tool, root: string, deps: InstallDeps): Promise<InstallOutcome> {
   const installer = await detectInstaller(kind, deps.platform, deps.env)
   if (!installer) {
     deps.open(DOWNLOAD[kind])
