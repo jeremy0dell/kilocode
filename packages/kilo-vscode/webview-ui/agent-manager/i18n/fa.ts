@@ -564,7 +564,7 @@ export const dict = {
   "agentManager.readiness.plain.other": "انتخاب پوشهٔ دیگر",
   "agentManager.readiness.identity.title": "چه نامی روی تغییرات شما ثبت شود؟",
   "agentManager.readiness.identity.body":
-    "Git هر تغییر را با یک نام و ایمیل برچسب می‌زند. Kilo آن‌ها را فقط برای این پروژه ذخیره می‌کند.",
+    "Git هر تغییر را با یک نام و ایمیل برچسب می‌زند. Kilo آن‌ها را برای کاربر Git شما ذخیره می‌کند.",
   "agentManager.readiness.identity.name": "نام",
   "agentManager.readiness.identity.email": "ایمیل",
   "agentManager.readiness.identity.saveInit": "ذخیره و راه‌اندازی Git",

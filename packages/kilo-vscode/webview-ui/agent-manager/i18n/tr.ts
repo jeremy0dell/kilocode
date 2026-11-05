@@ -571,7 +571,7 @@ export const dict = {
   "agentManager.readiness.plain.other": "Farklı bir klasör seç",
   "agentManager.readiness.identity.title": "Değişikliklerinizde hangi ad görünsün?",
   "agentManager.readiness.identity.body":
-    "Git her değişikliği bir ad ve e-posta ile etiketler. Kilo bunları yalnızca bu proje için kaydeder.",
+    "Git her değişikliği bir ad ve e-posta ile etiketler. Kilo bunları Git kullanıcınız için kaydeder.",
   "agentManager.readiness.identity.name": "Ad",
   "agentManager.readiness.identity.email": "E-posta",
   "agentManager.readiness.identity.saveInit": "Kaydet ve Git’i ayarla",

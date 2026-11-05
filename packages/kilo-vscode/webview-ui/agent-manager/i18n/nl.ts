@@ -571,7 +571,7 @@ export const dict = {
   "agentManager.readiness.plain.other": "Een andere map kiezen",
   "agentManager.readiness.identity.title": "Welke naam moet er bij je wijzigingen staan?",
   "agentManager.readiness.identity.body":
-    "Git voorziet elke wijziging van een naam en e-mailadres. Kilo bewaart ze alleen voor dit project.",
+    "Git voorziet elke wijziging van een naam en e-mailadres. Kilo bewaart ze voor je Git-gebruiker.",
   "agentManager.readiness.identity.name": "Naam",
   "agentManager.readiness.identity.email": "E-mail",
   "agentManager.readiness.identity.saveInit": "Opslaan en Git instellen",

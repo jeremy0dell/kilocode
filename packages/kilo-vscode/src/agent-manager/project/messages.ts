@@ -339,6 +339,8 @@ async function register(
   return { id, root, existing }
 }
 
+const FIXES = new Set(["initGit", "initialCommit", "useProject", "pickFolder"])
+
 /** Check or fix a project's worktree readiness and reply with the original project and request IDs. */
 async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: ProjectMessageDeps): Promise<void> {
   const reply = (outcome: FixOutcome) =>
@@ -349,6 +351,10 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
   const base = { git, trusted: () => deps.onboarding.isTrusted() }
   try {
     if (m.type === "agentManager.checkReadiness") return reply({ result: await check(ctx.root, base) })
+    if (!FIXES.has(m.fix)) {
+      reply({ result: await check(ctx.root, base), error: `Unknown readiness fix: ${String(m.fix)}` })
+      return
+    }
     reply(
       await fix(ctx.root, m, {
         ...base,

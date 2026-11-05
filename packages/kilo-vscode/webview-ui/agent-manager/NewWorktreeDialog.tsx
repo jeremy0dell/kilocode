@@ -560,12 +560,18 @@ export const NewWorktreeDialog: Component<{
     })
   }
 
+  /** Move focus to Create unless the user is typing in the prompt. */
+  const focusCreate = () => {
+    if (document.activeElement === textareaRef) return
+    button?.focus()
+  }
+
   /** After a fix: follow a project switch, and offer Create once the project is ready. Never submits. */
   const recover = async (pending: Promise<string | undefined>) => {
     const selected = await pending
     if (closed || props.closing()) return
     if (selected) setProject(selected)
-    if (readiness.state().status === "ready") button?.focus()
+    if (readiness.state().status === "ready") focusCreate()
   }
 
   const create = () => {

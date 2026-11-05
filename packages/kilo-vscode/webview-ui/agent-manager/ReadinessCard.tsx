@@ -225,22 +225,39 @@ function BlockedCard(props: {
                 </Button>
               </Match>
               <Match when={kind() === "projects"}>
-                <For each={projects()}>
-                  {(project, index) => (
-                    <Button
-                      size="small"
-                      variant="secondary"
-                      disabled={locked()}
-                      onClick={() => props.onProject(project.root)}
-                      data-readiness-action={index() === 0 ? "" : undefined}
-                    >
-                      {t("agentManager.readiness.projects.use", { name: project.label })}
-                    </Button>
-                  )}
-                </For>
-                <button class="am-readiness-link" type="button" disabled={locked()} onClick={props.onFolder}>
-                  {t("agentManager.readiness.projects.other")}
-                </button>
+                <Show
+                  when={props.result.more}
+                  fallback={
+                    <>
+                      <For each={projects()}>
+                        {(project, index) => (
+                          <Button
+                            size="small"
+                            variant="secondary"
+                            disabled={locked()}
+                            onClick={() => props.onProject(project.root)}
+                            data-readiness-action={index() === 0 ? "" : undefined}
+                          >
+                            {t("agentManager.readiness.projects.use", { name: project.label })}
+                          </Button>
+                        )}
+                      </For>
+                      <button class="am-readiness-link" type="button" disabled={locked()} onClick={props.onFolder}>
+                        {t("agentManager.readiness.projects.other")}
+                      </button>
+                    </>
+                  }
+                >
+                  <Button
+                    size="small"
+                    variant="secondary"
+                    disabled={locked()}
+                    onClick={props.onFolder}
+                    data-readiness-action
+                  >
+                    {t("agentManager.readiness.restricted.action")}
+                  </Button>
+                </Show>
               </Match>
               <Match when={kind() === "commit"}>
                 <Button size="small" variant="secondary" disabled={locked()} onClick={start} data-readiness-action>

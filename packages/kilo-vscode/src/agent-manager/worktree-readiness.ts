@@ -25,6 +25,8 @@ import type {
 type Git = Pick<GitOps, "execGit">
 
 const LIMIT = 3
+const PROBE = 16
+const SCAN = 2000
 const UNTRUSTED = "Trust this VS Code window before Kilo changes the project."
 const RESTRICTED = "Choose a project folder, not your home folder or a filesystem root."
 
@@ -147,17 +149,22 @@ async function folder(root: string, deps: ReadinessDeps): Promise<Readiness> {
   return { ...base, trusted: deps.trusted(), identity: await prepare.identity(root, deps.git) }
 }
 
-/** Direct child folders that contain `.git`, one level deep, stopping after one more than shown. */
+/** Direct child folders that contain `.git`, probed with bounded concurrency. */
 async function children(root: string): Promise<ReadinessProject[]> {
   const entries = await fs.readdir(root, { withFileTypes: true })
+  const scanned = entries.sort((a, b) => a.name.localeCompare(b.name)).slice(0, SCAN)
+  const dirs = scanned.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
   const found: ReadinessProject[] = []
-  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-    if (found.length > LIMIT) break
-    if (!entry.isDirectory()) continue
-    const dir = path.join(root, entry.name)
-    if (await exists(path.join(dir, ".git"))) found.push({ root: dir, label: entry.name })
+  let index = 0
+  const worker = async () => {
+    while (found.length <= LIMIT && index < dirs.length) {
+      const name = dirs[index++]!
+      const dir = path.join(root, name)
+      if (await exists(path.join(dir, ".git"))) found.push({ root: dir, label: name })
+    }
   }
-  return found
+  await Promise.all(Array.from({ length: Math.min(PROBE, dirs.length) }, worker))
+  return found.sort((a, b) => a.label.localeCompare(b.label))
 }
 
 function exists(file: string) {
@@ -184,6 +191,8 @@ async function apply(
     if (!dir) return { root, note: false }
     return select(dir, deps)
   }
+  if (request.fix !== "initGit" && request.fix !== "initialCommit")
+    throw new Error(`Unknown readiness fix: ${String(request.fix)}`)
   const state = await prepare.inspect(root, deps.git)
   allow(state.root ?? root)
   if (request.fix === "initialCommit" && !state.root) throw new Error(`Not a Git repository: ${root}`)
@@ -203,11 +212,12 @@ async function apply(
   return { root, note: status.code === 0 && status.stdout.trim().length > 0 }
 }
 
-/** Register a folder's project and select it. */
-async function select(dir: string, deps: FixDeps): Promise<{ root: string; selected: string; note: boolean }> {
+/** Register a repository as a project and select it. A non-repository folder is not attached yet. */
+async function select(dir: string, deps: FixDeps): Promise<{ root: string; selected?: string; note: boolean }> {
   const state = await prepare.inspect(dir, deps.git)
   const root = state.root ?? canonicalizePath(dir)
   allow(root)
   trust(deps)
+  if (!state.root) return { root, note: false }
   return { root, selected: await deps.attach(root), note: false }
 }

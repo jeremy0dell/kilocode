@@ -90,7 +90,12 @@ function fixDeps(ops: GitOps, overrides: Partial<FixDeps> = {}): FixDeps {
 /** The real project wiring over a fake Host that records what the fixes ask of VS Code. */
 function wire(root: string, trusted = true) {
   const posts: AgentManagerOutMessage[] = []
-  const calls = { refresh: 0, opened: [] as string[], picks: [] as Array<string | undefined> }
+  const calls = {
+    refresh: 0,
+    opened: [] as string[],
+    picks: [] as Array<string | undefined>,
+    pickResults: [] as Array<string | undefined>,
+  }
   let stored: unknown
   const none = { dispose: () => {} }
   const host = {
@@ -105,7 +110,7 @@ function wire(root: string, trusted = true) {
     onDidChangeWorktreePool: () => none,
     pickFolder: async (opts?: { defaultPath?: string }) => {
       calls.picks.push(opts?.defaultPath)
-      return undefined
+      return calls.pickResults.shift()
     },
     isTrusted: () => trusted,
     refreshGit: () => {
@@ -135,12 +140,17 @@ function wire(root: string, trusted = true) {
     post: (message) => posts.push(message),
   })
   const id = projectIdFor(canonicalizePath(root))
-  const send = (fix: "initGit" | "initialCommit" | "useProject", extra: Record<string, unknown> = {}) =>
+  const send = (fix: "initGit" | "initialCommit" | "useProject" | "pickFolder", extra: Record<string, unknown> = {}) =>
     handleProjectMessage(
       { type: "agentManager.fixReadiness", projectId: id, requestID: "r1", fix, ...extra },
       wiring.messages,
     )
-  return { posts, calls, wiring, id, send }
+  const sendRaw = (fix: string, extra: Record<string, unknown> = {}) =>
+    handleProjectMessage(
+      { type: "agentManager.fixReadiness", projectId: id, requestID: "r1", fix, ...extra } as never,
+      wiring.messages,
+    )
+  return { posts, calls, wiring, id, send, sendRaw }
 }
 
 const identity = { name: "Ada Lovelace", email: "ada@example.com" }
@@ -285,9 +295,10 @@ describe("worktree readiness fixes", () => {
     const exclude = await fs.readFile(path.join(scratch, ".git", "info", "exclude"), "utf8")
     expect(exclude).toContain("\n.kilo/worktrees/\n")
     expect(exclude).toContain("\n.kilo/agent-manager.json\n")
-    expect(git(scratch, "config", "--local", "user.name")).toBe(identity.name)
-    expect(git(scratch, "config", "--local", "user.email")).toBe(identity.email)
-    expect(await fs.readFile(path.join(home, ".gitconfig"), "utf8")).toBe(global)
+    expect(git(scratch, "config", "--global", "user.name")).toBe(identity.name)
+    expect(git(scratch, "config", "--global", "user.email")).toBe(identity.email)
+    expect(git(scratch, "config", "--local", "--list")).not.toMatch(/user\.(name|email)=/)
+    expect(await fs.readFile(path.join(home, ".gitconfig"), "utf8")).not.toBe(global)
     expect(setup.calls.opened).toEqual([scratch])
     expect(setup.calls.refresh).toBe(0)
     expect(setup.posts.map((post) => post.type)).toEqual(["agentManager.branches", "agentManager.readiness"])
@@ -299,6 +310,48 @@ describe("worktree readiness fixes", () => {
       requestID: "r1",
       result: { status: "ready", note: "uncommitted" },
     })
+  })
+
+  it("saves the approved identity globally so a second repository needs no input", async () => {
+    const first = await temp("kilo-ready-global-first-")
+    const second = await temp("kilo-ready-global-second-")
+    const one = wire(first)
+    await one.send("initGit", { identity })
+
+    expect(git(first, "config", "--global", "user.name")).toBe(identity.name)
+    expect(git(first, "config", "--global", "user.email")).toBe(identity.email)
+    expect(git(first, "config", "--local", "--list")).not.toMatch(/user\.(name|email)=/)
+
+    const two = wire(second)
+    await two.send("initGit")
+
+    expect(two.posts.at(-1)).toMatchObject({ result: { status: "ready" } })
+    expect(git(second, "rev-list", "--count", "HEAD")).toBe("1")
+  })
+
+  it("does not register a picked non-Git folder before setup", async () => {
+    const current = await temp("kilo-ready-pick-current-")
+    const picked = await temp("kilo-ready-pick-plain-")
+    await fs.writeFile(path.join(picked, "notes.txt"), "draft")
+    const setup = wire(current)
+    setup.calls.pickResults.push(picked)
+
+    await setup.send("pickFolder")
+
+    expect(setup.posts.at(-1)).toMatchObject({
+      result: { status: "blocked", code: "not_git_repo", name: path.basename(picked) },
+    })
+    expect(setup.wiring.registry.has(projectIdFor(canonicalizePath(picked)))).toBe(false)
+  })
+
+  it("rejects an unknown fix without initializing or committing", async () => {
+    const root = await temp("kilo-ready-unknown-fix-")
+    const setup = wire(root)
+
+    await setup.sendRaw("bogus", { identity })
+
+    expect(setup.posts.at(-1)).toMatchObject({ error: expect.stringContaining("Unknown readiness fix") })
+    expect(await Bun.file(path.join(root, ".git", "HEAD")).exists()).toBe(false)
   })
 
   it("does not run a repository's fsmonitor program while finding uncommitted files", async () => {

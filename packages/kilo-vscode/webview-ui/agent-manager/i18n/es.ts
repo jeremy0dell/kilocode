@@ -571,7 +571,7 @@ export const dict = {
   "agentManager.readiness.plain.other": "Elegir una carpeta distinta",
   "agentManager.readiness.identity.title": "¿Qué nombre debe aparecer en tus cambios?",
   "agentManager.readiness.identity.body":
-    "Git etiqueta cada cambio con un nombre y un correo. Kilo los guarda solo para este proyecto.",
+    "Git etiqueta cada cambio con un nombre y un correo. Kilo los guarda para tu usuario de Git.",
   "agentManager.readiness.identity.name": "Nombre",
   "agentManager.readiness.identity.email": "Correo electrónico",
   "agentManager.readiness.identity.saveInit": "Guardar y configurar Git",

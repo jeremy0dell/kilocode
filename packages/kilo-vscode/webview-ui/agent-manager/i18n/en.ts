@@ -564,7 +564,7 @@ export const dict = {
   "agentManager.readiness.plain.other": "Choose a different folder",
   "agentManager.readiness.identity.title": "What name should go on your changes?",
   "agentManager.readiness.identity.body":
-    "Git labels every change with a name and email. Kilo saves these for this project only.",
+    "Git labels every change with a name and email. Kilo saves them for your Git user.",
   "agentManager.readiness.identity.name": "Name",
   "agentManager.readiness.identity.email": "Email",
   "agentManager.readiness.identity.saveInit": "Save and set up Git",

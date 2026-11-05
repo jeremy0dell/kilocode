@@ -555,7 +555,7 @@ export const dict = {
   "agentManager.readiness.plain.other": "اختيار مجلد مختلف",
   "agentManager.readiness.identity.title": "ما الاسم الذي يجب أن يظهر على تغييراتك؟",
   "agentManager.readiness.identity.body":
-    "يضع Git اسمًا وبريدًا إلكترونيًا على كل تغيير. يحفظهما Kilo لهذا المشروع فقط.",
+    "يضع Git اسمًا وبريدًا إلكترونيًا على كل تغيير. يحفظهما Kilo لمستخدم Git الخاص بك.",
   "agentManager.readiness.identity.name": "الاسم",
   "agentManager.readiness.identity.email": "البريد الإلكتروني",
   "agentManager.readiness.identity.saveInit": "حفظ وإعداد Git",

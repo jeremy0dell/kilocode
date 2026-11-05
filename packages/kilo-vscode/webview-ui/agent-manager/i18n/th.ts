@@ -554,7 +554,7 @@ export const dict = {
   "agentManager.readiness.plain.other": "เลือกโฟลเดอร์อื่น",
   "agentManager.readiness.identity.title": "ต้องการให้ชื่อใดปรากฏในการเปลี่ยนแปลงของคุณ",
   "agentManager.readiness.identity.body":
-    "Git จะติดชื่อและอีเมลให้กับทุกการเปลี่ยนแปลง Kilo จะบันทึกไว้สำหรับโปรเจกต์นี้เท่านั้น",
+    "Git จะติดชื่อและอีเมลให้กับทุกการเปลี่ยนแปลง Kilo จะบันทึกไว้สำหรับผู้ใช้ Git ของคุณ",
   "agentManager.readiness.identity.name": "ชื่อ",
   "agentManager.readiness.identity.email": "อีเมล",
   "agentManager.readiness.identity.saveInit": "บันทึกและตั้งค่า Git",

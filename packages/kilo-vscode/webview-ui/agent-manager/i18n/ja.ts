@@ -565,7 +565,7 @@ export const dict = {
   "agentManager.readiness.plain.other": "別のフォルダーを選択",
   "agentManager.readiness.identity.title": "変更に表示する名前は？",
   "agentManager.readiness.identity.body":
-    "Git はすべての変更に名前とメールアドレスを記録します。Kilo はこのプロジェクトにのみ保存します。",
+    "Git はすべての変更に名前とメールアドレスを記録します。Kilo はそれらを Git ユーザー用に保存します。",
   "agentManager.readiness.identity.name": "名前",
   "agentManager.readiness.identity.email": "メールアドレス",
   "agentManager.readiness.identity.saveInit": "保存して Git を設定",

@@ -562,7 +562,7 @@ export const dict = {
   "agentManager.readiness.plain.other": "Velg en annen mappe",
   "agentManager.readiness.identity.title": "Hvilket navn skal stå på endringene dine?",
   "agentManager.readiness.identity.body":
-    "Git merker hver endring med et navn og en e-postadresse. Kilo lagrer dem bare for dette prosjektet.",
+    "Git merker hver endring med et navn og en e-postadresse. Kilo lagrer dem for Git-brukeren din.",
   "agentManager.readiness.identity.name": "Navn",
   "agentManager.readiness.identity.email": "E-post",
   "agentManager.readiness.identity.saveInit": "Lagre og sett opp Git",

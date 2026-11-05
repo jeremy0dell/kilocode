@@ -562,7 +562,7 @@ export const dict = {
   "agentManager.readiness.plain.other": "Odaberi drugi folder",
   "agentManager.readiness.identity.title": "Koje ime treba stajati na vašim izmjenama?",
   "agentManager.readiness.identity.body":
-    "Git označava svaku izmjenu imenom i e-mailom. Kilo ih čuva samo za ovaj projekat.",
+    "Git označava svaku izmjenu imenom i e-mailom. Kilo ih čuva za vašeg Git korisnika.",
   "agentManager.readiness.identity.name": "Ime",
   "agentManager.readiness.identity.email": "E-mail",
   "agentManager.readiness.identity.saveInit": "Sačuvaj i podesi Git",
