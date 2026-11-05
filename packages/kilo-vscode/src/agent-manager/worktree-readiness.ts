@@ -192,7 +192,20 @@ async function apply(
   if (request.fix !== "initGit" && request.fix !== "initialCommit")
     throw new Error(`Unknown readiness fix: ${String(request.fix)}`)
   if (request.target !== undefined) return usePick(request.target, request, deps)
-  const state = await prepare.inspect(root, deps.git)
+  const done = await setup(root, request, deps)
+  deps.openRepository(done.repo)
+  await deps.branches(done.repo)
+  return { root, note: done.note }
+}
+
+/** Initialize, exclude, configure identity and commit; returns the repository and uncommitted note. */
+async function setup(
+  root: string,
+  request: Pick<FixReadinessRequest, "fix" | "identity">,
+  deps: FixDeps,
+  inspected?: Awaited<ReturnType<typeof prepare.inspect>>,
+): Promise<{ repo: string; note: boolean }> {
+  const state = inspected ?? (await prepare.inspect(root, deps.git))
   allow(state.root ?? root)
   if (request.fix === "initialCommit" && !state.root) throw new Error(`Not a Git repository: ${root}`)
   if (!request.identity && !(await prepare.identity(root, deps.git)))
@@ -205,10 +218,8 @@ async function apply(
   if (request.identity) await prepare.configure(repo, deps.git, request.identity)
   trust(deps)
   await prepare.commit(repo, deps.git)
-  deps.openRepository(repo)
-  await deps.branches(repo)
   const status = await deps.git.execGit(["-c", "core.fsmonitor=false", "status", "--porcelain"], repo)
-  return { root, note: status.code === 0 && status.stdout.trim().length > 0 }
+  return { repo, note: status.code === 0 && status.stdout.trim().length > 0 }
 }
 
 /** Select a Git project nested directly inside the current folder. */
@@ -218,9 +229,13 @@ async function nested(
   deps: FixDeps,
 ): Promise<{ root: string; selected?: string; note: boolean }> {
   const target = value ? canonicalizePath(value) : ""
-  if (!target || !samePath(path.dirname(target), root) || !(await exists(path.join(target, ".git"))))
+  const parent = deps.picked()
+  const inside = (base: string | undefined) => base !== undefined && samePath(path.dirname(target), base)
+  if (!target || (!inside(root) && !inside(parent)) || !(await exists(path.join(target, ".git"))))
     throw new Error(`Not a Git project inside ${root}: ${value ?? ""}`)
-  return select(target, deps)
+  const done = await select(target, deps)
+  deps.forget()
+  return done
 }
 
 /** Use the folder the user just picked: attach it when it is a repository, otherwise remember it for setup. */
@@ -250,28 +265,23 @@ async function usePick(
 ): Promise<{ root: string; selected: string; note: boolean }> {
   const remembered = deps.picked()
   const target = value === "picked" ? remembered : canonicalizePath(value)
-  if (!remembered || !target || !samePath(target, remembered))
+  if (!remembered || !target || !samePath(target, remembered)) {
+    deps.forget()
     throw new Error("That folder is no longer the one you picked. Pick it again.")
-  deps.forget()
+  }
   allow(remembered)
   trust(deps)
   const state = await prepare.inspect(remembered, deps.git)
-  allow(state.root ?? remembered)
-  if (!request.identity && !(await prepare.identity(remembered, deps.git)))
-    throw new Error("Git needs a name and email before Kilo can create the first commit.")
-  trust(deps)
-  const repo = state.root ?? (await prepare.initialize(remembered, deps.git))
-  trust(deps)
-  await deps.exclude(repo)
-  trust(deps)
-  if (request.identity) await prepare.configure(repo, deps.git, request.identity)
-  trust(deps)
-  await prepare.commit(repo, deps.git)
-  deps.openRepository(repo)
-  const selected = await deps.attach(repo)
-  await deps.branches(repo)
-  const status = await deps.git.execGit(["-c", "core.fsmonitor=false", "status", "--porcelain"], repo)
-  return { root: repo, selected, note: status.code === 0 && status.stdout.trim().length > 0 }
+  if (state.root && !samePath(state.root, remembered)) {
+    deps.forget()
+    throw new Error("That folder is inside another Git repository now. Pick it again.")
+  }
+  deps.forget()
+  const done = await setup(remembered, request, deps, state)
+  deps.openRepository(done.repo)
+  const selected = await deps.attach(done.repo)
+  await deps.branches(done.repo)
+  return { root: done.repo, selected, note: done.note }
 }
 
 /** Register a repository as a project and select it. A non-repository folder is not attached yet. */

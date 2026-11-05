@@ -17,7 +17,11 @@ import type { SidebarTarget, SessionRef } from "./route"
 import { cloneProject, createProject, defaultParent, onboard, type Onboarding } from "./onboarding"
 import { runner } from "./prepare"
 import { check, fix, type FixOutcome } from "../worktree-readiness"
-import type { CheckReadinessRequest, FixReadinessRequest } from "../../../webview-ui/src/types/messages/agent-manager"
+import type {
+  CheckReadinessRequest,
+  FixReadinessRequest,
+  ReadinessFix,
+} from "../../../webview-ui/src/types/messages/agent-manager"
 
 const pending = new WeakSet<ProjectMessageDeps>()
 const selections = new WeakMap<ProjectMessageDeps, symbol>()
@@ -339,7 +343,12 @@ async function register(
   return { id, root, existing }
 }
 
-const FIXES = new Set(["initGit", "initialCommit", "useProject", "pickFolder"])
+const FIXES: Record<ReadinessFix, true> = {
+  initGit: true,
+  initialCommit: true,
+  useProject: true,
+  pickFolder: true,
+}
 
 /** Folder the user just picked, per project. One-shot and host-side only; the webview never supplies it. */
 const picks = new Map<string, string>()
@@ -354,7 +363,7 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
   const base = { git, trusted: () => deps.onboarding.isTrusted() }
   try {
     if (m.type === "agentManager.checkReadiness") return reply({ result: await check(ctx.root, base) })
-    if (!FIXES.has(m.fix)) {
+    if (!(m.fix in FIXES)) {
       reply({ result: await check(ctx.root, base), error: `Unknown readiness fix: ${String(m.fix)}` })
       return
     }
@@ -380,6 +389,7 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
 }
 
 async function removeProject(id: string, deps: ProjectMessageDeps): Promise<void> {
+  picks.delete(id)
   if (deps.contexts.pinned()?.id === id) return
   const active = deps.contexts.active()?.id === id
   await deps.registry.remove(id)
