@@ -24,6 +24,19 @@ const INSTALL_DEADLINE = 65 * 60_000
 type Blocked = Extract<Readiness, { status: "blocked" }>
 type InstallFix = "installGit" | "installLfs"
 
+/** Card label and fix names for the two installable tools. */
+export const TOOLS = {
+  git: { label: "Git", fix: "installGit", other: "downloadGit" },
+  lfs: { label: "Git LFS", fix: "installLfs", other: "downloadLfs" },
+} as const
+
+export type Tool = keyof typeof TOOLS
+
+/** Label for an install or download fix. */
+export function toolName(fix: ReadinessFix | undefined) {
+  return TOOLS[fix === "installGit" || fix === "downloadGit" ? "git" : "lfs"].label
+}
+
 export type ReadinessState =
   | { status: "checking"; project?: string }
   | { status: "blocked"; project: string; result: Blocked; error?: string }

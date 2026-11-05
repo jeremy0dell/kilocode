@@ -17,7 +17,7 @@ Object.assign(globalThis, {
 
 const { render } = await import("solid-js/web")
 const { createSignal } = await import("solid-js")
-const { createReopen } = await import("../../webview-ui/agent-manager/new-worktree-reopen")
+const { createReopen } = await import("../../webview-ui/agent-manager/new-worktree-draft")
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 20))
 

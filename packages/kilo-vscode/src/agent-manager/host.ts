@@ -130,10 +130,8 @@ export interface Host {
     sessionProject?: () => string | undefined
   }): PanelContext
 
-  /** Get the workspace/project root path. */
   workspacePath(): string | undefined
 
-  /** Local files with unsaved editor changes. */
   dirtyFiles(): string[]
 
   /** Show a folder picker and return the selected path, or undefined when cancelled. */
@@ -155,16 +153,13 @@ export interface Host {
   browserAutomation(): boolean
   approveBrowserNavigation?(origin: string): Promise<boolean>
 
-  /** Whether background worktree pre-warming is enabled. */
   worktreePool(): boolean
 
   /** Listen for changes to the worktree pre-warming setting. */
   onDidChangeWorktreePool(cb: (enabled: boolean) => void): Disposable
 
-  /** Read the persisted additional-project registry payload. */
   readProjects(): unknown
 
-  /** Persist the additional-project registry payload. */
   writeProjects(value: unknown): Promise<void>
 
   /** Read and persist the user's last PR merge method per repository. */
@@ -182,10 +177,8 @@ export interface Host {
   /** Read the user's automatic branch naming preferences. */
   autoBranchNaming(): { enabled: boolean; prefix: string }
 
-  /** Show an error notification. */
   showError(msg: string): void
 
-  /** Show an info, warning, or error notification. */
   notify(kind: "info" | "warning" | "error", msg: string): void
 
   /** Show a message with action buttons; resolves to the chosen action, or undefined when dismissed. */
@@ -205,16 +198,12 @@ export interface Host {
     opts?: { cancellable?: boolean },
   ): Promise<T>
 
-  /** Open a text document in an editor (e.g. setup script). */
   openDocument(path: string): Promise<void>
 
-  /** Open a file at a specific location in the editor. */
   openFile(path: string, line?: number, column?: number): void
 
-  /** Open a folder (optionally in a new window). */
   openFolder(path: string, newWindow: boolean): void
 
-  /** Create an output channel for logging. */
   createOutput(name: string): OutputHandle
 
   /** Read extension keybindings, with the user's keybindings.json applied. */
@@ -223,17 +212,13 @@ export interface Host {
   /** Notify when the user's keybindings.json changes. */
   onDidChangeKeybindings?(cb: () => void): Disposable
 
-  /** Copy text to the system clipboard. */
   copyToClipboard(text: string): void | Promise<void>
   readClipboard?(): Promise<string>
 
-  /** Capture a telemetry event. */
   capture(event: string, properties?: Record<string, unknown>): void
 
-  /** Open a URL in the user's default browser. */
   openExternal(url: string): void
 
-  /** Open Kilo Settings, optionally focused on a tab and project. */
   openSettings(tab?: string, projectId?: string): void
 
   /** Ask VS Code's git extension to re-scan repositories (e.g. after worktree ref migration). */
@@ -242,15 +227,11 @@ export interface Host {
   /** Open a repository in VS Code's Source Control view without a picker. */
   openRepository(root: string): void
 
-  /** Run a fixed install recipe in a visible task, returning its exit code (undefined when stopped). */
   runInstall(name: string, command: InstallCommand): Promise<number | undefined>
 
-  /** Notify when the VS Code window regains focus. */
   onWindowFocus(cb: () => void): Disposable
 
-  /** Reload the VS Code window. */
   reloadWindow(): void
 
-  /** Dispose all host resources. */
   dispose(): void
 }

@@ -183,7 +183,7 @@ export async function execWithShellEnv(
  * Windows has no login shell to re-resolve, so this is a no-op there: the
  * extension host's PATH cannot be refreshed and a Reload is the only fix.
  */
-export async function refreshShellEnv(): Promise<void> {
+async function refreshShellEnv(): Promise<void> {
   if (process.platform === "win32") return
   if (refreshing) return refreshing
   if (Date.now() - refreshedAt < REFRESH_MS) return

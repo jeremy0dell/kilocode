@@ -54,31 +54,22 @@ export interface ProjectMessageDeps {
   empty?: () => void
   /** Initialize an expanded background context and push its state. */
   expand: (ctx: ProjectContext) => void
-  /** Push the current project snapshots to the webview. */
   push: () => void
-  /** Push one project's managed state to the webview. */
   pushState?: (ctx: ProjectContext) => void
   /** Acknowledge an atomically validated sidebar selection. */
   selected: (target: SidebarTarget) => void
-  /** Post an outbound message to the webview. */
   post: (message: AgentManagerOutMessage) => void
-  /** Show a user-facing error. */
   error: (message: string) => void
-  /** Open the Kilo Settings editor, optionally on a tab and project. */
   openSettings: (tab?: string, projectId?: string) => void
   /** Ensure a context's repository state is ready (no-op once initialized). */
   ready: (ctx: ProjectContext, options?: { warm?: boolean }) => Promise<ProjectInitResult>
   /** Route one session to a directory inside a project (session override + project route). */
   routeSession?: (projectId: string, sessionId: string, directory: string, generation: number) => void
-  /** Open a repository in VS Code's Source Control view. */
   openRepository: (root: string) => void
-  /** Post a project's branch list. */
   branches: (ctx: ProjectContext) => Promise<void>
   /** Run a terminal install task; resolves its exit code, or undefined when stopped. */
   install: (name: string, command: import("../worktree-install").InstallCommand) => Promise<number | undefined>
-  /** Open a download page in the user's browser. */
   openExternal: (url: string) => void
-  /** Reload the VS Code window. */
   reloadWindow: () => void
   git?: GitOps
   log: (...args: unknown[]) => void

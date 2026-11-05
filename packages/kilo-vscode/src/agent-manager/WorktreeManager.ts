@@ -227,7 +227,6 @@ export class WorktreeManager {
   private gitAvailable = false
   private probeFailed = false
   private lfsAvailable: boolean | undefined
-  private lfsDetail: string | undefined
   /** When the last negative git-lfs probe ran, so a later install is picked up. */
   private lfsProbed = 0
   private static readonly LFS_PROBE_TTL = 300_000
@@ -441,7 +440,7 @@ export class WorktreeManager {
       this.lfsAvailable === false &&
       Date.now() - this.lfsProbed < WorktreeManager.LFS_PROBE_TTL
     ) {
-      return { ok: false, code: "missing", detail: this.lfsDetail ?? "git-lfs is not installed." }
+      return { ok: false, code: "missing", detail: "git-lfs is not installed." }
     }
     const env = fresh ? await toolEnvironment(true) : undefined
     try {
@@ -452,7 +451,6 @@ export class WorktreeManager {
         ...(env ? { env } : {}),
       })
       this.lfsAvailable = true
-      this.lfsDetail = undefined
       return { ok: true }
     } catch (error) {
       const detail = text(error)
@@ -461,7 +459,6 @@ export class WorktreeManager {
       // do not let it poison the negative cache for the next five minutes.
       this.lfsAvailable = absent ? false : undefined
       this.lfsProbed = absent ? Date.now() : 0
-      this.lfsDetail = absent ? detail : undefined
       return { ok: false, code: absent ? "missing" : "unknown", detail }
     }
   }

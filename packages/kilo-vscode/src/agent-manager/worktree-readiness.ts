@@ -57,15 +57,10 @@ export interface ReadinessDeps {
 }
 
 export interface FixDeps extends ReadinessDeps {
-  /** Write Kilo's entries to the project's `.git/info/exclude`. */
   exclude: () => Promise<void>
-  /** Open the repository in VS Code's Source Control view. */
   openRepository: (root: string) => void
-  /** Post the project's refreshed branch list. */
   branches: () => Promise<void>
-  /** Register a folder as a project and resolve its project ID. */
   attach: (root: string) => Promise<string>
-  /** Ask for a folder; undefined when cancelled. */
   pick: () => Promise<string | undefined>
 }
 

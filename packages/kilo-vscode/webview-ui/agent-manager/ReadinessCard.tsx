@@ -12,12 +12,11 @@ import { Spinner } from "@kilocode/kilo-ui/spinner"
 import { TextField } from "@kilocode/kilo-ui/text-field"
 import type { Readiness, ReadinessFix, ReadinessInstaller } from "../src/types/messages"
 import { useLanguage } from "../src/context/language"
-import type { ReadinessState } from "./worktree-readiness"
+import { TOOLS, toolName, type ReadinessState, type Tool } from "./worktree-readiness"
 
 type Blocked = Extract<Readiness, { status: "blocked" }>
 type Identity = { name: string; email: string }
 type ReadyFixed = "initGit" | "initialCommit" | "installGit" | "installLfs"
-type Tool = "git" | "lfs"
 const READY = new Set<string | undefined>(["initGit", "initialCommit", "installGit", "installLfs"])
 
 export const ReadinessCard: Component<{
@@ -86,18 +85,6 @@ function Details(props: { text: string }) {
       </Collapsible.Content>
     </Collapsible>
   )
-}
-
-function tool(prefix: string) {
-  return prefix === "git" ? "Git" : "Git LFS"
-}
-
-function toolFix(kind: Tool): ReadinessFix {
-  return kind === "git" ? "installGit" : "installLfs"
-}
-
-function otherFix(kind: Tool): ReadinessFix {
-  return kind === "git" ? "downloadGit" : "downloadLfs"
 }
 
 function BlockedCard(props: {
@@ -268,15 +255,19 @@ function BlockedCard(props: {
                   size="small"
                   variant="secondary"
                   disabled={locked()}
-                  onClick={() => props.onFix(toolFix(kind() as Tool))}
+                  onClick={() => props.onFix(TOOLS[kind() as Tool].fix)}
                   data-readiness-action
                 >
                   {t(install() ? "agentManager.readiness.tool.install" : "agentManager.readiness.tool.get", {
-                    tool: tool(kind()),
+                    tool: TOOLS[kind() as Tool].label,
                   })}
                 </Button>
                 <Show when={install()}>
-                  <button class="am-readiness-link" type="button" onClick={() => props.onFix(otherFix(kind() as Tool))}>
+                  <button
+                    class="am-readiness-link"
+                    type="button"
+                    onClick={() => props.onFix(TOOLS[kind() as Tool].other)}
+                  >
                     {t("agentManager.readiness.tool.other")}
                   </button>
                 </Show>
@@ -330,7 +321,7 @@ function InstallingCard(props: {
 }) {
   const { t } = useLanguage()
   const apple = () => props.state.mode === "apple"
-  const name = () => tool(props.state.fix === "installGit" ? "git" : "lfs")
+  const name = () => toolName(props.state.fix)
   return (
     <Card>
       <div class="am-readiness-working" role="status">
@@ -368,7 +359,7 @@ function StaleCard(props: {
   onReload: () => void
 }) {
   const { t } = useLanguage()
-  const name = () => tool(props.state.fix === "installGit" ? "git" : "lfs")
+  const name = () => toolName(props.state.fix)
   return (
     <Card variant="warning">
       <CardTitle variant="warning" tabIndex={-1} data-readiness-title>

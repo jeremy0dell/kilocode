@@ -64,13 +64,14 @@ import { createDialogPreferences } from "./new-worktree-models"
 import { validBranch } from "./new-worktree-branch"
 import { sanitizeBranchName } from "../../src/shared/branch-slug"
 import { shouldComposeGoal, submitPayload } from "./new-worktree-command"
-import { createReadiness } from "./worktree-readiness"
-import { markReopen } from "./new-worktree-reopen"
+import { createReadiness, toolName } from "./worktree-readiness"
+
 import { ReadinessCard } from "./ReadinessCard"
 import {
   draftValues,
   readCached,
   initialProject,
+  markReopen,
   writeAllocations,
   writeDraft,
   type VersionCount,
@@ -249,7 +250,7 @@ export const NewWorktreeDialog: Component<{
       return state.mode === "apple"
         ? t("agentManager.readiness.install.apple.title")
         : t("agentManager.readiness.install.terminal.title", {
-            tool: state.fix === "installGit" ? "Git" : "Git LFS",
+            tool: toolName(state.fix),
           })
     if (state.status === "blocked" || state.status === "fixing") {
       if (state.result.code === "git_not_found") return t("agentManager.readiness.blockedGit")
