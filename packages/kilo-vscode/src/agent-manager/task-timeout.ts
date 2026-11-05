@@ -57,7 +57,7 @@ export function watchTask(opts: WatchOptions): Promise<number | undefined> {
       stopping = true
       failure = new Error(opts.message)
       try {
-        opts.execution.terminate()
+        void Promise.resolve(opts.execution.terminate()).catch(() => undefined)
       } catch {
         finish(undefined, failure)
         return

@@ -384,7 +384,7 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
     git: (fresh, verify, env) => manager.probeGit(fresh, verify, env),
     usesLfs: (root) => manager.repoUsesLfs(root),
     lfs: (_root, fresh, verify, env) => manager.probeLfs(fresh, verify, env),
-    lfsSetup: () => manager.checkLfsFilters(),
+    lfsSetup: (root) => manager.checkLfsFilters(root),
     setupLfs: async () => {
       const command: InstallCommand = {
         command: manager.binary,

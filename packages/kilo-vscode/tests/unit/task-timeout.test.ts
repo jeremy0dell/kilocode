@@ -1,10 +1,10 @@
 import { expect, it } from "bun:test"
 import { watchTask, type TaskEnd } from "../../src/agent-manager/task-timeout"
 
-function harness() {
+function harness(terminate: () => unknown = () => {}) {
   const process: Array<(event: TaskEnd) => void> = []
   const end: Array<(event: TaskEnd) => void> = []
-  const execution = { terminate: () => {} }
+  const execution = { terminate }
   return {
     execution,
     handlers: {
@@ -78,4 +78,27 @@ it("rejects a setup timeout without waiting for termination", async () => {
     grace: 50,
   }).catch((err: Error) => err)
   expect((error as Error).message).toBe("Setup script timed out after 5 minutes")
+})
+
+it("does not leave an unhandled rejection when terminate rejects", async () => {
+  const fake = harness(() => Promise.reject(new Error("terminate failed")))
+  const unhandled: unknown[] = []
+  const onUnhandled = (reason: unknown) => unhandled.push(reason)
+  process.on("unhandledRejection", onUnhandled)
+  try {
+    const error = await watchTask({
+      execution: fake.execution,
+      handlers: fake.handlers,
+      budget: 5,
+      message: "Task timed out",
+      stop: true,
+      grace: 50,
+      fallback: 30,
+    }).catch((err: Error) => err)
+    expect((error as Error).message).toBe("Task timed out")
+    await wait(20)
+    expect(unhandled).toEqual([])
+  } finally {
+    process.off("unhandledRejection", onUnhandled)
+  }
 })

@@ -1473,10 +1473,10 @@ export class WorktreeManager {
     return false
   }
 
-  /** Whether git-lfs filters are registered in the global config. */
-  async checkLfsFilters(): Promise<boolean> {
-    return execWithShellEnv(this.binary, ["config", "--get", "filter.lfs.process"], {
-      cwd: tmpdir(),
+  /** Whether git-lfs filters are registered in the global, system, or repository config for `root`. */
+  async checkLfsFilters(root = this.root): Promise<boolean> {
+    return execWithShellEnv(this.binary, ["-c", "core.fsmonitor=false", "config", "--get", "filter.lfs.process"], {
+      cwd: root,
       timeout: BUDGET.probe,
     }).then(
       (out) => out.stdout.trim().length > 0,
