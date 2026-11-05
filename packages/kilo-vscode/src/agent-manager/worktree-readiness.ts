@@ -48,7 +48,7 @@ export interface ReadinessTools {
   git(fresh: boolean, verify?: boolean, env?: NodeJS.ProcessEnv): Promise<ToolProbe>
   usesLfs(root: string): Promise<boolean>
   lfs(root: string, fresh: boolean, verify?: boolean, env?: NodeJS.ProcessEnv): Promise<ToolProbe>
-  /** Whether git-lfs filters are registered (global config). */
+  /** Whether git-lfs filters are registered for this repository (local, global, or system config). */
   lfsSetup(root: string): Promise<boolean>
   /** Run `git lfs install` for a repo whose filters are not registered. */
   setupLfs(root: string): Promise<number | undefined>
