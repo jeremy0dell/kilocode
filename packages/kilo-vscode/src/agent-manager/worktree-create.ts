@@ -61,8 +61,8 @@ export function reportNoRepo(capture: Capture, entry: WorktreeEntry): null {
 
 /** Report a create message dropped because it targets an unknown project. Other messages are ignored. */
 export function reportDropped(capture: Capture, type: AgentManagerInMessage["type"]): void {
-  if (type === "agentManager.createMultiVersion") reportNoRepo(capture, "modal")
-  if (type === "agentManager.createWorktree") reportNoRepo(capture, "quick")
+  if (type === "agentManager.createMultiVersion") fail(capture, "modal", NO_GIT_REPO, "project_unavailable")
+  if (type === "agentManager.createWorktree") fail(capture, "quick", NO_GIT_REPO, "project_unavailable")
 }
 
 /**
