@@ -37,6 +37,8 @@ export type Readiness =
       identity?: boolean
       /** The folder is the home folder or a filesystem root. */
       restricted?: boolean
+      /** This card is for the folder the user just picked; a fix targets it, not the selected project. */
+      picked?: boolean
       /** Up to 3 projects found inside the folder. */
       projects?: ReadinessProject[]
       /** More projects exist than are listed. */
@@ -54,7 +56,7 @@ export interface FixReadinessRequest {
   projectId: string
   requestID: string
   fix: ReadinessFix
-  /** Repository root for `useProject`. */
+  /** Repository root for `useProject`, or `picked` for the folder the user just picked. */
   target?: string
   identity?: { name: string; email: string }
 }

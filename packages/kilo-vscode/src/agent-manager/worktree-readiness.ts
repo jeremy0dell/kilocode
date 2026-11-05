@@ -44,16 +44,22 @@ export interface ReadinessDeps {
 }
 
 export interface FixDeps extends ReadinessDeps {
-  /** Write Kilo's entries to the project's `.git/info/exclude`. */
-  exclude: () => Promise<void>
+  /** Write Kilo's entries to the given repository's `.git/info/exclude`. */
+  exclude: (root: string) => Promise<void>
   /** Open the repository in VS Code's Source Control view. */
   openRepository: (root: string) => void
-  /** Post the project's refreshed branch list. */
-  branches: () => Promise<void>
-  /** Register a folder as a project and resolve its project ID. */
+  /** Post the given repository's refreshed branch list. */
+  branches: (root: string) => Promise<void>
+  /** Register a repository as a project and resolve its project ID. */
   attach: (root: string) => Promise<string>
   /** Ask for a folder; undefined when cancelled. */
   pick: () => Promise<string | undefined>
+  /** The folder the user just picked through {@link pick}, until the next picked fix. */
+  picked: () => string | undefined
+  /** Remember a folder the user just picked. */
+  remember: (root: string) => void
+  /** Forget the remembered pick. */
+  forget: () => void
 }
 
 export interface FixOutcome {
@@ -90,7 +96,8 @@ export async function fix(
       note: false,
     }),
   )
-  const result = await probe(done.root, deps)
+  const probed = await probe(done.root, deps)
+  const result = "picked" in done && done.picked && probed.status === "blocked" ? { ...probed, picked: true } : probed
   const outcome = {
     result:
       result.status === "ready" && done.note ? { status: "ready" as const, note: "uncommitted" as const } : result,
@@ -178,21 +185,13 @@ async function apply(
   root: string,
   request: Pick<FixReadinessRequest, "fix" | "target" | "identity">,
   deps: FixDeps,
-): Promise<{ root: string; selected?: string; note: boolean }> {
+): Promise<{ root: string; selected?: string; picked?: boolean; note: boolean }> {
   trust(deps)
-  if (request.fix === "useProject") {
-    const target = request.target ? canonicalizePath(request.target) : ""
-    if (!target || !samePath(path.dirname(target), root) || !(await exists(path.join(target, ".git"))))
-      throw new Error(`Not a Git project inside ${root}: ${request.target ?? ""}`)
-    return select(target, deps)
-  }
-  if (request.fix === "pickFolder") {
-    const dir = await deps.pick()
-    if (!dir) return { root, note: false }
-    return select(dir, deps)
-  }
+  if (request.fix === "useProject") return nested(root, request.target, deps)
+  if (request.fix === "pickFolder") return choose(root, deps)
   if (request.fix !== "initGit" && request.fix !== "initialCommit")
     throw new Error(`Unknown readiness fix: ${String(request.fix)}`)
+  if (request.target !== undefined) return usePick(request.target, request, deps)
   const state = await prepare.inspect(root, deps.git)
   allow(state.root ?? root)
   if (request.fix === "initialCommit" && !state.root) throw new Error(`Not a Git repository: ${root}`)
@@ -201,15 +200,78 @@ async function apply(
   trust(deps)
   const repo = state.root ?? (await prepare.initialize(root, deps.git))
   trust(deps)
-  await deps.exclude()
+  await deps.exclude(repo)
   trust(deps)
   if (request.identity) await prepare.configure(repo, deps.git, request.identity)
   trust(deps)
   await prepare.commit(repo, deps.git)
   deps.openRepository(repo)
-  await deps.branches()
+  await deps.branches(repo)
   const status = await deps.git.execGit(["-c", "core.fsmonitor=false", "status", "--porcelain"], repo)
   return { root, note: status.code === 0 && status.stdout.trim().length > 0 }
+}
+
+/** Select a Git project nested directly inside the current folder. */
+async function nested(
+  root: string,
+  value: string | undefined,
+  deps: FixDeps,
+): Promise<{ root: string; selected?: string; note: boolean }> {
+  const target = value ? canonicalizePath(value) : ""
+  if (!target || !samePath(path.dirname(target), root) || !(await exists(path.join(target, ".git"))))
+    throw new Error(`Not a Git project inside ${root}: ${value ?? ""}`)
+  return select(target, deps)
+}
+
+/** Use the folder the user just picked: attach it when it is a repository, otherwise remember it for setup. */
+async function choose(
+  root: string,
+  deps: FixDeps,
+): Promise<{ root: string; selected?: string; picked?: boolean; note: boolean }> {
+  const dir = await deps.pick()
+  if (!dir) return { root, note: false }
+  const state = await prepare.inspect(dir, deps.git)
+  const picked = state.root ?? canonicalizePath(dir)
+  allow(picked)
+  trust(deps)
+  if (state.root) {
+    deps.forget()
+    return { root: picked, selected: await deps.attach(picked), note: false }
+  }
+  deps.remember(picked)
+  return { root: picked, picked: true, note: false }
+}
+
+/** Set up Git in the folder the user just picked, then attach and select it. */
+async function usePick(
+  value: string,
+  request: Pick<FixReadinessRequest, "fix" | "identity">,
+  deps: FixDeps,
+): Promise<{ root: string; selected: string; note: boolean }> {
+  const remembered = deps.picked()
+  const target = value === "picked" ? remembered : canonicalizePath(value)
+  if (!remembered || !target || !samePath(target, remembered))
+    throw new Error("That folder is no longer the one you picked. Pick it again.")
+  deps.forget()
+  allow(remembered)
+  trust(deps)
+  const state = await prepare.inspect(remembered, deps.git)
+  allow(state.root ?? remembered)
+  if (!request.identity && !(await prepare.identity(remembered, deps.git)))
+    throw new Error("Git needs a name and email before Kilo can create the first commit.")
+  trust(deps)
+  const repo = state.root ?? (await prepare.initialize(remembered, deps.git))
+  trust(deps)
+  await deps.exclude(repo)
+  trust(deps)
+  if (request.identity) await prepare.configure(repo, deps.git, request.identity)
+  trust(deps)
+  await prepare.commit(repo, deps.git)
+  deps.openRepository(repo)
+  const selected = await deps.attach(repo)
+  await deps.branches(repo)
+  const status = await deps.git.execGit(["-c", "core.fsmonitor=false", "status", "--porcelain"], repo)
+  return { root: repo, selected, note: status.code === 0 && status.stdout.trim().length > 0 }
 }
 
 /** Register a repository as a project and select it. A non-repository folder is not attached yet. */

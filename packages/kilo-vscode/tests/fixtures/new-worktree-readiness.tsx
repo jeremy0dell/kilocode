@@ -426,6 +426,26 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
   await close()
 }
 
+// A card for the picked folder sets up that folder, not the selected project.
+{
+  const id = await mount()
+  await reply("p1", id, {
+    status: "blocked",
+    code: "not_git_repo",
+    name: "picked",
+    trusted: true,
+    identity: true,
+    picked: true,
+  })
+  card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
+  await settle()
+  const fix = sent.find((item) => item.type === "agentManager.fixReadiness")
+  assert.ok(fix && fix.type === "agentManager.fixReadiness")
+  assert.equal(fix.fix, "initGit")
+  assert.equal(fix.target, "picked")
+  await close()
+}
+
 // More than three child repos show one primary folder action instead of a list.
 {
   const id = await mount()

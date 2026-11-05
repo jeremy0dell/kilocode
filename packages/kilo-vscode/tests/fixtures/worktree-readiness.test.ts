@@ -75,6 +75,7 @@ async function repo(dir: string, commit: boolean) {
 }
 
 function fixDeps(ops: GitOps, overrides: Partial<FixDeps> = {}): FixDeps {
+  let pick: string | undefined
   return {
     git: ops,
     trusted: () => true,
@@ -83,6 +84,13 @@ function fixDeps(ops: GitOps, overrides: Partial<FixDeps> = {}): FixDeps {
     branches: async () => {},
     attach: async () => "",
     pick: async () => undefined,
+    picked: () => pick,
+    remember: (root) => {
+      pick = root
+    },
+    forget: () => {
+      pick = undefined
+    },
     ...overrides,
   }
 }
@@ -342,6 +350,57 @@ describe("worktree readiness fixes", () => {
       result: { status: "blocked", code: "not_git_repo", name: path.basename(picked) },
     })
     expect(setup.wiring.registry.has(projectIdFor(canonicalizePath(picked)))).toBe(false)
+  })
+
+  it("sets up Git in the folder the user just picked and selects it", async () => {
+    const original = await temp("kilo-ready-picked-original-")
+    const picked = await temp("kilo-ready-picked-folder-")
+    await fs.writeFile(path.join(picked, "notes.txt"), "draft")
+    const setup = wire(original)
+    setup.calls.pickResults.push(picked)
+
+    await setup.send("pickFolder")
+    expect(setup.posts.at(-1)).toMatchObject({
+      result: { status: "blocked", code: "not_git_repo", name: path.basename(picked), picked: true },
+    })
+
+    await setup.send("initGit", { target: "picked", identity })
+
+    expect(git(picked, "rev-list", "--count", "HEAD")).toBe("1")
+    expect(await Bun.file(path.join(picked, ".git", "info", "exclude")).text()).toContain(".kilo/worktrees/")
+    expect(await Bun.file(path.join(original, ".git")).exists()).toBe(false)
+    expect(setup.posts.at(-1)).toMatchObject({
+      selected: projectIdFor(canonicalizePath(picked)),
+      result: { status: "ready" },
+    })
+    expect(setup.wiring.registry.has(projectIdFor(canonicalizePath(picked)))).toBe(true)
+  })
+
+  it("rejects a picked fix whose target is not the remembered folder", async () => {
+    const original = await temp("kilo-ready-forged-original-")
+    const picked = await temp("kilo-ready-forged-picked-")
+    const forged = await temp("kilo-ready-forged-other-")
+    const setup = wire(original)
+    setup.calls.pickResults.push(picked)
+
+    await setup.send("pickFolder")
+    await setup.send("initGit", { target: forged, identity })
+
+    expect(setup.posts.at(-1)).toMatchObject({ error: expect.stringContaining("no longer the one you picked") })
+    expect(await Bun.file(path.join(forged, ".git")).exists()).toBe(false)
+    expect(await Bun.file(path.join(picked, ".git")).exists()).toBe(false)
+    expect(await Bun.file(path.join(original, ".git")).exists()).toBe(false)
+    expect(setup.wiring.registry.has(projectIdFor(canonicalizePath(forged)))).toBe(false)
+  })
+
+  it("rejects a picked fix when nothing was picked", async () => {
+    const root = await temp("kilo-ready-no-pick-")
+    const setup = wire(root)
+
+    await setup.send("initGit", { target: "picked", identity })
+
+    expect(setup.posts.at(-1)).toMatchObject({ error: expect.stringContaining("no longer the one you picked") })
+    expect(await Bun.file(path.join(root, ".git")).exists()).toBe(false)
   })
 
   it("rejects an unknown fix without initializing or committing", async () => {
