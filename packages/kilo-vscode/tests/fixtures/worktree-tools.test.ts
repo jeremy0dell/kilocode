@@ -265,6 +265,43 @@ describe("LFS alias safety", () => {
   })
 })
 
+describe("LFS filters", () => {
+  it("reads the global filter registration", async () => {
+    const root = await temp("kilo-tools-root-")
+    const home = await temp("kilo-tools-home-")
+    const real = process.env.KILO_REAL_GIT
+    if (!real) throw new Error("KILO_REAL_GIT is required")
+    const previous = {
+      HOME: process.env.HOME,
+      GLOBAL: process.env.GIT_CONFIG_GLOBAL,
+      NO: process.env.GIT_CONFIG_NOSYSTEM,
+    }
+    process.env.HOME = home
+    delete process.env.GIT_CONFIG_GLOBAL
+    delete process.env.GIT_CONFIG_NOSYSTEM
+    try {
+      const mgr = manager(root, real, "linux")
+      expect(await mgr.checkLfsFilters()).toBe(false)
+      await fs.writeFile(path.join(home, ".gitconfig"), '[filter "lfs"]\n\tprocess = git-lfs filter-process\n')
+      expect(await mgr.checkLfsFilters()).toBe(true)
+    } finally {
+      if (previous.HOME === undefined) delete process.env.HOME
+      else process.env.HOME = previous.HOME
+      if (previous.GLOBAL === undefined) delete process.env.GIT_CONFIG_GLOBAL
+      else process.env.GIT_CONFIG_GLOBAL = previous.GLOBAL
+      if (previous.NO === undefined) delete process.env.GIT_CONFIG_NOSYSTEM
+      else process.env.GIT_CONFIG_NOSYSTEM = previous.NO
+    }
+  })
+
+  it("treats a non-unset config failure as advisory", async () => {
+    const root = await temp("kilo-tools-root-")
+    const bin = await temp("kilo-tools-bin-")
+    const git = await script(bin, "git-config-fail", `if [ "$1" = "config" ]; then exit 128; fi\nexit 0`)
+    expect(await manager(root, git, "linux").checkLfsFilters()).toBe(true)
+  })
+})
+
 describe("fresh tool checks", () => {
   it("refreshes the login-shell PATH only for fresh checks and updates both LFS caches", async () => {
     const root = await temp("kilo-tools-root-")

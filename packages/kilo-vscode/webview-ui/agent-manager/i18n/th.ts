@@ -607,7 +607,7 @@ export const dict = {
   "agentManager.readiness.install.stopped": "การติดตั้งถูกหยุด โปรดดูผลลัพธ์ในเทอร์มินัล",
   "agentManager.readiness.lfsSetup.title": "{{name}} ต้องตั้งค่า Git LFS",
   "agentManager.readiness.lfsSetup.body":
-    "ติดตั้ง Git LFS แล้ว แต่ยังไม่ได้ลงทะเบียนตัวกรองของโปรเจกต์นี้ ตั้งค่าเพื่อสร้าง worktree",
+    "ติดตั้ง Git LFS แล้ว แต่ยังไม่ได้ตั้งค่าสำหรับผู้ใช้ Git ของคุณ ตั้งค่าเพื่อสร้าง worktree",
   "agentManager.readiness.lfsSetup.action": "ตั้งค่า Git LFS",
   "agentManager.readiness.blockedLfsSetup": "โปรดตั้งค่า Git LFS ก่อน คุณยังเขียนงานต่อได้",
   "agentManager.readiness.working.setupLfs": "กำลังตั้งค่า Git LFS…",

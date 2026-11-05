@@ -601,7 +601,7 @@ export const dict = {
   "agentManager.readiness.lfs.title": "{{name}} needs Git LFS",
   "agentManager.readiness.lfsSetup.title": "{{name}} needs Git LFS set up",
   "agentManager.readiness.lfsSetup.body":
-    "Git LFS is installed, but this project's filters aren't registered yet. Set it up to create worktrees.",
+    "Git LFS is installed, but it isn't set up for your Git user yet. Set it up to create worktrees.",
   "agentManager.readiness.lfsSetup.action": "Set up Git LFS",
   "agentManager.readiness.blockedLfsSetup": "Set up Git LFS first. You can keep writing your task.",
   "agentManager.readiness.working.setupLfs": "Setting up Git LFS…",

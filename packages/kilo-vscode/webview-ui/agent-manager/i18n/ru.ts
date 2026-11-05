@@ -621,7 +621,7 @@ export const dict = {
   "agentManager.readiness.install.stopped": "Установка была остановлена. См. вывод терминала.",
   "agentManager.readiness.lfsSetup.title": "{{name}} требует настройки Git LFS",
   "agentManager.readiness.lfsSetup.body":
-    "Git LFS установлен, но фильтры этого проекта ещё не зарегистрированы. Настройте его для создания worktree.",
+    "Git LFS установлен, но ещё не настроен для вашего пользователя Git. Настройте его для создания worktree.",
   "agentManager.readiness.lfsSetup.action": "Настроить Git LFS",
   "agentManager.readiness.blockedLfsSetup": "Сначала настройте Git LFS. Вы можете продолжать писать задачу.",
   "agentManager.readiness.working.setupLfs": "Настройка Git LFS…",

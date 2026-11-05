@@ -625,7 +625,7 @@ export const dict = {
   "agentManager.readiness.install.stopped": "Kurulum durduruldu. Terminal çıktısına bakın.",
   "agentManager.readiness.lfsSetup.title": "{{name}} için Git LFS kurulumu gerekiyor",
   "agentManager.readiness.lfsSetup.body":
-    "Git LFS yüklü, ancak bu projenin filtreleri henüz kayıtlı değil. Worktree oluşturmak için kurun.",
+    "Git LFS yüklü, ancak henüz Git kullanıcınız için ayarlanmadı. Worktree oluşturmak için ayarlayın.",
   "agentManager.readiness.lfsSetup.action": "Git LFS'i ayarla",
   "agentManager.readiness.blockedLfsSetup": "Önce Git LFS'i ayarlayın. Görevinizi yazmaya devam edebilirsiniz.",
   "agentManager.readiness.working.setupLfs": "Git LFS ayarlanıyor…",

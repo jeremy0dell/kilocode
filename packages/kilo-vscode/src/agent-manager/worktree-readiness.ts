@@ -17,7 +17,6 @@ import { isRestrictedRoot } from "./home-workspace"
 import { canonicalizePath, samePath } from "./project/paths"
 import * as prepare from "./project/prepare"
 import { errorText } from "./git-errors"
-import { toolEnvironment } from "./shell-env"
 import type {
   Readiness,
   ReadinessInstaller,
@@ -45,6 +44,7 @@ function ensureAllowed(dir: string | undefined) {
 }
 
 export interface ReadinessTools {
+  env(fresh: boolean): Promise<NodeJS.ProcessEnv | undefined>
   git(fresh: boolean, verify?: boolean, env?: NodeJS.ProcessEnv): Promise<ToolProbe>
   usesLfs(root: string): Promise<boolean>
   lfs(root: string, fresh: boolean, verify?: boolean, env?: NodeJS.ProcessEnv): Promise<ToolProbe>
@@ -115,8 +115,7 @@ export async function applyWorktreeFix(
   }))
   // A fresh check makes an install visible immediately; only a truly invisible tool stays stale.
   const probed = await readReadiness(applied.root, deps, applied.install !== undefined)
-  const result =
-    "picked" in applied && applied.picked && probed.status === "blocked" ? { ...probed, picked: true } : probed
+  const result = applied.picked && probed.status === "blocked" ? { ...probed, picked: true } : probed
   return {
     result: result.status === "ready" && applied.note ? { status: "ready", note: "uncommitted" } : result,
     ...(applied.selected ? { selected: applied.selected } : {}),
@@ -142,7 +141,7 @@ async function readReadiness(root: string, deps: ReadinessDeps, fresh = false, v
 }
 
 async function inspectProject(root: string, deps: ReadinessDeps, fresh: boolean, verify: boolean): Promise<Readiness> {
-  const env = fresh ? await toolEnvironment(true) : undefined
+  const env = await deps.tools.env(fresh)
   const git = await deps.tools.git(fresh, verify, env)
   if (!git.ok) return blockedTool("git", git, root, deps)
   const state = await prepare.inspect(root, deps.git)
@@ -244,6 +243,7 @@ async function runFix(
 ): Promise<FixResult> {
   const toolFix = await runToolFix(root, request, deps)
   if (toolFix) return toolFix
+  ensureTrusted(deps)
   if (request.fix === "useProject") return nested(root, request.target, deps)
   if (request.fix === "pickFolder") return choose(root, deps)
   if (request.fix !== "initGit" && request.fix !== "initialCommit")
@@ -276,7 +276,9 @@ async function runToolFix(
 ): Promise<FixResult | undefined> {
   if (request.fix === "setupLfs") {
     ensureTrusted(deps)
-    await deps.tools.setupLfs(root)
+    const exit = await deps.tools.setupLfs(root)
+    if (exit === undefined) return { root, error: "Set up Git LFS was stopped. See the terminal output." }
+    if (exit !== 0) return { root, error: `Set up Git LFS exited with code ${exit}. See the terminal output.` }
     return { root }
   }
   const tool = toolFor(request.fix)

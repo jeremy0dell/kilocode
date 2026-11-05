@@ -12,7 +12,6 @@ import {
   type Tool,
   type ToolProbe,
 } from "../../src/agent-manager/worktree-install"
-import { INSTALL_DEADLINE_MS, INSTALL_TIMEOUT_MS } from "../../src/shared/worktree-readiness"
 
 const dirs: string[] = []
 

@@ -607,7 +607,7 @@ export const dict = {
   "agentManager.readiness.install.stopped": "تم إيقاف التثبيت. راجع مخرجات الطرفية.",
   "agentManager.readiness.lfsSetup.title": "يحتاج {{name}} إلى إعداد Git LFS",
   "agentManager.readiness.lfsSetup.body":
-    "تم تثبيت Git LFS، لكن عوامل تصفية هذا المشروع لم تُسجَّل بعد. أعدّه لإنشاء مساحات العمل.",
+    "تم تثبيت Git LFS، لكنه لم يُعدّ لمستخدم Git الخاص بك بعد. أعدّه لإنشاء مساحات العمل.",
   "agentManager.readiness.lfsSetup.action": "إعداد Git LFS",
   "agentManager.readiness.blockedLfsSetup": "أعدّ Git LFS أولاً. يمكنك متابعة كتابة مهمتك.",
   "agentManager.readiness.working.setupLfs": "جارٍ إعداد Git LFS…",

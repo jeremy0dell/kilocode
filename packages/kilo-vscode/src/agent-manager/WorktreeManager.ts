@@ -419,9 +419,9 @@ export class WorktreeManager {
    */
   async probeLfs(fresh = false, verify = false, provided?: NodeJS.ProcessEnv): Promise<ToolProbe> {
     const env = provided ?? (fresh ? await toolEnvironment(true) : undefined)
+    if (!fresh && !verify && this.lfsAvailable === true) return { ok: true }
     const guard = await this.guardApple(env)
     if (guard) return { ok: false, code: guard.missing ? "missing" : "unknown", detail: guard.detail }
-    if (!fresh && !verify && this.lfsAvailable === true) return { ok: true }
     // A negative verdict expires: installing git-lfs mid-session used to require a window reload.
     if (
       !fresh &&
@@ -1480,7 +1480,7 @@ export class WorktreeManager {
       timeout: BUDGET.probe,
     }).then(
       (out) => out.stdout.trim().length > 0,
-      () => false,
+      (error: unknown) => ((error as { code?: unknown }).code === 1 ? false : true),
     )
   }
 

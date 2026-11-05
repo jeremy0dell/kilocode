@@ -616,7 +616,7 @@ export const dict = {
   "agentManager.readiness.install.stopped": "Instalacija je zaustavljena. Pogledajte izlaz terminala.",
   "agentManager.readiness.lfsSetup.title": "{{name}} treba podešen Git LFS",
   "agentManager.readiness.lfsSetup.body":
-    "Git LFS je instaliran, ali filteri ovog projekta još nisu registrovani. Podesite ga da biste pravili worktree.",
+    "Git LFS je instaliran, ali još nije podešen za vašeg Git korisnika. Podesite ga da biste pravili worktree.",
   "agentManager.readiness.lfsSetup.action": "Podesi Git LFS",
   "agentManager.readiness.blockedLfsSetup": "Prvo podesite Git LFS. Možete nastaviti pisati zadatak.",
   "agentManager.readiness.working.setupLfs": "Podešavanje Git LFS…",

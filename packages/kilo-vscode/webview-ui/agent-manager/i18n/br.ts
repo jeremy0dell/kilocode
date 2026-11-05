@@ -566,7 +566,7 @@ export const dict = {
   "agentManager.readiness.plain.other": "Escolher uma pasta diferente",
   "agentManager.readiness.identity.title": "Qual nome deve aparecer nas suas alterações?",
   "agentManager.readiness.identity.body":
-    "O Git marca cada alteração com um nome e um e-mail. O Kilo os salva para o seu utilizador Git.",
+    "O Git marca cada alteração com um nome e um e-mail. O Kilo os salva para o seu usuário Git.",
   "agentManager.readiness.identity.name": "Nome",
   "agentManager.readiness.identity.email": "E-mail",
   "agentManager.readiness.identity.saveInit": "Salvar e configurar Git",
@@ -620,7 +620,7 @@ export const dict = {
   "agentManager.readiness.install.stopped": "A instalação foi interrompida. Consulte a saída do terminal.",
   "agentManager.readiness.lfsSetup.title": "{{name}} precisa do Git LFS configurado",
   "agentManager.readiness.lfsSetup.body":
-    "O Git LFS está instalado, mas os filtros deste projeto ainda não estão registrados. Configure-o para criar worktrees.",
+    "O Git LFS está instalado, mas ainda não está configurado para o seu usuário Git. Configure-o para criar worktrees.",
   "agentManager.readiness.lfsSetup.action": "Configurar Git LFS",
   "agentManager.readiness.blockedLfsSetup": "Configure o Git LFS primeiro. Você pode continuar escrevendo sua tarefa.",
   "agentManager.readiness.working.setupLfs": "Configurando o Git LFS…",

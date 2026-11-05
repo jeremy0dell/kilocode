@@ -376,6 +376,7 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
   const git = deps.git ?? new GitOps({ log: deps.log })
   const manager = ctx.worktreeManager()
   const tools: ReadinessTools = {
+    env: async (fresh) => (fresh ? toolEnvironment(true) : undefined),
     git: (fresh, verify, env) => manager.probeGit(fresh, verify, env),
     usesLfs: (root) => manager.repoUsesLfs(root),
     lfs: (_root, fresh, verify, env) => manager.probeLfs(fresh, verify, env),

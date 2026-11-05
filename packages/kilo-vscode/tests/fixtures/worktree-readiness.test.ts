@@ -178,6 +178,7 @@ function wire(root: string, trusted = true) {
 }
 
 const present: ReadinessTools = {
+  env: async () => undefined,
   git: async () => ({ ok: true }),
   usesLfs: async () => false,
   lfs: async () => ({ ok: true }),
@@ -194,6 +195,7 @@ describe("worktree readiness tool checks", () => {
   const fake = (overrides: Partial<ReadinessTools> = {}) => {
     const calls: string[] = []
     const tools: ReadinessTools = {
+      env: async () => undefined,
       git: async (fresh) => {
         calls.push(`git:${fresh}`)
         return { ok: true }
@@ -314,8 +316,13 @@ describe("worktree readiness tool checks", () => {
   it("refreshes the shell environment once per fresh check", async () => {
     const root = await repo(await temp("kilo-ready-env-"), true)
     const envs: Array<NodeJS.ProcessEnv | undefined> = []
+    const shared: NodeJS.ProcessEnv = { PATH: "/fake" }
     const tools: ReadinessTools = {
       ...fake().tools,
+      env: async (fresh) => {
+        expect(fresh).toBe(true)
+        return shared
+      },
       git: async (_fresh, _verify, env) => {
         envs.push(env)
         return { ok: true }
@@ -328,8 +335,8 @@ describe("worktree readiness tool checks", () => {
     }
     await checkWorktreeReadiness(root, { git: ops, trusted: () => true, tools }, true)
     expect(envs).toHaveLength(2)
-    expect(envs[0]).toBe(envs[1])
-    expect(envs[0]?.PATH).toBeDefined()
+    expect(envs[0]).toBe(shared)
+    expect(envs[1]).toBe(shared)
   })
 
   it("refuses to register a restricted root", async () => {
@@ -789,6 +796,7 @@ describe("worktree readiness fixes", () => {
     let registered = false
     const calls: string[] = []
     const tools: ReadinessTools = {
+      env: async () => undefined,
       git: async () => ({ ok: true }),
       usesLfs: async () => true,
       lfs: async () => ({ ok: true }),
@@ -809,28 +817,44 @@ describe("worktree readiness fixes", () => {
       name: path.basename(root),
       trusted: true,
     })
-    const outcome = await applyWorktreeFix(
-      root,
-      { fix: "setupLfs" },
-      {
-        git: ops,
-        trusted: () => true,
-        tools,
-        exclude: async () => {},
-        openRepository: () => {},
-        branches: async () => {},
-        attach: async () => "p",
-        pick: async () => undefined,
-      },
-    )
+    const outcome = await applyWorktreeFix(root, { fix: "setupLfs" }, fixDeps(ops, { tools }))
     expect(calls).toEqual(["setup"])
     expect(outcome.result).toEqual({ status: "ready" })
+  })
+
+  it("refuses an untrusted pick before opening the picker", async () => {
+    const root = await temp("kilo-ready-untrusted-pick-")
+    const setup = wire(root, false)
+    await setup.send("pickFolder")
+    expect(setup.calls.picks).toHaveLength(0)
+    const reply = setup.posts.at(-1)
+    expect(reply).toMatchObject({ result: { status: "blocked" } })
+    expect(reply && "error" in reply ? reply.error : "").toContain("Trust")
+  })
+
+  it("reports a failed Set up Git LFS task", async () => {
+    const root = await repo(await temp("kilo-ready-lfs-fail-"), true)
+    const tools: ReadinessTools = {
+      env: async () => undefined,
+      git: async () => ({ ok: true }),
+      usesLfs: async () => true,
+      lfs: async () => ({ ok: true }),
+      lfsSetup: async () => false,
+      setupLfs: async () => 1,
+      installer: async () => undefined,
+      install: async (kind) => ({ kind, mode: "external", ok: false }),
+      download: () => {},
+    }
+    const outcome = await applyWorktreeFix(root, { fix: "setupLfs" }, fixDeps(ops, { tools }))
+    expect(outcome.error).toContain("exited with code 1")
+    expect(outcome.result).toMatchObject({ status: "blocked", code: "lfs_not_setup" })
   })
 
   it("leaves an install whose tool was not visible yet to the LFS setup blocker", async () => {
     const root = await repo(await temp("kilo-ready-lfs-late-"), true)
     const calls: string[] = []
     const tools: ReadinessTools = {
+      env: async () => undefined,
       git: async () => ({ ok: true }),
       usesLfs: async () => true,
       lfs: async () => ({ ok: true }),
@@ -846,20 +870,7 @@ describe("worktree readiness fixes", () => {
       },
       download: () => {},
     }
-    const outcome = await applyWorktreeFix(
-      root,
-      { fix: "installLfs" },
-      {
-        git: ops,
-        trusted: () => true,
-        tools,
-        exclude: async () => {},
-        openRepository: () => {},
-        branches: async () => {},
-        attach: async () => "p",
-        pick: async () => undefined,
-      },
-    )
+    const outcome = await applyWorktreeFix(root, { fix: "installLfs" }, fixDeps(ops, { tools }))
     expect(calls).toEqual(["install:lfs"])
     expect(outcome.result).toEqual({
       status: "blocked",

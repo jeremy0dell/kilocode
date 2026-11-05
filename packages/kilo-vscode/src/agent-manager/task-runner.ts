@@ -5,6 +5,7 @@
 import * as vscode from "vscode"
 import { SETUP_TIMEOUT_MS } from "../shared/worktree-readiness"
 import { setupTaskIdentity, type SetupTaskConfig } from "./SetupScriptRunner"
+import { watchTask } from "./task-timeout"
 
 const GRACE_MS = 250
 export interface TaskOptions {
@@ -47,45 +48,20 @@ export async function executeVscodeTask(
     )
   })
 
-  return new Promise((resolve, reject) => {
-    let done = false
-    let grace: ReturnType<typeof setTimeout> | undefined
-    let timeout: ReturnType<typeof setTimeout> | undefined
-
-    const finish = (code?: number, error?: Error) => {
-      if (done) return
-      done = true
-      if (grace) clearTimeout(grace)
-      if (timeout) clearTimeout(timeout)
-      processListener.dispose()
-      endListener.dispose()
-      if (error) reject(error)
-      else resolve(code)
-    }
-
-    const processListener = vscode.tasks.onDidEndTaskProcess((event) => {
-      if (event.execution !== started) return
-      finish(event.exitCode ?? undefined)
-    })
-
-    const endListener = vscode.tasks.onDidEndTask((event) => {
-      if (event.execution !== started) return
-      if (done) return
-      grace = setTimeout(() => finish(undefined), GRACE_MS)
-    })
-
-    const budget = options.timeout ?? SETUP_TIMEOUT_MS
-    timeout = setTimeout(() => {
-      const message = options.stop
-        ? `Task timed out after ${Math.round(budget / 60_000)} minutes`
-        : "Setup script timed out after 5 minutes"
-      const stop = options.stop
-        ? Promise.race([
-            Promise.resolve(started.terminate()).catch(() => undefined),
-            new Promise((resolve) => setTimeout(resolve, 5_000)),
-          ])
-        : Promise.resolve()
-      void stop.then(() => finish(undefined, new Error(message)))
-    }, budget)
+  const budget = options.timeout ?? SETUP_TIMEOUT_MS
+  const message = options.stop
+    ? `Task timed out after ${Math.round(budget / 60_000)} minutes`
+    : "Setup script timed out after 5 minutes"
+  return watchTask({
+    execution: started,
+    handlers: {
+      onProcess: (cb) =>
+        vscode.tasks.onDidEndTaskProcess((event) => cb({ execution: event.execution, exitCode: event.exitCode })),
+      onEnd: (cb) => vscode.tasks.onDidEndTask((event) => cb({ execution: event.execution })),
+    },
+    budget,
+    message,
+    stop: options.stop === true,
+    grace: GRACE_MS,
   })
 }

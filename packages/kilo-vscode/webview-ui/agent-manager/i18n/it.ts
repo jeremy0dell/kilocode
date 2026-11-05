@@ -634,7 +634,7 @@ export const dict = {
   "agentManager.readiness.install.stopped": "L'installazione è stata interrotta. Controlla l'output del terminale.",
   "agentManager.readiness.lfsSetup.title": "{{name}} richiede la configurazione di Git LFS",
   "agentManager.readiness.lfsSetup.body":
-    "Git LFS è installato, ma i filtri di questo progetto non sono ancora registrati. Configuralo per creare worktree.",
+    "Git LFS è installato, ma non è ancora configurato per il tuo utente Git. Configuralo per creare worktree.",
   "agentManager.readiness.lfsSetup.action": "Configura Git LFS",
   "agentManager.readiness.blockedLfsSetup": "Configura prima Git LFS. Puoi continuare a scrivere l'attività.",
   "agentManager.readiness.working.setupLfs": "Configurazione di Git LFS…",
