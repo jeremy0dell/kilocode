@@ -213,6 +213,40 @@ describe("worktree readiness check", () => {
   })
 })
 
+describe("worktree readiness scan", () => {
+  it("finds a child repo after more than 2000 files", async () => {
+    const parent = await temp("kilo-ready-scan-files-")
+    const deps = { git: ops, trusted: () => true }
+    await Promise.all(
+      Array.from({ length: 2_100 }, (_, index) =>
+        fs.writeFile(path.join(parent, `f${String(index).padStart(4, "0")}`), ""),
+      ),
+    )
+    await repo(path.join(parent, "zrepo"), true)
+
+    const result = await check(parent, deps)
+
+    expect(result).toMatchObject({ status: "blocked", code: "not_git_repo", projects: [{ label: "zrepo" }] })
+    expect(result.status === "blocked" ? result.more : undefined).toBeUndefined()
+  })
+
+  it("reports more when the directory scan is truncated", async () => {
+    const parent = await temp("kilo-ready-scan-dirs-")
+    const deps = { git: ops, trusted: () => true }
+    await Promise.all(
+      Array.from({ length: 2_001 }, (_, index) =>
+        fs.mkdir(path.join(parent, `d${String(index).padStart(4, "0")}`), { recursive: true }),
+      ),
+    )
+    await repo(path.join(parent, "d0000"), true)
+
+    const result = await check(parent, deps)
+
+    expect(result).toMatchObject({ status: "blocked", code: "not_git_repo", more: true })
+    expect(result.status === "blocked" ? result.projects?.map((project) => project.label) : []).toEqual(["d0000"])
+  })
+})
+
 describe("worktree readiness flight", () => {
   it("coalesces concurrent checks for the same folder", async () => {
     const root = await repo(await temp("kilo-ready-flight-"), true)
