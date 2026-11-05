@@ -6,6 +6,7 @@
  * local scenario fakes can never fall through to a real installer.
  */
 
+import { tmpdir } from "node:os"
 import { lookup } from "./path-lookup"
 import { errorText } from "./git-errors"
 import type {
@@ -120,7 +121,11 @@ async function installWithManager(
   const label = `Install ${TOOL_LABELS[kind]}`
   // A clean package exit means the installer succeeded even if VS Code cannot see the tool yet.
   const installed = await runInstallStep(deps, kind, label, { command, args, cwd: root, env, mode: "task" })
-  return installed.outcome
+  if (kind === "git" || !installed.outcome.ok) return installed.outcome
+  if (!installed.present) return installed.outcome
+  // Installing is consent to register the filters; global registration is outside the repository.
+  const lfs: InstallCommand = { command: deps.git, args: ["lfs", "install"], cwd: tmpdir(), env, mode: "task" }
+  return (await runInstallStep(deps, "lfs", "Set up Git LFS", lfs)).outcome
 }
 
 export async function installTool(kind: Tool, root: string, deps: InstallDeps): Promise<InstallOutcome> {

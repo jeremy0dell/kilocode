@@ -714,6 +714,48 @@ describe("worktree readiness fixes", () => {
     expect(outcome.result).toEqual({ status: "ready" })
   })
 
+  it("leaves an install whose tool was not visible yet to the LFS setup blocker", async () => {
+    const root = await repo(await temp("kilo-ready-lfs-late-"), true)
+    const calls: string[] = []
+    const tools: ReadinessTools = {
+      git: async () => ({ ok: true }),
+      usesLfs: async () => true,
+      lfs: async () => ({ ok: true }),
+      lfsSetup: async () => false,
+      setupLfs: async () => {
+        calls.push("setup")
+        return 0
+      },
+      installer: async () => "brew",
+      install: async (kind) => {
+        calls.push(`install:${kind}`)
+        return { kind, mode: "terminal", ok: true }
+      },
+      download: () => {},
+    }
+    const outcome = await applyWorktreeFix(
+      root,
+      { fix: "installLfs" },
+      {
+        git: ops,
+        trusted: () => true,
+        tools,
+        exclude: async () => {},
+        openRepository: () => {},
+        branches: async () => {},
+        attach: async () => "p",
+        pick: async () => undefined,
+      },
+    )
+    expect(calls).toEqual(["install:lfs"])
+    expect(outcome.result).toEqual({
+      status: "blocked",
+      code: "lfs_not_setup",
+      name: path.basename(root),
+      trusted: true,
+    })
+  })
+
   it("passes a fresh probe and the fresh env to install deps", async () => {
     const root = await repo(await temp("kilo-ready-install-route-"), true)
     const dir = await temp("kilo-ready-install-env-")

@@ -106,7 +106,7 @@ describe("installer detection", () => {
 })
 
 describe("install outcomes", () => {
-  it("runs only the package step; LFS setup is an explicit fix", async () => {
+  it("runs the visible package then the lfs setup step", async () => {
     const linux = await dir()
     await bin(linux, "apt-get")
     const calls: Array<{ name: string; command: InstallCommand }> = []
@@ -120,8 +120,13 @@ describe("install outcomes", () => {
     )
 
     expect(outcome).toEqual({ kind: "lfs", mode: "terminal", ok: true })
-    expect(calls.map((call) => call.name)).toEqual(["Install Git LFS"])
+    expect(calls.map((call) => call.name)).toEqual(["Install Git LFS", "Set up Git LFS"])
     expect(calls[0]?.command).toMatchObject({ command: "sudo", args: ["apt-get", "install", "-y", "git-lfs"] })
+    expect(calls[1]?.command).toMatchObject({
+      command: "/selected/git",
+      args: ["lfs", "install"],
+      cwd: os.tmpdir(),
+    })
   })
 
   it.each([
@@ -158,7 +163,7 @@ describe("install outcomes", () => {
     expect(outcome).toEqual({ kind: "git", mode: "terminal", ...expected })
   })
 
-  it("treats a clean LFS package exit as success even when the tool is invisible", async () => {
+  it("leaves an invisible install with no lfs setup run", async () => {
     const linux = await dir()
     await bin(linux, "apt-get")
     const calls: string[] = []
@@ -224,7 +229,7 @@ describe("install outcomes", () => {
     expect(calls).toEqual(["Install Git LFS"])
   })
 
-  it("uses the explicit env for the package step", async () => {
+  it("uses the explicit env for both LFS steps", async () => {
     const linux = await dir()
     await bin(linux, "apt-get")
     const calls: InstallCommand[] = []
@@ -237,12 +242,13 @@ describe("install outcomes", () => {
       }),
     )
     expect(outcome).toEqual({ kind: "lfs", mode: "terminal", ok: true })
-    expect(calls).toHaveLength(1)
+    expect(calls).toHaveLength(2)
     expect(calls[0]?.env).toEqual(
       Object.fromEntries(
         Object.entries({ ...process.env, PATH: linux }).filter((entry) => typeof entry[1] === "string"),
       ),
     )
+    expect(calls[1]?.env).toEqual(calls[0]?.env)
   })
 
   it("launches Apple's installer when macOS has no Git", async () => {
