@@ -595,9 +595,10 @@ export const NewWorktreeDialog: Component<{
     })
   }
 
-  /** Move focus to Create unless the user is typing in the prompt. */
+  /** Move focus to Create unless the user is already focused outside the readiness card. */
   const focusCreate = () => {
-    if (document.activeElement === textareaRef) return
+    const active = document.activeElement
+    if (active && active !== document.body && !card?.contains(active)) return
     button?.focus()
   }
 
