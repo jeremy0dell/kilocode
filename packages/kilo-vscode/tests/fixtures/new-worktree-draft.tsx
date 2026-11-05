@@ -24,8 +24,8 @@ if (scenario === "catalog") {
     compare: true,
     versions: 3,
     allocations: [
-      { providerID: "kilo", modelID: "m1", name: "Gateway Alpha", count: 2 },
-      { providerID: "kilo", modelID: "m2", name: "Gateway Beta", count: 1 },
+      { providerID: "kilo", modelID: "m1", name: "Gateway Alpha", count: 2, variant: "max" },
+      { providerID: "kilo", modelID: "m2", name: "Gateway Beta", count: 1, variant: "max" },
     ],
   }
 }
@@ -37,8 +37,8 @@ const { window, sent, settle, checks, creates, submit, prompt, reply, close, mou
     providers: scenario !== "catalog",
     projectIds: ["p1", "p2", "p3"],
     models: {
-      m1: { id: "m1", name: "Gateway Alpha" },
-      m2: { id: "m2", name: "Gateway Beta" },
+      m1: { id: "m1", name: "Gateway Alpha", variants: { max: {} } },
+      m2: { id: "m2", name: "Gateway Beta", variants: { max: {} } },
     },
   })
 
@@ -243,8 +243,8 @@ if (scenario === "catalog") {
   )
   assert.deepEqual(checked, ["Gateway Alpha", "Gateway Beta"])
   assert.deepEqual((state.advancedDialogDraft as { allocations?: unknown }).allocations, [
-    { providerID: "kilo", modelID: "m1", name: "Gateway Alpha", count: 2 },
-    { providerID: "kilo", modelID: "m2", name: "Gateway Beta", count: 1 },
+    { providerID: "kilo", modelID: "m1", name: "Gateway Alpha", count: 2, variant: "max" },
+    { providerID: "kilo", modelID: "m2", name: "Gateway Beta", count: 1, variant: "max" },
   ])
   await openCompare()
 

@@ -5,6 +5,7 @@ import { newWorktreeHarness } from "./new-worktree-harness"
 
 const {
   window,
+  saved,
   sent,
   features,
   setFeatures,
@@ -502,7 +503,7 @@ if (process.env.READINESS_CASE === "install") {
     assert.ok(trigger)
     trigger.click()
   }
-  const install = async (result: Readiness) => {
+  const install = async () => {
     card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
     await settle()
     const fix = sent.filter((item) => item.type === "agentManager.fixReadiness").at(-1)
@@ -515,7 +516,7 @@ if (process.env.READINESS_CASE === "install") {
   await reply("p1", apple, git)
   assert.equal(card()?.querySelector("[data-readiness-title]")?.textContent, "agentManager.readiness.git.title")
   assert.equal(submit().getAttribute("aria-disabled"), "true")
-  const first = await install(git)
+  const first = await install()
   assert.equal(first.fix, "installGit")
   assert.ok(card()?.querySelector("[role=status]"))
   await emit({
@@ -535,7 +536,7 @@ if (process.env.READINESS_CASE === "install") {
   assert.equal(card()?.querySelector("[data-readiness-title]")?.textContent, "agentManager.readiness.git.title")
   assert.ok(card()?.querySelector("[data-readiness-action]"))
 
-  const again = await install(git)
+  const again = await install()
   assert.equal(again.fix, "installGit")
   await emit({
     type: "agentManager.readiness",
@@ -561,7 +562,8 @@ if (process.env.READINESS_CASE === "install") {
   assert.equal(creates().length, 0)
   await close()
 
-  // A window-return check that finds a different blocker wins over Apple's card.
+  // A window-return check keeps Apple's card for an unknown or same result,
+  // and a different blocker wins.
   const moved = await mount()
   await reply("p1", moved, git)
   const starting = await install()
@@ -572,6 +574,13 @@ if (process.env.READINESS_CASE === "install") {
     result: git,
     install: { kind: "git", mode: "apple", ok: false },
   })
+  for (const result of [git, { status: "unknown", detail: "timeout" }] as const) {
+    await emit({ type: "agentManager.readinessFocus" })
+    const focus = checks().at(-1)
+    assert.ok(focus)
+    await reply("p1", focus.requestID, result)
+    assert.equal(card()?.querySelector("[role=status] span")?.textContent, "agentManager.readiness.install.apple.title")
+  }
   await emit({ type: "agentManager.readinessFocus" })
   const focus = checks().at(-1)
   assert.ok(focus)
@@ -588,7 +597,7 @@ if (process.env.READINESS_CASE === "install") {
   // Apple: Other ways stays live and a window return focuses Create.
   const otherway = await mount()
   await reply("p1", otherway, git)
-  const opening = await install(git)
+  const opening = await install()
   await emit({
     type: "agentManager.readiness",
     projectId: "p1",
@@ -621,7 +630,7 @@ if (process.env.READINESS_CASE === "install") {
   // A focused prompt keeps focus after a window-return recovery.
   const typing = await mount()
   await reply("p1", typing, git)
-  const started = await install(git)
+  const started = await install()
   await emit({
     type: "agentManager.readiness",
     projectId: "p1",
@@ -645,7 +654,7 @@ if (process.env.READINESS_CASE === "install") {
   const second = await mount()
   await reply("p1", second, lfs)
   assert.equal(card()?.querySelector("[data-readiness-title]")?.textContent, "agentManager.readiness.lfs.title")
-  const fix = await install(lfs)
+  const fix = await install()
   assert.equal(fix.fix, "installLfs")
   assert.equal(card()?.querySelectorAll("[data-readiness-action]").length, 0)
   assert.equal(card()?.querySelector(".am-readiness-check"), null)
@@ -659,6 +668,21 @@ if (process.env.READINESS_CASE === "install") {
     "agentManager.readiness.install.terminal.title",
   )
   assert.equal(sent.filter((item) => item.type === "agentManager.fixReadiness").length, 1)
+  // A different blocker found while the terminal task is pending keeps Installing.
+  await emit({ type: "agentManager.readinessFocus" })
+  const changed = checks().at(-1)
+  assert.ok(changed)
+  await reply("p1", changed.requestID, {
+    status: "blocked",
+    code: "no_commits",
+    name: "p1",
+    trusted: true,
+    identity: true,
+  })
+  assert.equal(
+    card()?.querySelector("[role=status] span")?.textContent,
+    "agentManager.readiness.install.terminal.title",
+  )
 
   // A failed or stopped terminal task that still misses the tool is blocked, never Reload.
   for (const [detail, outcome] of [
@@ -689,7 +713,7 @@ if (process.env.READINESS_CASE === "install") {
   // A successful terminal install that VS Code cannot see yet is the only path to Reload.
   const third = await mount()
   await reply("p1", third, lfs)
-  const stale = await install(lfs)
+  const stale = await install()
   await emit({
     type: "agentManager.readiness",
     projectId: "p1",
@@ -709,6 +733,7 @@ if (process.env.READINESS_CASE === "install") {
   )
   card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
   await settle()
+  assert.equal(saved.advancedDialogReopen, true)
   assert.equal(
     sent.some((item) => item.type === "agentManager.reloadWindow"),
     true,

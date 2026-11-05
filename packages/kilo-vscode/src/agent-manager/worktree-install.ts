@@ -16,7 +16,7 @@ import type {
 export type { ReadinessInstall as InstallOutcome } from "../../webview-ui/src/types/messages/agent-manager"
 export type ToolKind = InstallOutcome["kind"]
 export type ToolProbe = { ok: true } | { ok: false; code: "missing" | "unknown"; detail: string }
-export type Installer = ReadinessInstaller
+type Installer = ReadinessInstaller
 
 export interface InstallCommand {
   command: string
@@ -81,11 +81,16 @@ export async function detectInstaller(
  */
 async function step(deps: InstallDeps, kind: ToolKind, name: string, command: InstallCommand, zero: boolean) {
   const exit = await deps.run(name, command).catch((err: unknown) => (err instanceof Error ? err.message : String(err)))
-  const ok = (await deps.probe(kind, true)).ok || (zero && exit === 0)
-  if (ok) return { kind, mode: "terminal", ok } satisfies InstallOutcome
-  if (typeof exit === "string") return { kind, mode: "terminal", ok, error: exit } satisfies InstallOutcome
-  if (exit === undefined) return { kind, mode: "terminal", ok, stopped: true } satisfies InstallOutcome
-  return { kind, mode: "terminal", ok, code: exit } satisfies InstallOutcome
+  const present = (await deps.probe(kind, true)).ok
+  const ok = present || (zero && exit === 0)
+  const outcome = ok
+    ? ({ kind, mode: "terminal", ok } satisfies InstallOutcome)
+    : typeof exit === "string"
+      ? ({ kind, mode: "terminal", ok, error: exit } satisfies InstallOutcome)
+      : exit === undefined
+        ? ({ kind, mode: "terminal", ok, stopped: true } satisfies InstallOutcome)
+        : ({ kind, mode: "terminal", ok, code: exit } satisfies InstallOutcome)
+  return { outcome, present }
 }
 
 export async function installTool(kind: ToolKind, root: string, deps: InstallDeps): Promise<InstallOutcome> {
@@ -114,10 +119,10 @@ export async function installTool(kind: ToolKind, root: string, deps: InstallDep
   const name = kind === "git" ? "Install Git" : "Install Git LFS"
   // A clean package exit means the installer succeeded even if VS Code cannot see the tool yet.
   const installed = await step(deps, kind, name, { command, args, cwd: root, env, mode: "task" }, true)
-  if (kind === "git" || !installed.ok) return installed
-  if (!(await deps.probe("lfs", true)).ok) return installed
+  if (kind === "git" || !installed.outcome.ok) return installed.outcome
+  if (!installed.present) return installed.outcome
   // Best-effort registration once the package is visible. Global registration works outside the
   // repository, so a repo alias must not hijack it.
   const lfs: InstallCommand = { command: deps.git, args: ["lfs", "install"], cwd: tmpdir(), env, mode: "task" }
-  return step(deps, "lfs", "Set up Git LFS", lfs, true)
+  return (await step(deps, "lfs", "Set up Git LFS", lfs, true)).outcome
 }

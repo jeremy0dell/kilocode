@@ -17,7 +17,8 @@ import { TOOLS, toolName, type ReadinessState, type Tool } from "./worktree-read
 type Blocked = Extract<Readiness, { status: "blocked" }>
 type Identity = { name: string; email: string }
 type ReadyFixed = "initGit" | "initialCommit" | "installGit" | "installLfs"
-const READY = new Set<string | undefined>(["initGit", "initialCommit", "installGit", "installLfs"])
+const READY = (value: string | undefined): value is ReadyFixed =>
+  value === "initGit" || value === "initialCommit" || value === "installGit" || value === "installLfs"
 
 export const ReadinessCard: Component<{
   state: ReadinessState
@@ -36,8 +37,8 @@ export const ReadinessCard: Component<{
   }
   const ready = () => {
     const state = props.state
-    if (state.status !== "ready" || !READY.has(state.fixed)) return undefined
-    return { fixed: state.fixed as ReadyFixed, note: state.note }
+    if (state.status !== "ready" || !READY(state.fixed)) return undefined
+    return { fixed: state.fixed, note: state.note }
   }
   const installing = () => (props.state.status === "installing" ? props.state : undefined)
   const stale = () => (props.state.status === "stale" ? props.state : undefined)
@@ -116,6 +117,10 @@ function BlockedCard(props: {
     if (projects().length > 0) return "projects"
     if (props.result.code === "no_commits") return "commit"
     return "plain"
+  }
+  const tool = (): Tool | undefined => {
+    const value = kind()
+    return value === "git" || value === "lfs" ? value : undefined
   }
   const start = () => {
     if (props.result.identity === false) {
@@ -250,27 +255,27 @@ function BlockedCard(props: {
                   {t("agentManager.readiness.restricted.action")}
                 </Button>
               </Match>
-              <Match when={kind() === "git" || kind() === "lfs"}>
-                <Button
-                  size="small"
-                  variant="secondary"
-                  disabled={locked()}
-                  onClick={() => props.onFix(TOOLS[kind() as Tool].fix)}
-                  data-readiness-action
-                >
-                  {t(install() ? "agentManager.readiness.tool.install" : "agentManager.readiness.tool.get", {
-                    tool: TOOLS[kind() as Tool].label,
-                  })}
-                </Button>
-                <Show when={install()}>
-                  <button
-                    class="am-readiness-link"
-                    type="button"
-                    onClick={() => props.onFix(TOOLS[kind() as Tool].other)}
-                  >
-                    {t("agentManager.readiness.tool.other")}
-                  </button>
-                </Show>
+              <Match when={tool()}>
+                {(value) => (
+                  <>
+                    <Button
+                      size="small"
+                      variant="secondary"
+                      disabled={locked()}
+                      onClick={() => props.onFix(TOOLS[value()].fix)}
+                      data-readiness-action
+                    >
+                      {t(install() ? "agentManager.readiness.tool.install" : "agentManager.readiness.tool.get", {
+                        tool: TOOLS[value()].label,
+                      })}
+                    </Button>
+                    <Show when={install()}>
+                      <button class="am-readiness-link" type="button" onClick={() => props.onFix(TOOLS[value()].other)}>
+                        {t("agentManager.readiness.tool.other")}
+                      </button>
+                    </Show>
+                  </>
+                )}
               </Match>
               <Match when={kind() === "projects"}>
                 <For each={projects()}>

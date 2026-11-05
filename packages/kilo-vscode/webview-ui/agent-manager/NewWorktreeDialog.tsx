@@ -65,7 +65,6 @@ import { validBranch } from "./new-worktree-branch"
 import { sanitizeBranchName } from "../../src/shared/branch-slug"
 import { shouldComposeGoal, submitPayload } from "./new-worktree-command"
 import { createReadiness, toolName } from "./worktree-readiness"
-
 import { ReadinessCard } from "./ReadinessCard"
 import {
   draftValues,

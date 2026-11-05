@@ -1739,6 +1739,7 @@ const AgentManagerContent: Component = () => {
   // restored draft's project is available. A normal reload leaves the flag unset.
   createReopen({
     loaded,
+    // The saved project is restored once the catalog arrives, so wait for it.
     arrived: () => projectList().length > 0,
     state: () => vscode.getState<Record<string, unknown>>(),
     save: (state) => vscode.setState(state),

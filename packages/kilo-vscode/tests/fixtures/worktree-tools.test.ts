@@ -4,7 +4,6 @@ import path from "node:path"
 import fs from "node:fs/promises"
 import { WorktreeManager } from "../../src/agent-manager/WorktreeManager"
 import { clearShellEnvCache } from "../../src/agent-manager/shell-env"
-import { type ToolProbe } from "../../src/agent-manager/worktree-install"
 
 const dirs: string[] = []
 let state = ""
@@ -112,8 +111,7 @@ describe("Git probe", () => {
 
   it("recomputes probeFailed instead of keeping a sticky missing verdict", async () => {
     const root = await temp("kilo-tools-root-")
-    const bin = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "kilo-tools-bin-")), "git")
-    dirs.push(path.dirname(bin))
+    const bin = path.join(await temp("kilo-tools-bin-"), "git")
 
     const missing = manager(root, bin, "linux")
     expect(await missing.probeGit()).toMatchObject({ ok: false, code: "missing" })
@@ -195,7 +193,7 @@ describe("verify probes", () => {
     const bin = await temp("kilo-tools-bin-")
     const git = await script(bin, "git", `echo "git $@" >> "$KILO_TOOLS_LOG"\nexec "$KILO_REAL_GIT" "$@"`)
     const mgr = manager(root, git, "linux")
-    await mgr.listBranches()
+    expect(await mgr.probeGit()).toEqual({ ok: true })
     await fs.rm(git)
     await expect(mgr.createWorktree({})).rejects.toThrow(/Git is not installed/)
   })

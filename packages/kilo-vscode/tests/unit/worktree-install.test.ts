@@ -209,7 +209,7 @@ describe("install outcomes", () => {
           probe: async (_kind, fresh) => {
             probes.push(fresh)
             sequence++
-            return sequence < 3 ? { ok: true } : { ok: false, code: "missing", detail: "gone" }
+            return sequence < 2 ? { ok: true } : { ok: false, code: "missing", detail: "gone" }
           },
         },
       ),

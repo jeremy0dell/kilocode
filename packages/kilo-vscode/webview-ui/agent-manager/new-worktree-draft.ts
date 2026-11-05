@@ -1,5 +1,5 @@
-// Draft persistence for the New Worktree dialog. The draft lives in webview
-// state, which the Agent Manager serializer keeps across a Reload window.
+// Draft persistence and the one-shot reopen flag for the New Worktree dialog.
+// Both live in webview state, which the Agent Manager serializer keeps across a Reload window.
 
 import { createEffect, on, type Accessor } from "solid-js"
 import {
@@ -130,7 +130,7 @@ export function markReopen(state: Record<string, unknown>): Record<string, unkno
 }
 
 /** Remove the reopen flag and report whether it was set. */
-export function takeReopen(state: Record<string, unknown> | undefined): {
+function takeReopen(state: Record<string, unknown> | undefined): {
   reopen: boolean
   state: Record<string, unknown>
 } {
@@ -140,7 +140,7 @@ export function takeReopen(state: Record<string, unknown> | undefined): {
   return { reopen, state: next }
 }
 
-export interface ReopenOptions {
+interface ReopenOptions {
   loaded: Accessor<boolean>
   arrived: Accessor<boolean>
   state: () => Record<string, unknown> | undefined

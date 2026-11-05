@@ -3,6 +3,7 @@ import os from "node:os"
 import path from "node:path"
 import fs from "node:fs/promises"
 import { GitOps } from "../../src/agent-manager/GitOps"
+import { clearShellEnvCache, toolEnvironment } from "../../src/agent-manager/shell-env"
 import { check, fix, type FixDeps, type ReadinessTools } from "../../src/agent-manager/worktree-readiness"
 import { createProjectWiring } from "../../src/agent-manager/project/wiring"
 import { handleProjectMessage } from "../../src/agent-manager/project/messages"
@@ -567,6 +568,76 @@ describe("worktree readiness fixes", () => {
       "git:true:false",
       "lfs:true:false",
     ])
+  })
+
+  it("passes a fresh probe and the fresh env to install deps", async () => {
+    const root = await repo(await temp("kilo-ready-install-route-"), true)
+    const dir = await temp("kilo-ready-install-env-")
+    const bin = path.join(dir, "bin")
+    await fs.mkdir(bin)
+    for (const name of ["brew", "apt-get", "dnf"]) {
+      await fs.writeFile(path.join(bin, name), "#!/bin/sh\nexit 0\n")
+      await fs.chmod(path.join(bin, name), 0o755)
+    }
+    const old = path.join(dir, "old")
+    await fs.mkdir(old)
+    const current = path.join(dir, "path")
+    await fs.writeFile(current, old)
+    const shell = path.join(dir, "shell")
+    await fs.writeFile(shell, `#!/bin/sh\nprintf "PATH=%s" "$(/bin/cat ${current})"\n`)
+    await fs.chmod(shell, 0o755)
+
+    const previous = { PATH: process.env.PATH, SHELL: process.env.SHELL }
+    process.env.PATH = bin
+    process.env.SHELL = shell
+    clearShellEnvCache()
+    // Warm the login-env cache without the managers, then refresh it to `bin`.
+    await toolEnvironment(true)
+    await new Promise((done) => setTimeout(done, 1_100))
+    await fs.writeFile(current, bin)
+    const probes: string[] = []
+    const commands: import("../../src/agent-manager/worktree-install").InstallCommand[] = []
+    const manager = {
+      binary: "git",
+      probeGit: async (fresh: boolean, verify: boolean) => {
+        probes.push(`git:${fresh}:${verify}`)
+        return { ok: true }
+      },
+      probeLfs: async (fresh: boolean, verify: boolean) => {
+        probes.push(`lfs:${fresh}:${verify}`)
+        return { ok: true }
+      },
+      repoUsesLfs: async () => false,
+    }
+    const deps = {
+      contexts: { resolve: () => ({ id: projectIdFor(root), root, worktreeManager: () => manager }) },
+      onboarding: { isTrusted: () => true },
+      install: async (_name: string, command: (typeof commands)[number]) => {
+        commands.push(command)
+        return 0
+      },
+      openExternal: () => {},
+      reloadWindow: () => {},
+      post: () => {},
+      log: () => {},
+      openRepository: () => {},
+      branches: async () => {},
+      pickFolder: async () => undefined,
+    } as unknown as ProjectMessageDeps
+
+    try {
+      await handleProjectMessage(
+        { type: "agentManager.fixReadiness", projectId: projectIdFor(root), requestID: "i1", fix: "installLfs" },
+        deps,
+      )
+    } finally {
+      process.env.PATH = previous.PATH
+      process.env.SHELL = previous.SHELL
+      clearShellEnvCache()
+    }
+    expect(probes).toContain("lfs:true:undefined")
+    expect(commands.length).toBeGreaterThan(0)
+    expect(commands[0]?.env.PATH).toBe(bin)
   })
 
   it("posts a window-focus trigger and reloads the window when asked", async () => {
