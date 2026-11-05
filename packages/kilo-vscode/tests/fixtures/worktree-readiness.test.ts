@@ -480,8 +480,15 @@ describe("worktree readiness fixes", () => {
     const setup = wire(root)
 
     await setup.sendRaw("bogus", { identity })
-
     expect(setup.posts.at(-1)).toMatchObject({ error: expect.stringContaining("Unknown readiness fix") })
+
+    // An inherited key must be rejected at the boundary, before the trusted-window check runs.
+    const untrusted = wire(root, false)
+    await untrusted.sendRaw("constructor", { identity })
+
+    expect(untrusted.posts.at(-1)).toMatchObject({
+      error: expect.stringContaining("Unknown readiness fix: constructor"),
+    })
     expect(await Bun.file(path.join(root, ".git", "HEAD")).exists()).toBe(false)
   })
 

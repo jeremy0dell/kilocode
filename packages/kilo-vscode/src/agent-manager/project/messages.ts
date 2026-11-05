@@ -363,7 +363,7 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
   const base = { git, trusted: () => deps.onboarding.isTrusted() }
   try {
     if (m.type === "agentManager.checkReadiness") return reply({ result: await check(ctx.root, base) })
-    if (!(m.fix in FIXES)) {
+    if (typeof m.fix !== "string" || !Object.hasOwn(FIXES, m.fix)) {
       reply({ result: await check(ctx.root, base), error: `Unknown readiness fix: ${String(m.fix)}` })
       return
     }
