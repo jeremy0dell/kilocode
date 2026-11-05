@@ -541,7 +541,7 @@ export const dict = {
   "agentManager.readiness.plain.action": "设置 Git",
   "agentManager.readiness.plain.other": "选择其他文件夹",
   "agentManager.readiness.identity.title": "你的更改应署什么名字？",
-  "agentManager.readiness.identity.body": "Git 会用名字和邮箱标记每次更改。Kilo 只会为此项目保存它们。",
+  "agentManager.readiness.identity.body": "Git 会用名字和邮箱标记每次更改。Kilo 会将它们保存到你的 Git 用户配置中。",
   "agentManager.readiness.identity.name": "名字",
   "agentManager.readiness.identity.email": "邮箱",
   "agentManager.readiness.identity.saveInit": "保存并设置 Git",

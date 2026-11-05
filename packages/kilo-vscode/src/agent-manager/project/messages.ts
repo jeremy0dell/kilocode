@@ -339,6 +339,11 @@ async function register(
   return { id, root, existing }
 }
 
+const FIXES = new Set(["initGit", "initialCommit", "useProject", "pickFolder"])
+
+/** Folder the user just picked, per project. One-shot and host-side only; the webview never supplies it. */
+const picks = new Map<string, string>()
+
 /** Check or fix a project's worktree readiness and reply with the original project and request IDs. */
 async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: ProjectMessageDeps): Promise<void> {
   const reply = (outcome: FixOutcome) =>
@@ -349,14 +354,24 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
   const base = { git, trusted: () => deps.onboarding.isTrusted() }
   try {
     if (m.type === "agentManager.checkReadiness") return reply({ result: await check(ctx.root, base) })
+    if (!FIXES.has(m.fix)) {
+      reply({ result: await check(ctx.root, base), error: `Unknown readiness fix: ${String(m.fix)}` })
+      return
+    }
     reply(
       await fix(ctx.root, m, {
         ...base,
-        exclude: () => ctx.worktreeManager().ensureGitExclude(),
+        exclude: (root) => ctx.worktreeManager().ensureGitExclude(root),
         openRepository: (root) => deps.openRepository(root),
-        branches: () => deps.branches(ctx),
+        branches: async (root) => {
+          const next = deps.contexts.resolve(projectIdFor(canonicalizePath(root))) ?? ctx
+          await deps.branches(next)
+        },
         attach: async (root) => (await register(root, deps, git)).id,
         pick: () => deps.pickFolder({ defaultPath: ctx.root, title: "Choose your project folder" }),
+        picked: () => picks.get(ctx.id),
+        remember: (root) => picks.set(ctx.id, root),
+        forget: () => picks.delete(ctx.id),
       }),
     )
   } finally {

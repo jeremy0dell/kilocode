@@ -88,6 +88,7 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
     await settle()
     const fix = sent.find((item) => item.type === "agentManager.fixReadiness")
     assert.ok(fix && fix.type === "agentManager.fixReadiness")
+    if (target === "ready") card()?.querySelector<HTMLElement>("[data-readiness-title]")?.focus()
     await emit({
       type: "agentManager.readiness",
       projectId: "p1",
@@ -227,6 +228,7 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
   assert.equal(fix.fix, "initGit")
   assert.ok(card()?.querySelector("[role=status]"))
   assert.equal(creates().length, 0)
+  card()?.querySelector<HTMLElement>("[data-readiness-title]")?.focus()
   await emit({
     type: "agentManager.readiness",
     projectId: "p1",
@@ -421,6 +423,75 @@ if (!process.env.READINESS_CASE || process.env.READINESS_CASE === "switch") {
   await emit({ type: "speechToTextResult", requestId: stop.requestId, text: "hello" })
   assert.equal(creates().length, 0)
   assert.equal(document.activeElement, card()?.querySelector("[data-readiness-action]"))
+  await close()
+}
+
+// A card for the picked folder sets up that folder, not the selected project.
+{
+  const id = await mount()
+  await reply("p1", id, {
+    status: "blocked",
+    code: "not_git_repo",
+    name: "picked",
+    trusted: true,
+    identity: true,
+    picked: true,
+  })
+  card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
+  await settle()
+  const fix = sent.find((item) => item.type === "agentManager.fixReadiness")
+  assert.ok(fix && fix.type === "agentManager.fixReadiness")
+  assert.equal(fix.fix, "initGit")
+  assert.equal(fix.target, "picked")
+  await close()
+}
+
+// More than three child repos show one primary folder action instead of a list.
+{
+  const id = await mount()
+  await reply("p1", id, {
+    status: "blocked",
+    code: "not_git_repo",
+    name: "parent",
+    trusted: true,
+    projects: [
+      { root: "/a", label: "a" },
+      { root: "/b", label: "b" },
+      { root: "/c", label: "c" },
+    ],
+    more: true,
+  })
+  assert.ok(!card()?.textContent?.includes("agentManager.readiness.projects.use"))
+  const action = card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")
+  assert.ok(action)
+  assert.equal(action.textContent, "agentManager.readiness.restricted.action")
+  action.click()
+  await settle()
+  const fix = sent.find((item) => item.type === "agentManager.fixReadiness")
+  assert.ok(fix && fix.type === "agentManager.fixReadiness")
+  assert.equal(fix.fix, "pickFolder")
+  await close()
+}
+
+// A ready fix does not steal focus from the prompt.
+{
+  const id = await mount()
+  await reply("p1", id, plain)
+  card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
+  await settle()
+  const fix = sent.find((item) => item.type === "agentManager.fixReadiness")
+  assert.ok(fix && fix.type === "agentManager.fixReadiness")
+  const area = prompt()
+  area.focus()
+  await emit({
+    type: "agentManager.readiness",
+    projectId: "p1",
+    requestID: fix.requestID,
+    result: { status: "ready" },
+  })
+  await settle()
+  assert.equal(document.activeElement, area, "b6: prompt focus")
+  assert.equal(creates().length, 0)
   await close()
 }
 
