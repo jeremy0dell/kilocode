@@ -710,6 +710,27 @@ if (process.env.READINESS_CASE === "install") {
     await close()
   }
 
+  // An older check reply must not re-block Create after an install settles.
+  const racing = await mount()
+  await reply("p1", racing, lfs)
+  const task = await install()
+  await emit({ type: "agentManager.readinessFocus" })
+  const older = checks().at(-1)
+  assert.ok(older)
+  await emit({
+    type: "agentManager.readiness",
+    projectId: "p1",
+    requestID: task.requestID,
+    result: { status: "ready" },
+    install: { kind: "lfs", mode: "terminal", ok: true },
+  })
+  assert.ok(card()?.textContent?.includes("agentManager.readiness.ready.lfs"))
+  assert.equal(submit().getAttribute("aria-disabled"), null)
+  await reply("p1", older.requestID, lfs)
+  assert.ok(card()?.textContent?.includes("agentManager.readiness.ready.lfs"))
+  assert.equal(submit().getAttribute("aria-disabled"), null)
+  await close()
+
   // A successful terminal install that VS Code cannot see yet is the only path to Reload.
   const third = await mount()
   await reply("p1", third, lfs)
@@ -730,6 +751,16 @@ if (process.env.READINESS_CASE === "install") {
   assert.equal(
     sent.some((item) => item.type === "agentManager.reloadWindow"),
     false,
+  )
+  // Check again from stale keeps the stale card (Reload) until it is actually ready.
+  card()?.querySelector<HTMLButtonElement>(".am-readiness-check")?.click()
+  await settle()
+  const staleCheck = checks().at(-1)
+  assert.ok(staleCheck)
+  await reply("p1", staleCheck.requestID, lfs)
+  assert.equal(
+    card()?.querySelector("[data-readiness-title]")?.textContent,
+    "agentManager.readiness.install.stale.title",
   )
   card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
   await settle()

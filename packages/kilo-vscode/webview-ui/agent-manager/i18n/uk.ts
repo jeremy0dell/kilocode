@@ -627,4 +627,10 @@ export const dict = {
   "agentManager.readiness.ready.lfs": "Git LFS готовий.",
   "agentManager.readiness.install.failed": "Встановлення завершилося з кодом {{code}}. Див. вивід термінала.",
   "agentManager.readiness.install.stopped": "Встановлення було зупинено. Див. вивід термінала.",
+  "agentManager.readiness.lfsSetup.title": "{{name}} потребує налаштування Git LFS",
+  "agentManager.readiness.lfsSetup.body":
+    "Git LFS встановлено, але фільтри цього проєкту ще не зареєстровано. Налаштуйте його, щоб створювати worktree.",
+  "agentManager.readiness.lfsSetup.action": "Налаштувати Git LFS",
+  "agentManager.readiness.blockedLfsSetup": "Спочатку налаштуйте Git LFS. Ви можете продовжувати писати завдання.",
+  "agentManager.readiness.working.setupLfs": "Налаштування Git LFS…",
 }

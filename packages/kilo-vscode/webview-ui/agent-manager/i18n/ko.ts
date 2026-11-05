@@ -609,4 +609,10 @@ export const dict = {
   "agentManager.readiness.ready.lfs": "Git LFS가 준비되었습니다.",
   "agentManager.readiness.install.failed": "설치가 코드 {{code}}으로 종료되었습니다. 터미널 출력을 확인하세요.",
   "agentManager.readiness.install.stopped": "설치가 중지되었습니다. 터미널 출력을 확인하세요.",
+  "agentManager.readiness.lfsSetup.title": "{{name}}에 Git LFS 설정이 필요합니다",
+  "agentManager.readiness.lfsSetup.body":
+    "Git LFS가 설치되어 있지만 이 프로젝트의 필터가 아직 등록되지 않았습니다. worktree를 만들려면 설정하세요.",
+  "agentManager.readiness.lfsSetup.action": "Git LFS 설정",
+  "agentManager.readiness.blockedLfsSetup": "먼저 Git LFS를 설정하세요. 작업 내용은 계속 작성할 수 있습니다.",
+  "agentManager.readiness.working.setupLfs": "Git LFS 설정 중…",
 }

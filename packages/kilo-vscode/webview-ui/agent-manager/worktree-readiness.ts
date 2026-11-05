@@ -77,6 +77,7 @@ function installFixFor(state: ReadinessState): InstallFix | undefined {
 const CODE_TIPS: Partial<Record<Blocked["code"], string>> = {
   git_not_found: "agentManager.readiness.blockedGit",
   lfs_missing: "agentManager.readiness.blockedLfs",
+  lfs_not_setup: "agentManager.readiness.blockedLfsSetup",
 }
 
 /** Why Create is disabled, and what unblocks it. */
@@ -261,6 +262,8 @@ export function createReadiness(opts: {
         install: undefined,
       }))
     if (disposed || opts.project() !== project) return undefined
+    // The fix outcome owns the state now; older check replies must not re-block Create.
+    revision++
     if (installKind) {
       applyInstall(project, installKind, reply.result, reply.install, reply.error)
       return undefined
@@ -303,7 +306,10 @@ export function createReadiness(opts: {
   }
 
   /** Check again from the card: a Git or Git LFS card refreshes the tool caches and PATH. */
-  const recheck = () => void check(installFixFor(state()) !== undefined)
+  const recheck = () => {
+    const current = state()
+    void check(installFixFor(current) !== undefined, current.status === "stale")
+  }
 
   return { state, blocked, check, recheck, fix: runFix, revision: () => revision }
 }

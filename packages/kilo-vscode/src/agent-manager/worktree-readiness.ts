@@ -17,6 +17,7 @@ import { isRestrictedRoot } from "./home-workspace"
 import { canonicalizePath, samePath } from "./project/paths"
 import * as prepare from "./project/prepare"
 import { errorText } from "./git-errors"
+import { toolEnvironment } from "./shell-env"
 import type {
   Readiness,
   ReadinessInstaller,
@@ -42,9 +43,13 @@ function ensureAllowed(dir: string | undefined) {
 }
 
 export interface ReadinessTools {
-  git(fresh: boolean, verify?: boolean): Promise<ToolProbe>
+  git(fresh: boolean, verify?: boolean, env?: NodeJS.ProcessEnv): Promise<ToolProbe>
   usesLfs(root: string): Promise<boolean>
-  lfs(root: string, fresh: boolean, verify?: boolean): Promise<ToolProbe>
+  lfs(root: string, fresh: boolean, verify?: boolean, env?: NodeJS.ProcessEnv): Promise<ToolProbe>
+  /** Whether git-lfs filters are registered (global config). */
+  lfsSetup(root: string): Promise<boolean>
+  /** Run `git lfs install` for a repo whose filters are not registered. */
+  setupLfs(root: string): Promise<number | undefined>
   installer(kind: Tool): Promise<ReadinessInstaller | undefined>
   install(kind: Tool, root: string): Promise<InstallOutcome>
   download(kind: Tool): void
@@ -116,7 +121,8 @@ async function readReadiness(root: string, deps: ReadinessDeps, fresh = false, v
 }
 
 async function inspectProject(root: string, deps: ReadinessDeps, fresh: boolean, verify: boolean): Promise<Readiness> {
-  const git = await deps.tools.git(fresh, verify)
+  const env = fresh ? await toolEnvironment(true) : undefined
+  const git = await deps.tools.git(fresh, verify, env)
   if (!git.ok) return blockedTool("git", git, root, deps)
   const state = await prepare.inspect(root, deps.git)
   if (isRestrictedRoot(state.root ?? root)) {
@@ -139,8 +145,15 @@ async function inspectProject(root: string, deps: ReadinessDeps, fresh: boolean,
     }
   }
   if (await deps.tools.usesLfs(state.root)) {
-    const lfs = await deps.tools.lfs(state.root, fresh, verify)
+    const lfs = await deps.tools.lfs(state.root, fresh, verify, env)
     if (!lfs.ok) return blockedTool("lfs", lfs, state.root, deps)
+    if (!(await deps.tools.lfsSetup(state.root)))
+      return {
+        status: "blocked",
+        code: "lfs_not_setup",
+        name: path.basename(state.root),
+        trusted: deps.trusted(),
+      }
   }
   return { status: "ready" }
 }
@@ -242,6 +255,11 @@ async function runToolFix(
   request: Pick<FixReadinessRequest, "fix">,
   deps: FixDeps,
 ): Promise<FixResult | undefined> {
+  if (request.fix === "setupLfs") {
+    ensureTrusted(deps)
+    await deps.tools.setupLfs(root)
+    return { root }
+  }
   const tool = toolFor(request.fix)
   if (!tool) return undefined
   if (isDownload(request.fix)) {

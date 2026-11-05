@@ -599,6 +599,12 @@ export const dict = {
   "agentManager.readiness.git.bodyMac":
     "Git isn't installed on this Mac yet. Install it, then come back to this window. Your task stays here.",
   "agentManager.readiness.lfs.title": "{{name}} needs Git LFS",
+  "agentManager.readiness.lfsSetup.title": "{{name}} needs Git LFS set up",
+  "agentManager.readiness.lfsSetup.body":
+    "Git LFS is installed, but this project's filters aren't registered yet. Set it up to create worktrees.",
+  "agentManager.readiness.lfsSetup.action": "Set up Git LFS",
+  "agentManager.readiness.blockedLfsSetup": "Set up Git LFS first. You can keep writing your task.",
+  "agentManager.readiness.working.setupLfs": "Setting up Git LFS…",
   "agentManager.readiness.lfs.body":
     "This project keeps some large files in Git LFS, which isn't installed yet. Install it, then come back to this window. Your task stays here.",
   "agentManager.readiness.tool.install": "Install {{tool}}",

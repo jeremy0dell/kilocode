@@ -24,7 +24,7 @@ import type { ReadinessState } from "./worktree-readiness"
 
 type Blocked = Extract<Readiness, { status: "blocked" }>
 type Identity = { name: string; email: string }
-type Kind = "restricted" | "git" | "lfs" | "projects" | "commit" | "plain"
+type Kind = "restricted" | "git" | "lfs" | "lfs-setup" | "projects" | "commit" | "plain"
 type ReadyFixed = "initGit" | "initialCommit" | "installGit" | "installLfs"
 const isReadyFixed = (value: string | undefined): value is ReadyFixed =>
   value === "initGit" || value === "initialCommit" || value === "installGit" || value === "installLfs"
@@ -113,6 +113,7 @@ function BlockedCard(props: {
   const tool = (): Tool | undefined => toolForCode(props.result.code)
   const fix = (): ReadinessFix => {
     if (props.result.code === "no_commits") return "initialCommit"
+    if (props.result.code === "lfs_not_setup") return "setupLfs"
     const kind = tool()
     return kind ? installFix(kind) : "initGit"
   }
@@ -123,6 +124,7 @@ function BlockedCard(props: {
     if (props.result.restricted) return "restricted"
     const installable = tool()
     if (installable) return installable
+    if (props.result.code === "lfs_not_setup") return "lfs-setup"
     if (projects().length > 0) return "projects"
     if (props.result.code === "no_commits") return "commit"
     return "plain"
@@ -155,6 +157,10 @@ function BlockedCard(props: {
       title: () => t("agentManager.readiness.lfs.title", { name: props.result.name }),
       body: () => t("agentManager.readiness.lfs.body"),
     },
+    "lfs-setup": {
+      title: () => t("agentManager.readiness.lfsSetup.title", { name: props.result.name }),
+      body: () => t("agentManager.readiness.lfsSetup.body"),
+    },
     projects: {
       title: () => t("agentManager.readiness.projects.title", { name: props.result.name }),
       body: () => {
@@ -181,6 +187,7 @@ function BlockedCard(props: {
   const working = () => {
     if (props.fixing === "initGit") return t("agentManager.readiness.working.initGit")
     if (props.fixing === "initialCommit") return t("agentManager.readiness.working.initialCommit")
+    if (props.fixing === "setupLfs") return t("agentManager.readiness.working.setupLfs")
     return t("agentManager.readiness.working.project")
   }
 
@@ -214,6 +221,12 @@ function BlockedCard(props: {
               </button>
             </Show>
           </>
+        )
+      case "lfs-setup":
+        return (
+          <Button size="small" variant="secondary" disabled={locked()} onClick={start} data-readiness-action>
+            {t("agentManager.readiness.lfsSetup.action")}
+          </Button>
         )
       case "projects":
         return (

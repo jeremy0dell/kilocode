@@ -27,6 +27,7 @@ afterEach(async () => {
   clearShellEnvCache()
   process.env.PATH = initial.PATH
   process.env.SHELL = initial.SHELL
+  delete process.env.KILO_TOOLS_LOG
   await Promise.all(dirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })))
 })
 
@@ -169,6 +170,17 @@ describe("Git probe", () => {
     const probe = await manager(root, git, "linux").probeGit()
     expect(probe.ok ? "" : probe.detail).toBe("stderr truth")
   })
+
+  it("keeps a probe timeout as the original error", async () => {
+    const root = await repo()
+    const bin = await temp("kilo-tools-bin-")
+    const git = await script(bin, "git-slow", `if [ "$1" = "--version" ]; then sleep 6; fi\nexec "$KILO_REAL_GIT" "$@"`)
+    const error = await manager(root, git, "linux")
+      .createWorktree({})
+      .catch((err: unknown) => err)
+    expect(error).toBeInstanceOf(Error)
+    expect(error).toMatchObject({ killed: true, signal: "SIGTERM" })
+  }, 20_000)
 })
 
 describe("LFS probe", () => {

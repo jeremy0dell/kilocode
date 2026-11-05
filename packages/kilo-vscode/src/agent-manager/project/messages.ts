@@ -6,6 +6,7 @@
  * projects leave state untouched.
  */
 
+import { tmpdir } from "node:os"
 import { GitOps } from "../GitOps"
 import type { Host } from "../host"
 import type { AgentManagerInMessage, AgentManagerOutMessage } from "../types"
@@ -17,7 +18,7 @@ import type { SidebarTarget, SessionRef } from "./route"
 import { cloneProject, createProject, defaultParent, onboard, type Onboarding } from "./onboarding"
 import { runner } from "./prepare"
 import { applyWorktreeFix, checkWorktreeReadiness, type FixOutcome, type ReadinessTools } from "../worktree-readiness"
-import { DOWNLOAD, detectInstaller, installTool } from "../worktree-install"
+import { DOWNLOAD, detectInstaller, installTool, stringEnv, type InstallCommand } from "../worktree-install"
 import { toolEnvironment } from "../shell-env"
 import type { CheckReadinessRequest, FixReadinessRequest } from "../../../webview-ui/src/types/messages/agent-manager"
 
@@ -360,9 +361,20 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
   const git = deps.git ?? new GitOps({ log: deps.log })
   const manager = ctx.worktreeManager()
   const tools: ReadinessTools = {
-    git: (fresh, verify) => manager.probeGit(fresh, verify),
+    git: (fresh, verify, env) => manager.probeGit(fresh, verify, env),
     usesLfs: (root) => manager.repoUsesLfs(root),
-    lfs: (_root, fresh, verify) => manager.probeLfs(fresh, verify),
+    lfs: (_root, fresh, verify, env) => manager.probeLfs(fresh, verify, env),
+    lfsSetup: () => manager.checkLfsFilters(),
+    setupLfs: async () => {
+      const command: InstallCommand = {
+        command: manager.binary,
+        args: ["lfs", "install"],
+        cwd: tmpdir(),
+        env: stringEnv(await toolEnvironment(true)),
+        mode: "task",
+      }
+      return deps.install("Set up Git LFS", command)
+    },
     installer: async (kind) => detectInstaller(kind, process.platform, await toolEnvironment()),
     install: async (kind, root) =>
       installTool(kind, root, {

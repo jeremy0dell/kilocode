@@ -6,7 +6,6 @@
  * local scenario fakes can never fall through to a real installer.
  */
 
-import { tmpdir } from "node:os"
 import { lookup } from "./path-lookup"
 import { errorText } from "./git-errors"
 import type {
@@ -17,7 +16,7 @@ import { TOOL_LABELS, type Tool } from "../shared/worktree-readiness"
 
 export type { ReadinessInstall as InstallOutcome } from "../../webview-ui/src/types/messages/agent-manager"
 export type { Tool } from "../shared/worktree-readiness"
-export type ToolProbe = { ok: true } | { ok: false; code: "missing" | "unknown"; detail: string }
+export type ToolProbe = { ok: true } | { ok: false; code: "missing" | "unknown"; detail: string; error?: unknown }
 type Installer = ReadinessInstaller
 
 export interface InstallCommand {
@@ -49,8 +48,8 @@ const MANAGERS = {
   winget: {
     bin: "winget",
     sudo: false,
-    git: ["install", "-e", "--id", "Git.Git"],
-    lfs: ["install", "-e", "--id", "GitHub.GitLFS"],
+    git: ["install", "-e", "--id", "Git.Git", "--source", "winget"],
+    lfs: ["install", "-e", "--id", "GitHub.GitLFS", "--source", "winget"],
   },
   apt: { bin: "apt-get", sudo: true, git: ["install", "-y", "git"], lfs: ["install", "-y", "git-lfs"] },
   dnf: { bin: "dnf", sudo: true, git: ["install", "-y", "git"], lfs: ["install", "-y", "git-lfs"] },
@@ -88,7 +87,7 @@ async function runInstallStep(deps: InstallDeps, kind: Tool, label: string, comm
   return { outcome: { kind, mode: "terminal" as const, ok, code: exit }, present }
 }
 
-function stringEnv(env: NodeJS.ProcessEnv): Record<string, string> {
+export function stringEnv(env: NodeJS.ProcessEnv): Record<string, string> {
   return Object.fromEntries(
     Object.entries(env).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
   )
@@ -121,12 +120,7 @@ async function installWithManager(
   const label = `Install ${TOOL_LABELS[kind]}`
   // A clean package exit means the installer succeeded even if VS Code cannot see the tool yet.
   const installed = await runInstallStep(deps, kind, label, { command, args, cwd: root, env, mode: "task" })
-  if (kind === "git" || !installed.outcome.ok) return installed.outcome
-  if (!installed.present) return installed.outcome
-  // Best-effort registration once the package is visible. Global registration works outside the
-  // repository, so a repo alias must not hijack it.
-  const lfs: InstallCommand = { command: deps.git, args: ["lfs", "install"], cwd: tmpdir(), env, mode: "task" }
-  return (await runInstallStep(deps, "lfs", "Set up Git LFS", lfs)).outcome
+  return installed.outcome
 }
 
 export async function installTool(kind: Tool, root: string, deps: InstallDeps): Promise<InstallOutcome> {

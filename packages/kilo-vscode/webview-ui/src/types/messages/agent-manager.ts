@@ -20,6 +20,7 @@ export type ReadinessFix =
   | "installLfs"
   | "downloadGit"
   | "downloadLfs"
+  | "setupLfs"
 
 /** A package manager a card can use, or Apple's Command Line Tools launcher. */
 export type ReadinessInstaller = "apple" | "brew" | "winget" | "apt" | "dnf"
@@ -53,7 +54,7 @@ export type Readiness =
   | { status: "unknown"; detail: string }
   | {
       status: "blocked"
-      code: "not_git_repo" | "no_commits" | "git_not_found" | "lfs_missing"
+      code: "not_git_repo" | "no_commits" | "git_not_found" | "lfs_missing" | "lfs_not_setup"
       /** Folder or repository name, for the card title. */
       name: string
       /** Workspace trust; every fix needs it. */

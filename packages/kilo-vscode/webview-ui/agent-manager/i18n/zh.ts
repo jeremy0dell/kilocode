@@ -589,4 +589,9 @@ export const dict = {
   "agentManager.readiness.ready.lfs": "Git LFS 已就绪。",
   "agentManager.readiness.install.failed": "安装以代码 {{code}} 退出。请查看终端输出。",
   "agentManager.readiness.install.stopped": "安装已停止。请查看终端输出。",
+  "agentManager.readiness.lfsSetup.title": "{{name}} 需要设置 Git LFS",
+  "agentManager.readiness.lfsSetup.body": "Git LFS 已安装，但此项目的过滤器尚未注册。请设置后再创建工作树。",
+  "agentManager.readiness.lfsSetup.action": "设置 Git LFS",
+  "agentManager.readiness.blockedLfsSetup": "请先设置 Git LFS。你可以继续编写任务。",
+  "agentManager.readiness.working.setupLfs": "正在设置 Git LFS…",
 }

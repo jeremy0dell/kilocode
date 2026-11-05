@@ -2660,6 +2660,19 @@ export const ReadinessLfsMissing: Story = {
   render: () => <ReadinessPreview state={{ status: "blocked", project: "orbit", result: readinessLfs }} />,
 }
 
+export const ReadinessLfsSetup: Story = {
+  name: "Readiness — Git LFS not set up",
+  render: () => (
+    <ReadinessPreview
+      state={{
+        status: "blocked",
+        project: "orbit",
+        result: { status: "blocked", code: "lfs_not_setup", name: "orbit", trusted: true },
+      }}
+    />
+  ),
+}
+
 export const ReadinessLfsInstalling: Story = {
   name: "Readiness — installing Git LFS",
   render: () => (

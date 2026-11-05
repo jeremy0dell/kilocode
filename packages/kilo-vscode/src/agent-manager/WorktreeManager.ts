@@ -381,8 +381,8 @@ export class WorktreeManager {
    * Apple's install dialog unprompted. `fresh` bypasses the cached success and
    * refreshes the login-shell PATH.
    */
-  async probeGit(fresh = false, verify = false): Promise<ToolProbe> {
-    const env = fresh ? await toolEnvironment(true) : undefined
+  async probeGit(fresh = false, verify = false, provided?: NodeJS.ProcessEnv): Promise<ToolProbe> {
+    const env = provided ?? (fresh ? await toolEnvironment(true) : undefined)
     const guard = await this.guardApple(env)
     if (guard) {
       this.gitAvailable = false
@@ -405,9 +405,9 @@ export class WorktreeManager {
       // The probe runs without a cwd, so ENOENT here can only mean the binary is missing.
       if (toolAbsent(error, detail)) {
         this.probeFailed = true
-        return { ok: false, code: "missing", detail }
+        return { ok: false, code: "missing", detail, error }
       }
-      return { ok: false, code: "unknown", detail }
+      return { ok: false, code: "unknown", detail, error }
     }
   }
 
@@ -417,7 +417,10 @@ export class WorktreeManager {
    * diagnosis counts as confirmed absence; timeouts, missing cwd and permission
    * errors stay raw and non-blocking.
    */
-  async probeLfs(fresh = false, verify = false): Promise<ToolProbe> {
+  async probeLfs(fresh = false, verify = false, provided?: NodeJS.ProcessEnv): Promise<ToolProbe> {
+    const env = provided ?? (fresh ? await toolEnvironment(true) : undefined)
+    const guard = await this.guardApple(env)
+    if (guard) return { ok: false, code: guard.missing ? "missing" : "unknown", detail: guard.detail }
     if (!fresh && !verify && this.lfsAvailable === true) return { ok: true }
     // A negative verdict expires: installing git-lfs mid-session used to require a window reload.
     if (
@@ -429,7 +432,6 @@ export class WorktreeManager {
       // git-lfs not installed
       return { ok: false, code: "missing", detail: "git-lfs is not installed." }
     }
-    const env = fresh ? await toolEnvironment(true) : undefined
     try {
       await execWithShellEnv(this.binary, ["lfs", "version"], {
         // Not the repository: a repo-local `alias.lfs = !cmd` must not run here.
@@ -446,7 +448,7 @@ export class WorktreeManager {
       // do not let it poison the negative cache for the next five minutes.
       this.lfsAvailable = absent ? false : undefined
       this.lfsProbed = absent ? Date.now() : 0
-      return { ok: false, code: absent ? "missing" : "unknown", detail }
+      return { ok: false, code: absent ? "missing" : "unknown", detail, error }
     }
   }
 
@@ -479,7 +481,8 @@ export class WorktreeManager {
     // Creation re-probes; probeGit guards before any git execution and never trusts a cached positive.
     const probe = await this.probeGit(false, true)
     if (probe.ok) return
-    throw new Error(probe.code === "missing" ? MISSING_GIT : probe.detail)
+    if (probe.code === "missing") throw new Error(MISSING_GIT)
+    throw probe.error ?? new Error(probe.detail)
   }
 
   private async ensureCommit(): Promise<void> {
@@ -1467,6 +1470,17 @@ export class WorktreeManager {
     }
 
     return false
+  }
+
+  /** Whether git-lfs filters are registered in the global config. */
+  async checkLfsFilters(): Promise<boolean> {
+    return execWithShellEnv(this.binary, ["config", "--get", "filter.lfs.process"], {
+      cwd: tmpdir(),
+      timeout: BUDGET.probe,
+    }).then(
+      (out) => out.stdout.trim().length > 0,
+      () => false,
+    )
   }
 
   async checkLfsAvailable(): Promise<boolean> {

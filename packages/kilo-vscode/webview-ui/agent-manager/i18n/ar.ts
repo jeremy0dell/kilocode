@@ -605,4 +605,10 @@ export const dict = {
   "agentManager.readiness.ready.lfs": "Git LFS جاهز.",
   "agentManager.readiness.install.failed": "انتهى التثبيت بالرمز {{code}}. راجع مخرجات الطرفية.",
   "agentManager.readiness.install.stopped": "تم إيقاف التثبيت. راجع مخرجات الطرفية.",
+  "agentManager.readiness.lfsSetup.title": "يحتاج {{name}} إلى إعداد Git LFS",
+  "agentManager.readiness.lfsSetup.body":
+    "تم تثبيت Git LFS، لكن عوامل تصفية هذا المشروع لم تُسجَّل بعد. أعدّه لإنشاء مساحات العمل.",
+  "agentManager.readiness.lfsSetup.action": "إعداد Git LFS",
+  "agentManager.readiness.blockedLfsSetup": "أعدّ Git LFS أولاً. يمكنك متابعة كتابة مهمتك.",
+  "agentManager.readiness.working.setupLfs": "جارٍ إعداد Git LFS…",
 }

@@ -79,6 +79,24 @@ describe("installer detection", () => {
     expect(await detectInstaller("lfs", "darwin", { PATH: mac })).toBe("brew")
   })
 
+  it("pins winget to its source", async () => {
+    const win = await dir()
+    await bin(win, "winget.EXE")
+    const calls: InstallCommand[] = []
+    await installTool(
+      "git",
+      await dir(),
+      deps("win32", win, async (_name, command) => {
+        calls.push(command)
+        return 0
+      }),
+    )
+    expect(calls[0]).toMatchObject({
+      command: "winget",
+      args: ["install", "-e", "--id", "Git.Git", "--source", "winget"],
+    })
+  })
+
   it("reads Windows Path and PathExt case-insensitively", async () => {
     const win = await dir()
     await bin(win, "winget.CMD")
@@ -88,7 +106,7 @@ describe("installer detection", () => {
 })
 
 describe("install outcomes", () => {
-  it("runs separate package and git-lfs steps without absolute installer paths", async () => {
+  it("runs only the package step; LFS setup is an explicit fix", async () => {
     const linux = await dir()
     await bin(linux, "apt-get")
     const calls: Array<{ name: string; command: InstallCommand }> = []
@@ -102,13 +120,8 @@ describe("install outcomes", () => {
     )
 
     expect(outcome).toEqual({ kind: "lfs", mode: "terminal", ok: true })
-    expect(calls.map((call) => call.name)).toEqual(["Install Git LFS", "Set up Git LFS"])
+    expect(calls.map((call) => call.name)).toEqual(["Install Git LFS"])
     expect(calls[0]?.command).toMatchObject({ command: "sudo", args: ["apt-get", "install", "-y", "git-lfs"] })
-    expect(calls[1]?.command).toMatchObject({
-      command: "/selected/git",
-      args: ["lfs", "install"],
-      cwd: os.tmpdir(),
-    })
   })
 
   it.each([
@@ -190,12 +203,10 @@ describe("install outcomes", () => {
   it.each([
     ["failed", async () => 1, { ok: false, code: 1 }],
     ["stopped", async () => undefined, { ok: false, stopped: true }],
-  ])("reports a %s git lfs install step", async (_name, setup, expected) => {
+  ])("reports a %s LFS package step", async (_name, setup, expected) => {
     const linux = await dir()
     await bin(linux, "apt-get")
     const calls: string[] = []
-    const probes: boolean[] = []
-    let sequence = 0
     const outcome = await installTool(
       "lfs",
       await dir(),
@@ -204,23 +215,16 @@ describe("install outcomes", () => {
         linux,
         async (name) => {
           calls.push(name)
-          return name === "Set up Git LFS" ? setup() : 0
+          return setup()
         },
-        {
-          probe: async (_kind, fresh) => {
-            probes.push(fresh)
-            sequence++
-            return sequence < 2 ? { ok: true } : { ok: false, code: "missing", detail: "gone" }
-          },
-        },
+        { probe: async () => ({ ok: false, code: "missing", detail: "gone" }) },
       ),
     )
     expect(outcome).toEqual({ kind: "lfs", mode: "terminal", ...expected })
-    expect(calls).toEqual(["Install Git LFS", "Set up Git LFS"])
-    expect(probes.every(Boolean)).toBe(true)
+    expect(calls).toEqual(["Install Git LFS"])
   })
 
-  it("uses the explicit env for both package and lfs steps", async () => {
+  it("uses the explicit env for the package step", async () => {
     const linux = await dir()
     await bin(linux, "apt-get")
     const calls: InstallCommand[] = []
@@ -233,13 +237,12 @@ describe("install outcomes", () => {
       }),
     )
     expect(outcome).toEqual({ kind: "lfs", mode: "terminal", ok: true })
-    expect(calls).toHaveLength(2)
+    expect(calls).toHaveLength(1)
     expect(calls[0]?.env).toEqual(
       Object.fromEntries(
         Object.entries({ ...process.env, PATH: linux }).filter((entry) => typeof entry[1] === "string"),
       ),
     )
-    expect(calls[1]?.env).toEqual(calls[0]?.env)
   })
 
   it("launches Apple's installer when macOS has no Git", async () => {
@@ -287,8 +290,4 @@ describe("install outcomes", () => {
     }
     expect(opened).toEqual([DOWNLOAD.git, DOWNLOAD.lfs])
   })
-})
-
-it("keeps the webview install deadline above two chained host tasks", () => {
-  expect(INSTALL_DEADLINE_MS).toBeGreaterThanOrEqual(INSTALL_TIMEOUT_MS * 2)
 })
