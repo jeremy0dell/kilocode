@@ -226,16 +226,16 @@ export const NewWorktreeDialog: Component<{
   }
   let createButton: HTMLButtonElement | undefined
   let card: HTMLDivElement | undefined
+  /** Move focus to Create unless the user is already focused outside the readiness card. */
+  const focusCreate = () => {
+    const active = document.activeElement
+    if (active && active !== document.body && !card?.contains(active)) return
+    createButton?.focus()
+  }
   const readiness = createReadiness({
     project,
     entry: "modal",
-    onRecovered: () =>
-      queueMicrotask(() => {
-        // Only pull focus when it is not already in the user's input.
-        const active = document.activeElement
-        if (active && active !== document.body && !card?.contains(active)) return
-        createButton?.focus()
-      }),
+    onRecovered: () => queueMicrotask(focusCreate),
   })
   // A readiness fix changes the project on disk: hold the project choice still until it finishes.
   const busy = () => {
@@ -611,12 +611,6 @@ export const NewWorktreeDialog: Component<{
       }
       if (canSubmit()) create()
     })
-  }
-
-  /** Move focus to Create unless the user is typing in the prompt. */
-  const focusCreate = () => {
-    if (document.activeElement === textareaRef) return
-    createButton?.focus()
   }
 
   /** After a fix: follow a project switch, and offer Create once the project is ready. Never submits. */

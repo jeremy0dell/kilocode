@@ -811,6 +811,28 @@ if (process.env.READINESS_CASE === "install") {
   await close()
 }
 
+// A ready fix keeps focus in the branch-name input.
+{
+  const id = await mount()
+  await reply("p1", id, plain)
+  card()?.querySelector<HTMLButtonElement>("[data-readiness-action]")?.click()
+  await settle()
+  const fix = sent.find((item) => item.type === "agentManager.fixReadiness")
+  assert.ok(fix && fix.type === "agentManager.fixReadiness")
+  const branch = document.querySelector<HTMLInputElement>(".am-nv-branch-input")
+  assert.ok(branch)
+  branch.focus()
+  await emit({
+    type: "agentManager.readiness",
+    projectId: "p1",
+    requestID: fix.requestID,
+    result: { status: "ready" },
+  })
+  await settle()
+  assert.equal(document.activeElement, branch, "m4: branch focus")
+  await close()
+}
+
 // More than three child repos show one primary folder action instead of a list.
 {
   const id = await mount()

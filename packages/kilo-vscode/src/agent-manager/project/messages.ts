@@ -20,7 +20,11 @@ import { runner } from "./prepare"
 import { applyWorktreeFix, checkWorktreeReadiness, type FixOutcome, type ReadinessTools } from "../worktree-readiness"
 import { DOWNLOAD, detectInstaller, installTool, stringEnv, type InstallCommand } from "../worktree-install"
 import { toolEnvironment } from "../shell-env"
-import type { CheckReadinessRequest, FixReadinessRequest } from "../../../webview-ui/src/types/messages/agent-manager"
+import type {
+  CheckReadinessRequest,
+  FixReadinessRequest,
+  ReadinessFix,
+} from "../../../webview-ui/src/types/messages/agent-manager"
 
 const pending = new WeakSet<ProjectMessageDeps>()
 const selections = new WeakMap<ProjectMessageDeps, symbol>()
@@ -352,17 +356,17 @@ async function local(m: AgentManagerInMessage, deps: ProjectMessageDeps): Promis
   return true
 }
 
-const FIXES = new Set([
-  "initGit",
-  "initialCommit",
-  "useProject",
-  "pickFolder",
-  "installGit",
-  "installLfs",
-  "downloadGit",
-  "downloadLfs",
-  "setupLfs",
-])
+const FIXES: Record<ReadinessFix, true> = {
+  initGit: true,
+  initialCommit: true,
+  useProject: true,
+  pickFolder: true,
+  installGit: true,
+  installLfs: true,
+  downloadGit: true,
+  downloadLfs: true,
+  setupLfs: true,
+}
 
 /** Folder the user just picked, per project. One-shot and host-side only; the webview never supplies it. */
 const picks = new Map<string, string>()
@@ -407,7 +411,7 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
   try {
     if (m.type === "agentManager.checkReadiness")
       return reply({ result: await checkWorktreeReadiness(ctx.root, base, m.fresh === true, m.verify === true) })
-    if (!FIXES.has(m.fix)) {
+    if (typeof m.fix !== "string" || !Object.hasOwn(FIXES, m.fix)) {
       reply({ result: await checkWorktreeReadiness(ctx.root, base), error: `Unknown readiness fix: ${String(m.fix)}` })
       return
     }
@@ -433,6 +437,7 @@ async function readiness(m: CheckReadinessRequest | FixReadinessRequest, deps: P
 }
 
 async function removeProject(id: string, deps: ProjectMessageDeps): Promise<void> {
+  picks.delete(id)
   if (deps.contexts.pinned()?.id === id) return
   const active = deps.contexts.active()?.id === id
   await deps.registry.remove(id)

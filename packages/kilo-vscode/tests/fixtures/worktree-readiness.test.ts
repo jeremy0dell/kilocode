@@ -103,7 +103,7 @@ function fixDeps(ops: GitOps, overrides: Partial<FixDeps> = {}): FixDeps {
 }
 
 /** The real project wiring over a fake Host that records what the fixes ask of VS Code. */
-function wire(root: string, trusted = true) {
+function wire(root: string, trusted: boolean | (() => boolean) = true) {
   const posts: AgentManagerOutMessage[] = []
   const calls = {
     refresh: 0,
@@ -136,7 +136,7 @@ function wire(root: string, trusted = true) {
       calls.picks.push(opts?.defaultPath)
       return calls.pickResults.shift()
     },
-    isTrusted: () => trusted,
+    isTrusted: () => (typeof trusted === "function" ? trusted() : trusted),
     refreshGit: () => {
       calls.refresh++
     },
@@ -631,6 +631,78 @@ describe("worktree readiness fixes", () => {
       result: { status: "ready" },
     })
     expect(setup.wiring.registry.has(projectIdFor(canonicalizePath(picked)))).toBe(true)
+
+    await setup.send("initGit", { target: "picked", identity })
+    expect(setup.posts.at(-1)).toMatchObject({ error: expect.stringContaining("no longer the one you picked") })
+    expect(git(picked, "rev-list", "--count", "HEAD")).toBe("1")
+  })
+
+  it("selects a Git repo inside the folder the user just picked", async () => {
+    const original = await temp("kilo-ready-picked-child-original-")
+    const folder = await temp("kilo-ready-picked-child-folder-")
+    const child = await repo(path.join(folder, "child"), true)
+    const setup = wire(original)
+    setup.calls.pickResults.push(folder)
+
+    await setup.send("pickFolder")
+    await setup.send("useProject", { target: child })
+
+    expect(setup.posts.at(-1)).toMatchObject({
+      selected: projectIdFor(canonicalizePath(child)),
+      result: { status: "ready" },
+    })
+    expect(setup.wiring.registry.has(projectIdFor(canonicalizePath(child)))).toBe(true)
+  })
+
+  it("keeps the pick when a fix is attempted while the window is untrusted", async () => {
+    let checks = 0
+    let failAt = 0
+    const original = await temp("kilo-ready-keep-pick-original-")
+    const picked = await temp("kilo-ready-keep-pick-folder-")
+    const setup = wire(original, () => ++checks !== failAt)
+    setup.calls.pickResults.push(picked)
+
+    // pickFolder: apply's trust check, choose's, then the folder probe's.
+    await setup.send("pickFolder")
+    // initGit: apply's check passes, usePick's check fails.
+    failAt = 5
+    await setup.send("initGit", { target: "picked", identity })
+
+    expect(setup.posts.at(-1)).toMatchObject({ error: expect.stringContaining("Trust") })
+    expect(await Bun.file(path.join(picked, ".git")).exists()).toBe(false)
+
+    failAt = 0
+    await setup.send("initGit", { target: "picked", identity })
+
+    expect(git(picked, "rev-list", "--count", "HEAD")).toBe("1")
+    expect(setup.posts.at(-1)).toMatchObject({ result: { status: "ready" } })
+  })
+
+  it("does not open the picker in an untrusted window", async () => {
+    const setup = wire(await temp("kilo-ready-untrusted-pick-"), false)
+
+    await setup.send("pickFolder")
+
+    expect(setup.posts.at(-1)).toMatchObject({ error: expect.stringContaining("Trust") })
+    expect(setup.calls.picks).toEqual([])
+  })
+
+  it("rejects a picked folder that became nested inside a repository", async () => {
+    const original = await temp("kilo-ready-nested-original-")
+    const holder = await temp("kilo-ready-nested-holder-")
+    const picked = path.join(holder, "picked")
+    await fs.mkdir(picked)
+    const setup = wire(original)
+    setup.calls.pickResults.push(picked)
+
+    await setup.send("pickFolder")
+    await repo(holder, true)
+    const head = git(holder, "rev-parse", "HEAD")
+    await setup.send("initGit", { target: "picked", identity })
+
+    expect(setup.posts.at(-1)).toMatchObject({ error: expect.stringContaining("inside another Git repository") })
+    expect(await Bun.file(path.join(picked, ".git")).exists()).toBe(false)
+    expect(git(holder, "rev-parse", "HEAD")).toBe(head)
   })
 
   it("rejects a picked fix whose target is not the remembered folder", async () => {
@@ -665,8 +737,15 @@ describe("worktree readiness fixes", () => {
     const setup = wire(root)
 
     await setup.sendRaw("bogus", { identity })
-
     expect(setup.posts.at(-1)).toMatchObject({ error: expect.stringContaining("Unknown readiness fix") })
+
+    // An inherited key must be rejected at the boundary, before the trusted-window check runs.
+    const untrusted = wire(root, false)
+    await untrusted.sendRaw("constructor", { identity })
+
+    expect(untrusted.posts.at(-1)).toMatchObject({
+      error: expect.stringContaining("Unknown readiness fix: constructor"),
+    })
     expect(await Bun.file(path.join(root, ".git", "HEAD")).exists()).toBe(false)
   })
 
