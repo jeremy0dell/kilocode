@@ -393,6 +393,16 @@ export const dict = {
   "common.edit": "Düzenle",
   "common.loadMore": "Daha fazla yükle",
 
+  "sidebar.upsell.title": "Bir Kilo ajan filosunu işe koyun",
+  "sidebar.upsell.body": "Bir görevin bitmesini beklemek zorunda değilsiniz.",
+  "sidebar.upsell.parallel": "Aynı anda birden fazla oturum çalıştırın",
+  "sidebar.upsell.worktree": "Değişikliklerin çakışmaması için her oturuma ayrı bir worktree verin",
+  "sidebar.upsell.attention": "Hangi oturumun size ihtiyaç duyduğunu bir bakışta görün",
+  "sidebar.upsell.open": "Agent Manager'ı aç",
+  "sidebar.upsell.later": "Şimdi değil",
+  "sidebar.upsell.never": "Bunu bir daha gösterme",
+  "sidebar.upsell.confirmation": "Anlaşıldı. Burada bir daha Agent Manager'ı önermeyeceğiz.",
+  "sidebar.upsell.undo": "Geri al",
   "sidebar.settings": "Ayarlar",
 
   "sound.option.alert01": "Uyarı 01",

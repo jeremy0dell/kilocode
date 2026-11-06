@@ -20,6 +20,8 @@ import { PromptInput } from "./PromptInput"
 import type { ManagerContext } from "../../utils/shortcut-hint"
 import { PermissionDock } from "./PermissionDock"
 import { SessionDock } from "./SessionDock"
+import { AgentManagerUpsell } from "./AgentManagerUpsell"
+import { AGENT_MANAGER_UPSELL, sidebarTurns } from "./agent-manager-upsell"
 import { StartupErrorBanner } from "./StartupErrorBanner"
 import { SessionTabStrip } from "./SessionTabStrip"
 import { useSession } from "../../context/session"
@@ -62,6 +64,8 @@ interface ChatViewProps {
   resolveEmbeddedTerminal?: (context?: string) => Promise<string | undefined>
   /** Agent Manager state for the prompt shortcut hint. */
   manager?: () => ManagerContext | undefined
+  /** Explicit preview override; ordinary sidebar usage keeps the development gate. */
+  upsell?: boolean
 }
 
 export const ChatView: Component<ChatViewProps> = (props) => {
@@ -78,6 +82,17 @@ export const ChatView: Component<ChatViewProps> = (props) => {
   // Show "Continue in Worktree": only when explicitly enabled via prop
   const canContinueInWorktree = () => props.continueInWorktree === true
   const ownsPrompts = () => props.interactivePrompts !== false
+  const observed = sidebarTurns()
+  const upsell = createMemo(() => {
+    const turn = session.userMessages().at(-1)
+    return observed({
+      id: session.currentSessionID(),
+      turn: turn?.id,
+      busy: session.submitting() || session.status() !== "idle",
+      reason: session.closeReason(),
+      files: typeof turn?.summary === "object" ? turn.summary.diffs?.length : undefined,
+    })
+  })
 
   const id = () => session.currentSessionID()
   const openLink = (event: MouseEvent) => {
@@ -446,6 +461,14 @@ export const ChatView: Component<ChatViewProps> = (props) => {
           </div>
 
           <Show when={dock()}>
+            <div class="agent-manager-upsell-slot">
+              <AgentManagerUpsell
+                enabled={props.upsell ?? AGENT_MANAGER_UPSELL}
+                sidebar={isSidebar() && !props.readonly && !!vscode.sidebarSide()}
+                eligible={upsell()}
+                idle={session.status() === "idle" && !session.submitting() && !dockBlocked() && !session.loading()}
+              />
+            </div>
             <div class="chat-input">
               <Show when={server.connectionState() === "error" && server.errorMessage()}>
                 <StartupErrorBanner errorMessage={server.errorMessage()!} errorDetails={server.errorDetails()!} />

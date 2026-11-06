@@ -395,6 +395,16 @@ export const dict = {
   "common.edit": "Edytuj",
   "common.loadMore": "Załaduj więcej",
 
+  "sidebar.upsell.title": "Zatrudnij flotę agentów Kilo",
+  "sidebar.upsell.body": "Nie musisz czekać, aż jedno zadanie się zakończy.",
+  "sidebar.upsell.parallel": "Uruchom kilka sesji jednocześnie",
+  "sidebar.upsell.worktree": "Przydziel każdej osobne drzewo robocze, aby zmiany nie kolidowały ze sobą",
+  "sidebar.upsell.attention": "Zobacz na pierwszy rzut oka, która sesja Cię potrzebuje",
+  "sidebar.upsell.open": "Otwórz Agent Manager",
+  "sidebar.upsell.later": "Nie teraz",
+  "sidebar.upsell.never": "Nie pokazuj tego ponownie",
+  "sidebar.upsell.confirmation": "Rozumiemy. Nie będziemy już proponować tutaj Agent Manager.",
+  "sidebar.upsell.undo": "Cofnij",
   "sidebar.settings": "Ustawienia",
 
   "sound.option.alert01": "Alert 01",

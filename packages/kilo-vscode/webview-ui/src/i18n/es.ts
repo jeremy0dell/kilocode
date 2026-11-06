@@ -397,6 +397,16 @@ export const dict = {
   "common.edit": "Editar",
   "common.loadMore": "Cargar más",
 
+  "sidebar.upsell.title": "Pon a trabajar una flota de agentes Kilo",
+  "sidebar.upsell.body": "No tienes que esperar a que termine una tarea.",
+  "sidebar.upsell.parallel": "Ejecuta varias sesiones al mismo tiempo",
+  "sidebar.upsell.worktree": "Dale a cada una su propio worktree para que los cambios no entren en conflicto",
+  "sidebar.upsell.attention": "Ve de un vistazo cuál te necesita",
+  "sidebar.upsell.open": "Abrir Agent Manager",
+  "sidebar.upsell.later": "Ahora no",
+  "sidebar.upsell.never": "No volver a mostrar esto",
+  "sidebar.upsell.confirmation": "Entendido. No volveremos a sugerir Agent Manager aquí.",
+  "sidebar.upsell.undo": "Deshacer",
   "sidebar.settings": "Ajustes",
 
   "sound.option.alert01": "Alerta 01",
