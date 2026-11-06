@@ -980,6 +980,9 @@ export const dict = {
   "settings.experimental.conversationPromptHistory.title": "Sohbet başına istem geçmişi",
   "settings.experimental.conversationPromptHistory.description":
     "İstem geçmişini (ArrowUp/ArrowDown) tüm sohbetlerde tek bir geçmiş paylaşmak yerine her sohbet için ayrı tutun.",
+  "settings.experimental.agentManagerSplash.title": "Agent Manager karşılama ekranı",
+  "settings.experimental.agentManagerSplash.description":
+    "İş akışı örnekleriyle yeni Agent Manager tanıtımını deneyin. Hemen uygulanır.",
   "settings.experimental.claudeMigration.title": "Claude Code Geçişi",
   "settings.experimental.claudeMigration.description":
     "Desteklenen genel CLAUDE.md talimatlarını, basit becerileri ve devre dışı MCP tanımlarını bir kez içe aktarın. Orijinal Claude dosyaları değiştirilmez; etkinleştirdikten sonra arka ucu yeniden başlatın.",
@@ -1491,6 +1494,9 @@ export const dict = {
   "chat.search.close": "Aramayı kapat",
   "chat.search.invalidRegex": "Geçersiz normal ifade",
   "chat.search.noResults": "Sonuç yok",
+  "settings.experimental.agentManagerUpsell.title": "Kenar Çubuğunda Agent Manager Daveti",
+  "settings.experimental.agentManagerUpsell.description":
+    "Kodlama görevlerinden sonra Kilo kenar çubuğunda Agent Manager'ı denemek için isteğe bağlı bir davet gösterin. Varsayılan olarak devre dışıdır.",
   "settings.experimental.browserAutomation.title": "Entegre Tarayıcı",
   "settings.experimental.browserAutomation.description":
     "Agent Manager'da yerel uygulama önizlemelerini gösterin ve browser_open aracını Agent Manager oturumlarına sunun.",

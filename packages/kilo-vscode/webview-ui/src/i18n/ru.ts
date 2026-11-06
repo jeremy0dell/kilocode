@@ -986,6 +986,9 @@ export const dict = {
   "settings.experimental.conversationPromptHistory.title": "История промптов для каждого разговора",
   "settings.experimental.conversationPromptHistory.description":
     "Хранить историю промптов (ArrowUp/ArrowDown) отдельно для каждого разговора вместо одной общей истории для всех.",
+  "settings.experimental.agentManagerSplash.title": "Экран приветствия Agent Manager",
+  "settings.experimental.agentManagerSplash.description":
+    "Попробуйте новое знакомство с Agent Manager с примерами рабочих процессов. Применяется сразу.",
   "settings.experimental.claudeMigration.title": "Миграция Claude Code",
   "settings.experimental.claudeMigration.description":
     "Однократно импортируйте поддерживаемые глобальные инструкции CLAUDE.md, простые навыки и отключённые определения MCP. Исходные файлы Claude не изменяются; после включения перезапустите backend.",
@@ -1473,6 +1476,9 @@ export const dict = {
   "chat.search.close": "Закрыть поиск",
   "chat.search.invalidRegex": "Недопустимое регулярное выражение",
   "chat.search.noResults": "Нет результатов",
+  "settings.experimental.agentManagerUpsell.title": "Приглашение в Agent Manager на боковой панели",
+  "settings.experimental.agentManagerUpsell.description":
+    "Показывать необязательное приглашение попробовать Agent Manager на боковой панели Kilo после задач по программированию. По умолчанию отключено.",
   "settings.experimental.browserAutomation.title": "Встроенный браузер",
   "settings.experimental.browserAutomation.description":
     "Показывайте предпросмотр локальных приложений в Agent Manager и предоставляйте инструмент browser_open сеансам Agent Manager.",

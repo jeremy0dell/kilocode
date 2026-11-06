@@ -524,6 +524,8 @@ export interface ChatSettingsLoadedMessage {
   type: "chatSettingsLoaded"
   settings: {
     shiftTabCyclesVariant: boolean
+    agentManagerUpsell: boolean
+    agentManagerSplash: boolean
     browserAutomation: boolean
     agentManagerBrowserOpenLinksIn: "external" | "integrated"
     workspaceTrusted: boolean

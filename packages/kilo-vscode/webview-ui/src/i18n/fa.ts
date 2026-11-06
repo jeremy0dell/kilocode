@@ -978,6 +978,9 @@ export const dict = {
   "settings.experimental.conversationPromptHistory.title": "تاریخچه پرامپت برای هر گفتگو",
   "settings.experimental.conversationPromptHistory.description":
     "تاریخچه پرامپت (ArrowUp/ArrowDown) را برای هر گفتگو جداگانه نگه دارید، به جای اشتراک یک تاریخچه بین همه گفتگوها.",
+  "settings.experimental.agentManagerSplash.title": "صفحه خوشامدگویی Agent Manager",
+  "settings.experimental.agentManagerSplash.description":
+    "معرفی جدید Agent Manager را با نمونه‌های گردش کار امتحان کنید. بلافاصله اعمال می‌شود.",
   "settings.experimental.claudeMigration.title": "مهاجرت Claude Code",
   "settings.experimental.claudeMigration.description":
     "دستورالعمل‌های سراسری CLAUDE.md پشتیبانی‌شده، مهارت‌های ساده و تعریف‌های MCP غیرفعال را فقط یک‌بار وارد کنید. فایل‌های اصلی Claude تغییر نمی‌کنند؛ پس از فعال‌سازی backend را دوباره راه‌اندازی کنید.",
@@ -1472,6 +1475,9 @@ export const dict = {
   "chat.search.close": "بستن جستجو",
   "chat.search.invalidRegex": "عبارت منظم نامعتبر",
   "chat.search.noResults": "نتیجه‌ای یافت نشد",
+  "settings.experimental.agentManagerUpsell.title": "دعوت به استفاده از Agent Manager در نوار کناری",
+  "settings.experimental.agentManagerUpsell.description":
+    "پس از کارهای برنامه‌نویسی، یک دعوت اختیاری برای امتحان کردن Agent Manager در نوار کناری Kilo نمایش دهید. به‌طور پیش‌فرض غیرفعال است.",
   "settings.experimental.browserAutomation.title": "مرورگر یکپارچه",
   "settings.experimental.browserAutomation.description":
     "پیش‌نمایش برنامه‌های محلی را در Agent Manager نشان دهید و ابزار browser_open را در اختیار جلسات Agent Manager قرار دهید.",

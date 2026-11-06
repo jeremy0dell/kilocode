@@ -968,6 +968,9 @@ export const dict = {
   "settings.sandboxing.writablePaths.title": "Additional Writable Paths",
   "settings.sandboxing.writablePaths.description":
     "Extra filesystem paths the sandbox allows writes to (e.g. /tmp, /var/log). These are merged with the default writable paths when the sandbox is active.",
+  "settings.experimental.agentManagerUpsell.title": "Agent Manager Sidebar Invitation",
+  "settings.experimental.agentManagerUpsell.description":
+    "Show an optional invitation to try Agent Manager in the Kilo sidebar after coding tasks. Disabled by default.",
   "settings.experimental.browserAutomation.title": "Integrated Browser",
   "settings.experimental.browserAutomation.description":
     "Preview local applications and public HTTPS pages in Agent Manager and the Integrated Browser tab, and expose the browser_open tool to sessions.",
@@ -984,6 +987,9 @@ export const dict = {
   "settings.experimental.conversationPromptHistory.title": "Per-Conversation Prompt History",
   "settings.experimental.conversationPromptHistory.description":
     "Keep the prompt input history (ArrowUp/ArrowDown recall) separate for each conversation instead of sharing one history across all conversations.",
+  "settings.experimental.agentManagerSplash.title": "Agent Manager splash",
+  "settings.experimental.agentManagerSplash.description":
+    "Try the new Agent Manager introduction with workflow examples. Applies immediately.",
   "settings.experimental.claudeMigration.title": "Claude Code Migration",
   "settings.experimental.claudeMigration.description":
     "On the next backend start, import supported global CLAUDE.md instructions, simple skills, and disabled MCP definitions. This runs once with no automatic retry; global Claude instructions and skills are then handed off to Kilo. Claude files stay unchanged; keep them if you still use Claude Code.",

@@ -998,6 +998,9 @@ export const dict = {
   "settings.experimental.conversationPromptHistory.title": "Histórico de prompts por conversa",
   "settings.experimental.conversationPromptHistory.description":
     "Mantenha o histórico de prompts (ArrowUp/ArrowDown) separado para cada conversa, em vez de compartilhar um único histórico entre todas as conversas.",
+  "settings.experimental.agentManagerSplash.title": "Tela de boas-vindas do Agent Manager",
+  "settings.experimental.agentManagerSplash.description":
+    "Experimente a nova introdução do Agent Manager com exemplos de fluxos de trabalho. Aplicação imediata.",
   "settings.experimental.claudeMigration.title": "Migração do Claude Code",
   "settings.experimental.claudeMigration.description":
     "Importe uma vez instruções globais CLAUDE.md compatíveis, habilidades simples e definições MCP desativadas. Os arquivos originais do Claude permanecem inalterados; reinicie o backend após ativar.",
@@ -1491,6 +1494,9 @@ export const dict = {
   "chat.search.close": "Fechar pesquisa",
   "chat.search.invalidRegex": "Expressão regular inválida",
   "chat.search.noResults": "Nenhum resultado",
+  "settings.experimental.agentManagerUpsell.title": "Convite para o Agent Manager na barra lateral",
+  "settings.experimental.agentManagerUpsell.description":
+    "Mostre um convite opcional para experimentar o Agent Manager na barra lateral do Kilo após tarefas de programação. Desativado por padrão.",
   "settings.experimental.browserAutomation.title": "Navegador Integrado",
   "settings.experimental.browserAutomation.description":
     "Mostre pré-visualizações de aplicativos locais no Agent Manager e exponha a ferramenta browser_open para sessões do Agent Manager.",

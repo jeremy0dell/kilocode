@@ -965,6 +965,9 @@ export const dict = {
   "settings.experimental.conversationPromptHistory.title": "سجل مطالبات لكل محادثة",
   "settings.experimental.conversationPromptHistory.description":
     "إبقاء سجل مطالبات الإدخال (استدعاء بالسهمين لأعلى/لأسفل) منفصلاً لكل محادثة بدلاً من مشاركة سجل واحد بين جميع المحادثات.",
+  "settings.experimental.agentManagerSplash.title": "شاشة ترحيب Agent Manager",
+  "settings.experimental.agentManagerSplash.description":
+    "جرّب المقدمة الجديدة لـ Agent Manager مع أمثلة لسير العمل. تُطبّق فورًا.",
   "settings.experimental.claudeMigration.title": "ترحيل Claude Code",
   "settings.experimental.claudeMigration.description":
     "استورد مرة واحدة تعليمات CLAUDE.md العامة المدعومة والمهارات البسيطة وتعريفات MCP المعطلة. تبقى ملفات Claude الأصلية دون تغيير؛ أعد تشغيل الخلفية بعد التفعيل.",
@@ -1441,6 +1444,9 @@ export const dict = {
   "chat.search.close": "إغلاق البحث",
   "chat.search.invalidRegex": "تعبير عادي غير صالح",
   "chat.search.noResults": "لا توجد نتائج",
+  "settings.experimental.agentManagerUpsell.title": "دعوة لتجربة Agent Manager في الشريط الجانبي",
+  "settings.experimental.agentManagerUpsell.description":
+    "عرض دعوة اختيارية لتجربة Agent Manager في الشريط الجانبي لـ Kilo بعد مهام البرمجة. معطّل افتراضيًا.",
   "settings.experimental.browserAutomation.title": "المتصفح المدمج",
   "settings.experimental.browserAutomation.description":
     "عرض معاينات التطبيقات المحلية في Agent Manager وإتاحة أداة browser_open لجلسات Agent Manager.",

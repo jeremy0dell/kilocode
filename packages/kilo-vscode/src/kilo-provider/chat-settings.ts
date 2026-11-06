@@ -9,6 +9,12 @@ export function buildChatSettingsMessage() {
     type: "chatSettingsLoaded" as const,
     settings: {
       shiftTabCyclesVariant: config.get<boolean>("shiftTabCyclesVariant", true),
+      agentManagerUpsell: vscode.workspace
+        .getConfiguration("kilo-code.new.experimental")
+        .get("agentManagerUpsell", false),
+      agentManagerSplash:
+        vscode.workspace.getConfiguration("kilo-code.new.experimental").get<boolean>("agentManagerSplash", false) ===
+        true,
       browserAutomation: vscode.workspace
         .getConfiguration("kilo-code.new.experimental")
         .get("browserAutomation", false),
@@ -30,6 +36,8 @@ export function watchChatConfig(post: Post): vscode.Disposable {
   return vscode.workspace.onDidChangeConfiguration((event) => {
     if (
       event.affectsConfiguration("kilo-code.new.chat") ||
+      event.affectsConfiguration("kilo-code.new.experimental.agentManagerUpsell") ||
+      event.affectsConfiguration("kilo-code.new.experimental.agentManagerSplash") ||
       event.affectsConfiguration("kilo-code.new.experimental.browserAutomation") ||
       event.affectsConfiguration("kilo-code.new.agentManager.browser.openLinksIn")
     ) {

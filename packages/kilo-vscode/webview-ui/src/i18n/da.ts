@@ -989,6 +989,9 @@ export const dict = {
   "settings.experimental.conversationPromptHistory.title": "Prompthistorik pr. samtale",
   "settings.experimental.conversationPromptHistory.description":
     "Hold prompthistorikken (ArrowUp/ArrowDown) adskilt for hver samtale i stedet for at dele én historik på tværs af alle samtaler.",
+  "settings.experimental.agentManagerSplash.title": "Agent Manager-velkomstskærm",
+  "settings.experimental.agentManagerSplash.description":
+    "Prøv den nye introduktion til Agent Manager med eksempler på arbejdsgange. Træder i kraft med det samme.",
   "settings.experimental.claudeMigration.title": "Claude Code-migrering",
   "settings.experimental.claudeMigration.description":
     "Importér understøttede globale CLAUDE.md-instruktioner, enkle færdigheder og deaktiverede MCP-definitioner én gang. Originale Claude-filer forbliver uændrede; genstart backend efter aktivering.",
@@ -1473,6 +1476,9 @@ export const dict = {
   "chat.search.close": "Luk søgning",
   "chat.search.invalidRegex": "Ugyldigt regulært udtryk",
   "chat.search.noResults": "Ingen resultater",
+  "settings.experimental.agentManagerUpsell.title": "Invitation til Agent Manager i sidepanelet",
+  "settings.experimental.agentManagerUpsell.description":
+    "Vis en valgfri invitation til at prøve Agent Manager i Kilos sidepanel efter programmeringsopgaver. Deaktiveret som standard.",
   "settings.experimental.browserAutomation.title": "Integreret browser",
   "settings.experimental.browserAutomation.description":
     "Vis forhåndsvisninger af lokale applikationer i Agent Manager, og gør værktøjet browser_open tilgængeligt for Agent Manager-sessioner.",

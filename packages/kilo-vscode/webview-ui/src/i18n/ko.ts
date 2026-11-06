@@ -979,6 +979,9 @@ export const dict = {
   "settings.experimental.conversationPromptHistory.title": "대화별 프롬프트 기록",
   "settings.experimental.conversationPromptHistory.description":
     "프롬프트 기록(ArrowUp/ArrowDown)을 모든 대화에서 공유하지 않고 대화별로 분리하여 유지합니다.",
+  "settings.experimental.agentManagerSplash.title": "Agent Manager 시작 화면",
+  "settings.experimental.agentManagerSplash.description":
+    "워크플로 예제가 포함된 새로운 Agent Manager 소개 화면을 사용해 보세요. 즉시 적용됩니다.",
   "settings.experimental.claudeMigration.title": "Claude Code 마이그레이션",
   "settings.experimental.claudeMigration.description":
     "지원되는 전역 CLAUDE.md 지침, 간단한 스킬 및 비활성화된 MCP 정의를 한 번 가져옵니다. 원본 Claude 파일은 변경되지 않으며 활성화 후 백엔드를 다시 시작해야 합니다.",
@@ -1450,6 +1453,9 @@ export const dict = {
   "chat.search.close": "검색 닫기",
   "chat.search.invalidRegex": "정규식이 잘못되었습니다",
   "chat.search.noResults": "검색 결과 없음",
+  "settings.experimental.agentManagerUpsell.title": "사이드바의 Agent Manager 초대",
+  "settings.experimental.agentManagerUpsell.description":
+    "코딩 작업 후 Kilo 사이드바에 Agent Manager를 사용해 보도록 권하는 선택적 초대를 표시합니다. 기본적으로 비활성화되어 있습니다.",
   "settings.experimental.browserAutomation.title": "통합 브라우저",
   "settings.experimental.browserAutomation.description":
     "Agent Manager에서 로컬 애플리케이션 미리보기를 표시하고 browser_open 도구를 Agent Manager 세션에 노출합니다.",

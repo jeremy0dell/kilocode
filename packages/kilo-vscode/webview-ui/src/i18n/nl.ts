@@ -987,6 +987,9 @@ export const dict = {
   "settings.experimental.conversationPromptHistory.title": "Promptgeschiedenis per gesprek",
   "settings.experimental.conversationPromptHistory.description":
     "Houd de promptgeschiedenis (ArrowUp/ArrowDown) gescheiden per gesprek in plaats van één geschiedenis te delen over alle gesprekken.",
+  "settings.experimental.agentManagerSplash.title": "Agent Manager-welkomstscherm",
+  "settings.experimental.agentManagerSplash.description":
+    "Probeer de nieuwe Agent Manager-introductie met workflowvoorbeelden. Wordt direct toegepast.",
   "settings.experimental.claudeMigration.title": "Claude Code-migratie",
   "settings.experimental.claudeMigration.description":
     "Importeer ondersteunde globale CLAUDE.md-instructies, eenvoudige vaardigheden en uitgeschakelde MCP-definities één keer. Originele Claude-bestanden blijven ongewijzigd; herstart de backend na inschakelen.",
@@ -1503,6 +1506,9 @@ export const dict = {
   "chat.search.close": "Zoeken sluiten",
   "chat.search.invalidRegex": "Ongeldige reguliere expressie",
   "chat.search.noResults": "Geen resultaten",
+  "settings.experimental.agentManagerUpsell.title": "Uitnodiging voor Agent Manager in de zijbalk",
+  "settings.experimental.agentManagerUpsell.description":
+    "Toon na programmeertaken een optionele uitnodiging om Agent Manager te proberen in de Kilo-zijbalk. Standaard uitgeschakeld.",
   "settings.experimental.browserAutomation.title": "Geïntegreerde browser",
   "settings.experimental.browserAutomation.description":
     "Toon voorbeelden van lokale applicaties in Agent Manager en stel de tool browser_open beschikbaar aan Agent Manager-sessies.",

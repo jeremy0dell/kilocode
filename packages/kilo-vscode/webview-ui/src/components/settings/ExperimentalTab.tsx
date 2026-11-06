@@ -224,6 +224,19 @@ const ExperimentalTab: Component = () => {
         </SettingsRow>
 
         <SettingsRow
+          title={language.t("settings.experimental.agentManagerSplash.title")}
+          description={language.t("settings.experimental.agentManagerSplash.description")}
+        >
+          <Switch
+            checked={settings().agentManagerSplash === true}
+            onChange={(checked) => applySetting("agentManagerSplash", checked, "experimental.agentManagerSplash")}
+            hideLabel
+          >
+            {language.t("settings.experimental.agentManagerSplash.title")}
+          </Switch>
+        </SettingsRow>
+
+        <SettingsRow
           title={language.t("settings.experimental.claudeMigration.title")}
           description={language.t("settings.experimental.claudeMigration.description")}
         >
@@ -248,6 +261,19 @@ const ExperimentalTab: Component = () => {
             hideLabel
           >
             {language.t("settings.experimental.conversationPromptHistory.title")}
+          </Switch>
+        </SettingsRow>
+
+        <SettingsRow
+          title={language.t("settings.experimental.agentManagerUpsell.title")}
+          description={language.t("settings.experimental.agentManagerUpsell.description")}
+        >
+          <Switch
+            checked={settings().agentManagerUpsell === true}
+            onChange={(checked) => applySetting("agentManagerUpsell", checked, "experimental.agentManagerUpsell")}
+            hideLabel
+          >
+            {language.t("settings.experimental.agentManagerUpsell.title")}
           </Switch>
         </SettingsRow>
 

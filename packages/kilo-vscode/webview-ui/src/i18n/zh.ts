@@ -947,6 +947,8 @@ export const dict = {
   "settings.experimental.conversationPromptHistory.title": "按对话区分的提示历史",
   "settings.experimental.conversationPromptHistory.description":
     "为每个对话单独保存提示历史(ArrowUp/ArrowDown),而不是在所有对话间共享同一份。",
+  "settings.experimental.agentManagerSplash.title": "Agent Manager 欢迎页",
+  "settings.experimental.agentManagerSplash.description": "试用带有工作流示例的新版 Agent Manager 介绍页。立即生效。",
   "settings.experimental.claudeMigration.title": "Claude Code 迁移",
   "settings.experimental.claudeMigration.description":
     "一次性导入受支持的全局 CLAUDE.md 指令、简单技能和已禁用的 MCP 定义。不会修改原始 Claude 文件；启用后请重启后端。",
@@ -1392,6 +1394,9 @@ export const dict = {
   "chat.search.close": "关闭搜索",
   "chat.search.invalidRegex": "正则表达式无效",
   "chat.search.noResults": "无结果",
+  "settings.experimental.agentManagerUpsell.title": "侧边栏 Agent Manager 邀请",
+  "settings.experimental.agentManagerUpsell.description":
+    "在编码任务完成后，在 Kilo 侧边栏显示可选的 Agent Manager 试用邀请。默认禁用。",
   "settings.experimental.browserAutomation.title": "集成浏览器",
   "settings.experimental.browserAutomation.description":
     "在 Agent Manager 中显示本地应用预览，并向 Agent Manager 会话公开 browser_open 工具。",
