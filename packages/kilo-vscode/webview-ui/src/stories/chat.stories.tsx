@@ -37,6 +37,7 @@ import type { SessionContextValue } from "../context/session-types"
 import { ProviderContext } from "../context/provider"
 import { ServerContext } from "../context/server"
 import { getVSCodeAPI } from "../context/vscode"
+import { LanguageProvider, type Locale } from "../context/language"
 import { WorktreeModeProvider } from "../context/worktree-mode"
 import type {
   Message,
@@ -155,6 +156,8 @@ function UpsellPreview(props: {
   full?: boolean
 }) {
   const sidebar = document.documentElement.dataset.sidebar
+  const lang = document.documentElement.lang
+  const dir = document.documentElement.dir
   if (props.full) document.documentElement.dataset.sidebar = "left"
   const [scene, setScene] = createSignal({
     active: props.active ?? true,
@@ -162,6 +165,7 @@ function UpsellPreview(props: {
     sidebar: props.sidebar ?? true,
     idle: !props.full,
     eligible: true,
+    locale: "en" as Locale,
   })
   const values = new Map<string, unknown>()
   const storage = {
@@ -193,6 +197,8 @@ function UpsellPreview(props: {
   onCleanup(() => {
     api.postMessage = post
     window.removeEventListener("upsellStoryChange", change)
+    document.documentElement.lang = lang
+    document.documentElement.dir = dir
     if (!props.full) return
     if (sidebar == null) {
       delete document.documentElement.dataset.sidebar
@@ -214,33 +220,36 @@ function UpsellPreview(props: {
   const session = {
     ...mockSessionValue({ id: SESSION_ID }),
     status: () => (scene().idle ? "idle" : "busy"),
+    statusInfo: () => ({ type: scene().idle ? "idle" : "busy" }),
     closeReason: () => (scene().idle ? "completed" : undefined),
     userMessages: () => [user()],
     messages: () => [user()],
   } as unknown as SessionContextValue
   return (
     <StoryProviders sessionID={SESSION_ID} status="idle" noPadding>
-      <Show
-        when={props.full}
-        fallback={
-          <div style={{ width: `${props.width ?? 430}px`, "max-width": "100%", padding: "12px 0" }}>
-            <SidebarTopBar surface="sidebar" onNewTask={() => {}} onHistory={() => {}} />
-            <input aria-label="Focus sentinel" />
-            <AgentManagerUpsell
-              enabled={scene().enabled}
-              sidebar={scene().sidebar}
-              eligible={scene().eligible}
-              idle={scene().idle}
-            />
-          </div>
-        }
-      >
-        <SessionContext.Provider value={session}>
-          <div style={{ width: "100%", height: "100dvh", display: "flex", "flex-direction": "column" }}>
-            <ChatView upsell={scene().enabled} />
-          </div>
-        </SessionContext.Provider>
-      </Show>
+      <LanguageProvider languageOverride={() => scene().locale}>
+        <Show
+          when={props.full}
+          fallback={
+            <div style={{ width: `${props.width ?? 430}px`, "max-width": "100%", padding: "12px 0" }}>
+              <SidebarTopBar surface="sidebar" onNewTask={() => {}} onHistory={() => {}} />
+              <input aria-label="Focus sentinel" />
+              <AgentManagerUpsell
+                enabled={scene().enabled}
+                sidebar={scene().sidebar}
+                eligible={scene().eligible}
+                idle={scene().idle}
+              />
+            </div>
+          }
+        >
+          <SessionContext.Provider value={session}>
+            <div style={{ width: "100%", height: "100dvh", display: "flex", "flex-direction": "column" }}>
+              <ChatView upsell={scene().enabled} />
+            </div>
+          </SessionContext.Provider>
+        </Show>
+      </LanguageProvider>
     </StoryProviders>
   )
 }

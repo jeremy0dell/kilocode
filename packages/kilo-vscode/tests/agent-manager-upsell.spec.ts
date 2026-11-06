@@ -72,6 +72,54 @@ async function arrow(page: Page) {
   await expect(button.locator('[data-component="icon"]')).toHaveCSS("color", color)
   await expect(button.locator('[data-slot="icon-svg"]')).toHaveCSS("color", color)
 }
+async function localized(page: Page) {
+  const lane = await card(page).locator(".agent-manager-upsell-actions").boundingBox()
+  const buttons = await card(page)
+    .locator(".agent-manager-upsell-actions button")
+    .evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const box = node.getBoundingClientRect()
+        const ink = Array.from(node.childNodes)
+          .filter((child) => child.nodeType === Node.TEXT_NODE && child.textContent?.trim())
+          .flatMap((child) => {
+            const range = document.createRange()
+            range.selectNodeContents(child)
+            return Array.from(range.getClientRects(), (rect) => ({
+              left: rect.left,
+              right: rect.right,
+              top: rect.top,
+              bottom: rect.bottom,
+            }))
+          })
+        return {
+          left: box.left,
+          right: box.right,
+          top: box.top,
+          bottom: box.bottom,
+          ink,
+          clipped: node.scrollWidth > node.clientWidth || node.scrollHeight > node.clientHeight,
+        }
+      }),
+    )
+  expect(buttons).toHaveLength(3)
+  for (const [index, button] of buttons.entries()) {
+    expect(button.clipped).toBe(false)
+    expect(button.ink.length).toBeGreaterThan(0)
+    expect(button.left).toBeGreaterThanOrEqual(lane!.x - 0.5)
+    expect(button.right).toBeLessThanOrEqual(lane!.x + lane!.width + 0.5)
+    for (const ink of button.ink) {
+      expect(ink.left).toBeGreaterThanOrEqual(button.left - 0.5)
+      expect(ink.right).toBeLessThanOrEqual(button.right + 0.5)
+      expect(ink.top).toBeGreaterThanOrEqual(button.top - 0.5)
+      expect(ink.bottom).toBeLessThanOrEqual(button.bottom + 0.5)
+    }
+    for (const next of buttons.slice(index + 1)) {
+      const x = Math.min(button.right, next.right) - Math.max(button.left, next.left)
+      const y = Math.min(button.bottom, next.bottom) - Math.max(button.top, next.top)
+      expect(x <= 0.5 || y <= 0.5).toBe(true)
+    }
+  }
+}
 const actions = (page: Page) =>
   page.evaluate(() =>
     (window as Window & { upsell: WebviewMessage[] }).upsell
@@ -224,6 +272,54 @@ test("opt-out confirmation expires after six seconds and Undo cancels the old ti
   await expect(card(page)).toHaveCount(0)
 })
 
+test("Escape inside confirmation preserves Undo and its original six-second window", async ({ page }) => {
+  await page.goto("/iframe.html?id=chat--chat-agent-manager-upsell-hidden&viewMode=story")
+  await expect(page.getByRole("textbox", { name: "Focus sentinel" })).toBeVisible({ timeout: 30_000 })
+  await scene(page, { active: true })
+  await expect(card(page)).toBeVisible()
+  await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") })
+  await page.clock.pauseAt(new Date("2026-01-01T00:00:01Z"))
+  await page.evaluate(() => {
+    Object.assign(window, { escaped: 0 })
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !event.defaultPrevented) (window as Window & { escaped: number }).escaped++
+    })
+  })
+  await page.getByRole("textbox", { name: "Focus sentinel" }).press("Escape")
+  expect(await page.evaluate(() => (window as Window & { escaped: number }).escaped)).toBe(1)
+  await card(page).getByRole("button", { name: "Don't show this again", exact: true }).click()
+  const undo = card(page).getByRole("button", { name: "Undo", exact: true })
+  await undo.focus()
+  await page.keyboard.press("Escape")
+  await expect(undo).toBeFocused()
+  await expect(card(page)).toContainText("Got it. We won't suggest Agent Manager here again.")
+  expect(await actions(page)).toEqual(["shown", "dont_show_again"])
+  await page.clock.fastForward(5900)
+  await expect(undo).toBeVisible()
+  await undo.press("Enter")
+  await expect(card(page)).toContainText("Put a fleet of Kilo agents to work")
+  await page.clock.fastForward(1000)
+  await expect(card(page)).toBeVisible()
+  await card(page).getByRole("button", { name: "Don't show this again", exact: true }).click()
+  await page.clock.fastForward(3000)
+  await undo.focus()
+  await page.keyboard.press("Escape")
+  await expect(undo).toBeFocused()
+  await page.clock.fastForward(2999)
+  await expect(undo).toBeVisible()
+  await page.clock.fastForward(1)
+  await expect(card(page)).toHaveCount(0)
+  expect(await actions(page)).toEqual(["shown", "dont_show_again", "undo", "dont_show_again"])
+  expect(await page.evaluate(() => (window as Window & { escaped: number }).escaped)).toBe(1)
+  expect(
+    await page.evaluate(() =>
+      (window as Window & { upsell: WebviewMessage[] }).upsell.filter(
+        (message) => message.type === "agentManagerUpsell" && message.action === "not_now",
+      ),
+    ),
+  ).toEqual([])
+})
+
 test("Open Agent Manager uses the same message as the existing people icon", async ({ page }) => {
   await page.goto("/iframe.html?id=chat--chat-agent-manager-upsell&viewMode=story")
   await expect(card(page)).toBeVisible()
@@ -261,6 +357,53 @@ test("normal motion uses the specified 450ms entrance", async ({ page }) => {
   await expect(card(page)).toBeVisible()
   await expect(card(page)).toHaveCSS("animation-duration", "0.45s")
 })
+
+for (const [width, height, constrained] of [
+  [420, 800, false],
+  [297, 400, true],
+] as const) {
+  test(`entrance preserves appropriate scrolling and composer access at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height })
+    await page.emulateMedia({ reducedMotion: "no-preference" })
+    await page.goto("/iframe.html?id=chat--chat-agent-manager-upsell-full-sidebar&viewMode=story")
+    await expect(page.locator(".chat-view")).toBeVisible({ timeout: 30_000 })
+    await scene(page, { idle: true })
+    await expect(card(page)).toHaveCount(1)
+    const frames = await card(page).evaluate((node) => {
+      const slot = node.parentElement!
+      const composer = document.querySelector<HTMLElement>(".chat-input")!
+      const animation = node.getAnimations().at(0)
+      if (!animation) throw new Error("Expected the actual entrance animation")
+      animation.pause()
+      const frames = [0, 100, 450].map((time) => {
+        animation.currentTime = time
+        const bounds = composer.getBoundingClientRect()
+        return {
+          time,
+          client: slot.clientHeight,
+          scroll: slot.scrollHeight,
+          bottom: node.getBoundingClientRect().bottom,
+          edge: slot.getBoundingClientRect().bottom,
+          overflow: getComputedStyle(slot).overflowY,
+          top: bounds.top,
+          end: bounds.bottom,
+        }
+      })
+      animation.finish()
+      return frames
+    })
+    for (const frame of frames) {
+      expect(frame.overflow).toBe("auto")
+      expect(frame.top).toBeGreaterThanOrEqual(0)
+      expect(frame.end).toBeLessThanOrEqual(height)
+      if (constrained) expect(frame.scroll).toBeGreaterThan(frame.client)
+      if (!constrained) {
+        expect(frame.scroll).toBeLessThanOrEqual(frame.client)
+        expect(frame.bottom).toBeLessThanOrEqual(frame.edge)
+      }
+    }
+  })
+}
 
 test("an accepted reply arriving hidden is retained until the sidebar is visible", async ({ page }) => {
   await hold(page)
@@ -481,4 +624,62 @@ for (const font of ["Arial", "Verdana"]) {
       await page.screenshot({ path: info.outputPath(`narrow-${font}-${width}.png`) })
     })
   }
+}
+
+for (const [locale, width, font] of [
+  ["fr", 297, 13],
+  ["fr", 200, 16],
+  ["pl", 200, 16],
+  ["es", 200, 16],
+  ["ja", 200, 16],
+  ["fa", 200, 16],
+  ["ar", 297, 16],
+  ["tr", 200, 13],
+] as const) {
+  test(`real ${locale} labels remain complete at ${width}px with font ${font}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 })
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/iframe.html?id=chat--chat-agent-manager-upsell-hidden&viewMode=story")
+    await expect(page.getByRole("textbox", { name: "Focus sentinel" })).toBeVisible({ timeout: 30_000 })
+    await page.evaluate(
+      (locale) => window.dispatchEvent(new CustomEvent("upsellStoryChange", { detail: { locale, active: true } })),
+      locale,
+    )
+    await expect(page.locator("html")).toHaveAttribute("lang", locale, { timeout: 30_000 })
+    await expect(page.locator("html")).toHaveAttribute("dir", ["ar", "fa"].includes(locale) ? "rtl" : "ltr")
+    await expect(card(page)).toBeVisible()
+    await page.evaluate(
+      (fontSize) => window.postMessage({ type: "fontSizeChanged", fontSize }, window.location.origin),
+      font,
+    )
+    await expect(card(page)).toHaveCSS("font-size", `${font}px`)
+    await expect(card(page).locator(".agent-manager-upsell-primary")).not.toHaveText("Open Agent Manager")
+    if (locale === "fr") await expect(card(page).locator(".agent-manager-upsell-later")).toHaveText("Pas maintenant")
+    await localized(page)
+    for (const button of await card(page).getByRole("button").all()) await button.click({ trial: true })
+    await page.setViewportSize({ width: 297, height: 400 })
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/iframe.html?id=chat--chat-agent-manager-upsell-full-sidebar&viewMode=story")
+    await expect(page.locator(".chat-view")).toBeVisible({ timeout: 30_000 })
+    await page.evaluate(
+      (locale) => window.dispatchEvent(new CustomEvent("upsellStoryChange", { detail: { locale, idle: true } })),
+      locale,
+    )
+    await expect(page.locator("html")).toHaveAttribute("lang", locale, { timeout: 30_000 })
+    await expect(card(page)).toBeVisible()
+    await page.evaluate(
+      (fontSize) => window.postMessage({ type: "fontSizeChanged", fontSize }, window.location.origin),
+      font,
+    )
+    await expect(card(page)).toHaveCSS("font-size", `${font}px`)
+    await localized(page)
+    for (const button of await card(page).getByRole("button").all()) {
+      await button.click({ trial: true })
+      const box = await page.locator(".chat-input").boundingBox()
+      expect(box!.x).toBeGreaterThanOrEqual(0)
+      expect(box!.x + box!.width).toBeLessThanOrEqual(297)
+      expect(box!.y).toBeGreaterThanOrEqual(0)
+      expect(box!.y + box!.height).toBeLessThanOrEqual(400)
+    }
+  })
 }

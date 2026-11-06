@@ -160,6 +160,12 @@
 .agent-manager-upsell [data-component="button"].agent-manager-upsell-never:hover {
   color: var(--vscode-foreground, #d6d7da);
 }
+.agent-manager-upsell:not(:lang(en)) .agent-manager-upsell-actions [data-component="button"] {
+  min-width: 0;
+  flex-shrink: 1;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 @container agent-manager-upsell (max-width: 20em) {
   .agent-manager-upsell-body {
     padding-inline: 8px;
@@ -209,7 +215,7 @@
 @keyframes agent-manager-upsell-rise {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.98);
+    transform: translateY(10px) scale(0.98);
   }
   to {
     opacity: 1;

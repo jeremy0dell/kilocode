@@ -127,7 +127,7 @@ export function AgentManagerUpsell(props: { enabled: boolean; sidebar: boolean; 
           if (event.key !== "Escape") return
           event.preventDefault()
           event.stopPropagation()
-          act("not_now")
+          if (view() === "shown") act("not_now")
         }}
       >
         <Show
