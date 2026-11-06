@@ -74,6 +74,7 @@ async function arrow(page: Page) {
 }
 async function localized(page: Page) {
   const lane = await card(page).locator(".agent-manager-upsell-actions").boundingBox()
+  const choices = await card(page).locator(".agent-manager-upsell-choices").boundingBox()
   const buttons = await card(page)
     .locator(".agent-manager-upsell-actions button")
     .evaluateAll((nodes) =>
@@ -107,6 +108,14 @@ async function localized(page: Page) {
     expect(button.ink.length).toBeGreaterThan(0)
     expect(button.left).toBeGreaterThanOrEqual(lane!.x - 0.5)
     expect(button.right).toBeLessThanOrEqual(lane!.x + lane!.width + 0.5)
+    expect(button.top).toBeGreaterThanOrEqual(lane!.y - 0.5)
+    expect(button.bottom).toBeLessThanOrEqual(lane!.y + lane!.height + 0.5)
+    if (index < 2) {
+      expect(button.left).toBeGreaterThanOrEqual(choices!.x - 0.5)
+      expect(button.right).toBeLessThanOrEqual(choices!.x + choices!.width + 0.5)
+      expect(button.top).toBeGreaterThanOrEqual(choices!.y - 0.5)
+      expect(button.bottom).toBeLessThanOrEqual(choices!.y + choices!.height + 0.5)
+    }
     for (const ink of button.ink) {
       expect(ink.left).toBeGreaterThanOrEqual(button.left - 0.5)
       expect(ink.right).toBeLessThanOrEqual(button.right + 0.5)
@@ -628,12 +637,16 @@ for (const font of ["Arial", "Verdana"]) {
 
 for (const [locale, width, font] of [
   ["fr", 297, 13],
+  ["fr", 420, 13],
+  ["fr", 430, 13],
   ["fr", 200, 16],
   ["pl", 200, 16],
   ["es", 200, 16],
   ["ja", 200, 16],
   ["fa", 200, 16],
   ["ar", 297, 16],
+  ["ar", 420, 13],
+  ["fa", 430, 13],
   ["tr", 200, 13],
 ] as const) {
   test(`real ${locale} labels remain complete at ${width}px with font ${font}`, async ({ page }) => {
